@@ -1,0 +1,36 @@
+# Keil build output
+*.axf
+*.htm
+*.lnp
+*.lst
+*.map
+*.o
+*.sct
+*.tra
+*.d
+*.crf
+*.build_log.htm
+*.dep
+*.iex
+
+# Keil specific user settings
+*.uvoptx
+*.uvgui*
+*.uvguix.*
+*.bak
+
+# CubeMX generated backup files
+*.bak
+*.ioc-backup*
+
+# Build folders
+/Objects/
+/Listings/
+/Output/
+/build/
+/Debug/
+/Release/
+
+# VSCode specific
+.vscode/
+*.code-workspace
