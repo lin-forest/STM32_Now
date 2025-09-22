@@ -148,7 +148,7 @@ void StartTask02(void *argument)
   for(;;)
   {
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // 翻转 PC13 LED
-    osDelay(500); // 延时 500ms，不占用 CPU
+    osDelay(100); // 延时 500ms，不占用 CPU
     // osDelay(1);
   }
   /* USER CODE END StartTask02 */
