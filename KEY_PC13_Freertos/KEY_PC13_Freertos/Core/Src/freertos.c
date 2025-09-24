@@ -173,15 +173,17 @@ void StartLedTask(void *argument)
       // {
       //   // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // 切换LED状态
       // }
-      if (key_state)
-      {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-      }
-      else
-      {
-        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-      }
-    
+
+      // if (key_state)
+      // {
+      //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+      // }
+      // else
+      // {
+      //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+      // }
+      // osDelay(200);
+      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
       
     }
     
@@ -211,7 +213,7 @@ void StartKeyPress(void *argument)
     if (key_state != last_state)
     {
       osDelay(20); // 软件去抖
-      if (key_state == (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)==GPIO_PIN_SET))
+      if (key_state && key_state != last_state/*key_state == (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)==GPIO_PIN_SET)*/)
       {
         last_state = key_state;
         osMessageQueuePut(KeyQueueHandle, &key_state, 0, 0);
@@ -220,6 +222,7 @@ void StartKeyPress(void *argument)
       // osMessageQueuePut(KeyQueueHandle, &key_state, 0, 0);
     }
     // osDelay(1);
+    last_state = key_state;
     osDelay(10); // 给CPU调度机会
   }
   /* USER CODE END StartKeyPress */
