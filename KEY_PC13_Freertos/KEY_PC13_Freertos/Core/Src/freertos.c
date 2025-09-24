@@ -215,6 +215,9 @@ void StartKeyPress(void *argument)
       osDelay(20); // 软件去抖
       if (key_state && key_state != last_state/*key_state == (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)==GPIO_PIN_SET)*/)
       {
+        // if中的内容，现为“检测事件”，而非”检测状态“，
+        // 因为按键按下和松开都算是状态变化，都要发送消息
+        // 所以，在if中语句不发生变化时，LedTask中不管使用write，还是togglen，最终效果都一致
         last_state = key_state;
         osMessageQueuePut(KeyQueueHandle, &key_state, 0, 0);
       }
