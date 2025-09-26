@@ -56,11 +56,11 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
-void HAL_GPIO_ToggleTest(void) {
-    // GPIO 翻转，1kHz方波
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
-    HAL_Delay(1); // 1ms，得到约500Hz，改成500us可得1kHz
-}
+// void HAL_GPIO_ToggleTest(void) {
+//     // GPIO 翻转，1kHz方波
+//     HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
+//     HAL_Delay(1); // 1ms，得到约500Hz，改成500us可得1kHz
+// }
 void UART_Test(void) {
     char msg[] = "Hello LA!\r\n";
     HAL_UART_Transmit(&huart1, (uint8_t*)msg, sizeof(msg)-1, 100);
@@ -73,15 +73,15 @@ void UART_Test(void) {
 //         HAL_UART_Transmit_IT(&huart1, (uint8_t*)msg, sizeof(msg)-1);
 //     }
 // }
-void I2C_Test(void) {
-    uint8_t data[2] = {0x12, 0x34};
-    // HAL_I2C_Master_Transmit(&hi2c1, 0x50<<1, data, 2, 100);
-    HAL_I2C_Master_Transmit_IT(&hi2c1, 0x50<<1, data, 2);
-}
-void SPI_Test(void) {
-    uint8_t data[4] = {0xAA, 0x55, 0xFF, 0x00};
-    HAL_SPI_Transmit(&hspi1, data, 4, 100);
-}
+// void I2C_Test(void) {
+//     uint8_t data[2] = {0x12, 0x34};
+//     // HAL_I2C_Master_Transmit(&hi2c1, 0x50<<1, data, 2, 100);
+//     HAL_I2C_Master_Transmit_IT(&hi2c1, 0x50<<1, data, 2);
+// }
+// void SPI_Test(void) {
+//     uint8_t data[4] = {0xAA, 0x55, 0xFF, 0x00};
+//     HAL_SPI_Transmit(&hspi1, data, 4, 100);
+// }
 
 /* USER CODE END PFP */
 
@@ -127,7 +127,7 @@ int main(void)
 
   // uint8_t data[2] = {0xAB, 0xCD};
 
-  // HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
   /* USER CODE END 2 */
 
