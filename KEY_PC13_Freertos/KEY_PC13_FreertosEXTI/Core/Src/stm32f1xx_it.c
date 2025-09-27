@@ -23,8 +23,15 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "cmsis_os.h"  // 自己加：因为要用 FreeRTOS API
-extern osSemaphoreId KeySemHandle; // 自己加：声明信号量句柄
+// #include "cmsis_os.h"  // 自己加：因为要用 FreeRTOS API
+// # include "freertos.h" // 自己加：因为要用 FreeRTOS 相关定义
+#include "FreeRTOS.h"
+#include "task.h"
+// #include "main.h"
+#include "cmsis_os.h"
+#include "queue.h"      // 队列功能相关定义
+// extern osSemaphoreId KeySemHandle; // 自己加：声明信号量句柄
+extern osMessageQueueId_t KeyQueueHandle;
 
 /* USER CODE END Includes */
 
@@ -55,6 +62,8 @@ extern osSemaphoreId KeySemHandle; // 自己加：声明信号量句柄
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+static uint8_t last_key_val = 0;  // 记录上一次按键状态
 
 /* USER CODE END 0 */
 
@@ -171,9 +180,24 @@ void EXTI0_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_IRQn 0 */
 
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  uint8_t key_val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);  // 获取按键电平
+
+  if (key_val != last_key_val) // 检测按键状态变化
+  {
+    osDelay(10);  // 等待按键状态稳定
+    if (key_val != last_key_val)
+    {
+      xQueueSendFromISR(KeyQueueHandle, &key_val, &xHigherPriorityTaskWoken); // 从中断安全地发送消息
+      last_key_val = key_val; // 更新按键状态
+    }
+  }
+  // xQueueSendFromISR(KeyQueueHandle, &key_val, &xHigherPriorityTaskWoken); // 从中断安全地发送消息
   /* USER CODE END EXTI0_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_IRQn 1 */
+
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);  // 如果需要，可以触发任务切换
 
   /* USER CODE END EXTI0_IRQn 1 */
 }

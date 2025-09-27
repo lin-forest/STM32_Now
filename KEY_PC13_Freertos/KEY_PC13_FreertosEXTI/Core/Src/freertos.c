@@ -134,15 +134,17 @@ void MX_FREERTOS_Init(void) {
 void StartLedTask(void *argument)
 {
   /* USER CODE BEGIN StartLedTask */
-  uint8_t recv_val;
+
+  // uint8_t recv_val;
+
   /* Infinite loop */
   for(;;)
   {
-          if(osMessageQueueGet(KeyQueueHandle, &recv_val, NULL, osWaitForever) == osOK)
-      {
-          HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-      }
-    // osDelay(1);
+      //     if(osMessageQueueGet(KeyQueueHandle, &recv_val, NULL, osWaitForever) == osOK)
+      // {
+      //     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+      // }
+    osDelay(1);
   }
   /* USER CODE END StartLedTask */
 }
@@ -157,17 +159,22 @@ void StartLedTask(void *argument)
 void StartKeyTask(void *argument)
 {
   /* USER CODE BEGIN StartKeyTask */
+
   uint8_t key_val;
+  // TickType_t lastWakeTime;
+  // lastWakeTime = osKernelGetTickCount();
+
   /* Infinite loop */
   for(;;)
   {
-          /* 这里简单轮询 PA0，也可以在 HAL_GPIO_EXTI_Callback 设置 flag */
-      if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_RESET)
-      {
-          key_val = 1;  // 按键事件标志
-          osMessageQueuePut(KeyQueueHandle, &key_val, 0, 0); // 非阻塞
-          osDelay(50); // 简单消抖和避免重复发送
-      }
+      if (osMessageQueueGet(KeyQueueHandle, &key_val, NULL, osWaitForever) == osOK)
+        {
+          if (key_val == 1) // 假设1表示按键按下
+          HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+          // key_val = 0;
+            // 消抖处理（延时一定时间再检测按键状态）
+          osDelay(50); // 消抖延时，根据硬件需要调整
+        }
     osDelay(10);
   }
   /* USER CODE END StartKeyTask */
