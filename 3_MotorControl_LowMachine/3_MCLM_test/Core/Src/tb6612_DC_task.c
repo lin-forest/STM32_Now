@@ -15,7 +15,7 @@ void MotorControl_Task(void *argument)
               GPIOB, GPIO_PIN_0,
               GPIOB, GPIO_PIN_1,
               GPIOB, GPIO_PIN_10,              // EN (如果没有独立的使能引脚，则为 NULL, 0)
-              1000, 1000, 5,
+              1000, 1000, 10,
               0, MOTOR_STOP_BRAKE);
 
   /* Infinite loop */
@@ -27,11 +27,11 @@ void MotorControl_Task(void *argument)
       switch (cmdMsg.type)
       {
         case CMD_FORWARD:
-            Motor_SetSpeed(&motor1, 800);
+            Motor_SetSpeed(&motor1, 80);
             // UART2_Print("CMD: Forward\r\n");
             break;
         case CMD_REVERSE:
-            Motor_SetSpeed(&motor1, -800);
+            Motor_SetSpeed(&motor1, -80);
             // UART2_Print("CMD: Reverse\r\n");
             break;
         case CMD_STOP:

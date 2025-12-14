@@ -61,7 +61,7 @@ const osThreadAttr_t MotorControl_Ta_attributes = {
   .cb_size = sizeof(MotorControl_TControlBlock),
   .stack_mem = &MotorControl_TBuffer[0],
   .stack_size = sizeof(MotorControl_TBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for Encoder_Ta */
 osThreadId_t Encoder_TaHandle;
@@ -73,7 +73,7 @@ const osThreadAttr_t Encoder_Ta_attributes = {
   .cb_size = sizeof(Encoder_TaskControlBlock),
   .stack_mem = &Encoder_TaskBuffer[0],
   .stack_size = sizeof(Encoder_TaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for Logger_Ta */
 osThreadId_t Logger_TaHandle;
@@ -154,7 +154,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of CommandQueue */
-  CommandQueueHandle = osMessageQueueNew (32, sizeof(uint64_t), &CommandQueue_attributes);
+  CommandQueueHandle = osMessageQueueNew (128, sizeof(uint64_t), &CommandQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -257,11 +257,15 @@ void Start_Command(void *argument)
 {
   /* USER CODE BEGIN Start_Command */
   /* Infinite loop */
-  // Command_Task(argument);
-  for(;;)
+
+    for(;;)
   {
-    osDelay(1);
+   
+    osDelay(100);
   }
+
+  // Command_Task(argument);
+  // osDelay(100);
   /* USER CODE END Start_Command */
 }
 

@@ -30,3 +30,15 @@
 3_mclm_test\tb6612_dc.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 3_mclm_test\tb6612_dc.o: C:\keil5\MDK-ARM\ARM\ARM_Compiler_5.06u7\Bin\..\include\stdlib.h
 3_mclm_test\tb6612_dc.o: C:\keil5\MDK-ARM\ARM\ARM_Compiler_5.06u7\Bin\..\include\stdio.h
+3_mclm_test\tb6612_dc.o: ../Core/Inc/app_task.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+3_mclm_test\tb6612_dc.o: ../Core/Inc/FreeRTOSConfig.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3/portmacro.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+3_mclm_test\tb6612_dc.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h

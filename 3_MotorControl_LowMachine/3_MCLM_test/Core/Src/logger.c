@@ -67,6 +67,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
             /* 投递到队列，不等待 */
             osMessageQueuePut(CommandQueueHandle, &msg, 0, 0);
+
+            // // 反馈设计
+            // Command_Feedback(&msg);
         }
 
         uart2_rx_index = 0;          // 清空接收

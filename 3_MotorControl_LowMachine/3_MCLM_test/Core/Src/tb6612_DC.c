@@ -1,11 +1,13 @@
 #include "tb6612_DC.h"
 #include "stdlib.h"
 #include "stdio.h"
+#include "app_task.h"
 
 // /* ===========================
 //  *  全局电机对象定义（关键！）
 //  * =========================== */
-Motor_t motor1;
+// 20251214，重定义，已删除
+// Motor_t motor1;
 
 /**
  * @brief 初始化电机结构体和硬件

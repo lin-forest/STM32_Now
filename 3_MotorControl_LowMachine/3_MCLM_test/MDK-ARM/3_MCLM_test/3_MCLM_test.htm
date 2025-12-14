@@ -3,7 +3,7 @@
 <title>Static Call Graph - [3_MCLM_test\3_MCLM_test.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image 3_MCLM_test\3_MCLM_test.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Fri Dec 12 20:47:26 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Dec 14 20:08:51 2025
 <BR><P>
 <H3>Maximum Stack Usage =        240 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -39,7 +39,7 @@ Function Pointers
  <LI><a href="#[19]">DMA1_Channel2_IRQHandler</a> from startup_stm32f103xb.o(.text) referenced from startup_stm32f103xb.o(RESET)
  <LI><a href="#[1a]">DMA1_Channel3_IRQHandler</a> from startup_stm32f103xb.o(.text) referenced from startup_stm32f103xb.o(RESET)
  <LI><a href="#[1b]">DMA1_Channel4_IRQHandler</a> from stm32f1xx_it.o(i.DMA1_Channel4_IRQHandler) referenced from startup_stm32f103xb.o(RESET)
- <LI><a href="#[1c]">DMA1_Channel5_IRQHandler</a> from startup_stm32f103xb.o(.text) referenced from startup_stm32f103xb.o(RESET)
+ <LI><a href="#[1c]">DMA1_Channel5_IRQHandler</a> from stm32f1xx_it.o(i.DMA1_Channel5_IRQHandler) referenced from startup_stm32f103xb.o(RESET)
  <LI><a href="#[1d]">DMA1_Channel6_IRQHandler</a> from stm32f1xx_it.o(i.DMA1_Channel6_IRQHandler) referenced from startup_stm32f103xb.o(RESET)
  <LI><a href="#[1e]">DMA1_Channel7_IRQHandler</a> from stm32f1xx_it.o(i.DMA1_Channel7_IRQHandler) referenced from startup_stm32f103xb.o(RESET)
  <LI><a href="#[a]">DebugMon_Handler</a> from stm32f1xx_it.o(i.DebugMon_Handler) referenced from startup_stm32f103xb.o(RESET)
@@ -306,9 +306,6 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
 </UL>
 <P><STRONG><a name="[1a]"></a>DMA1_Channel3_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32f103xb.o(.text))
-<BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
-</UL>
-<P><STRONG><a name="[1c]"></a>DMA1_Channel5_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32f103xb.o(.text))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
 </UL>
 <P><STRONG><a name="[13]"></a>EXTI0_IRQHandler</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, startup_stm32f103xb.o(.text))
@@ -614,7 +611,7 @@ Global Symbols
 </UL>
 <P><STRONG><a name="[14d]"></a>__semihosting_library_function</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, indicate_semi.o(.text), UNUSED)
 
-<P><STRONG><a name="[73]"></a>Command_ParseString</STRONG> (Thumb, 94 bytes, Stack size 8 bytes, command.o(i.Command_ParseString))
+<P><STRONG><a name="[73]"></a>Command_ParseString</STRONG> (Thumb, 114 bytes, Stack size 8 bytes, command.o(i.Command_ParseString))
 <BR><BR>[Stack]<UL><LI>Max Depth = 96<LI>Call Chain = Command_ParseString &rArr; atoi &rArr; strtol &rArr; _strtoul
 </UL>
 <BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;atoi
@@ -624,6 +621,13 @@ Global Symbols
 
 <P><STRONG><a name="[1b]"></a>DMA1_Channel4_IRQHandler</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, stm32f1xx_it.o(i.DMA1_Channel4_IRQHandler))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = DMA1_Channel4_IRQHandler &rArr; HAL_DMA_IRQHandler
+</UL>
+<BR>[Calls]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_DMA_IRQHandler
+</UL>
+<BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
+</UL>
+<P><STRONG><a name="[1c]"></a>DMA1_Channel5_IRQHandler</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, stm32f1xx_it.o(i.DMA1_Channel5_IRQHandler))
+<BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = DMA1_Channel5_IRQHandler &rArr; HAL_DMA_IRQHandler
 </UL>
 <BR>[Calls]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_DMA_IRQHandler
 </UL>
@@ -681,6 +685,7 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[1e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DMA1_Channel7_IRQHandler
 <LI><a href="#[1d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DMA1_Channel6_IRQHandler
+<LI><a href="#[1c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DMA1_Channel5_IRQHandler
 <LI><a href="#[1b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DMA1_Channel4_IRQHandler
 </UL>
 
@@ -1007,7 +1012,7 @@ Global Symbols
 <LI><a href="#[c6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_USART1_UART_Init
 </UL>
 
-<P><STRONG><a name="[ad]"></a>HAL_UART_MspInit</STRONG> (Thumb, 336 bytes, Stack size 48 bytes, usart.o(i.HAL_UART_MspInit))
+<P><STRONG><a name="[ad]"></a>HAL_UART_MspInit</STRONG> (Thumb, 378 bytes, Stack size 48 bytes, usart.o(i.HAL_UART_MspInit))
 <BR><BR>[Stack]<UL><LI>Max Depth = 88<LI>Call Chain = HAL_UART_MspInit &rArr; HAL_GPIO_Init
 </UL>
 <BR>[Calls]<UL><LI><a href="#[90]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_Init
@@ -1084,7 +1089,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Start_Logger
 </UL>
 
-<P><STRONG><a name="[bc]"></a>MX_DMA_Init</STRONG> (Thumb, 72 bytes, Stack size 8 bytes, dma.o(i.MX_DMA_Init))
+<P><STRONG><a name="[bc]"></a>MX_DMA_Init</STRONG> (Thumb, 88 bytes, Stack size 8 bytes, dma.o(i.MX_DMA_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = MX_DMA_Init &rArr; HAL_NVIC_SetPriority
 </UL>
 <BR>[Calls]<UL><LI><a href="#[84]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_NVIC_SetPriority
@@ -1161,7 +1166,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xb.o(RESET)
 </UL>
-<P><STRONG><a name="[c8]"></a>MotorControl_Task</STRONG> (Thumb, 126 bytes, Stack size 48 bytes, tb6612_dc_task.o(i.MotorControl_Task))
+<P><STRONG><a name="[c8]"></a>MotorControl_Task</STRONG> (Thumb, 124 bytes, Stack size 48 bytes, tb6612_dc_task.o(i.MotorControl_Task))
 <BR><BR>[Stack]<UL><LI>Max Depth = 184<LI>Call Chain = MotorControl_Task &rArr; osMessageQueueGet &rArr; xQueueReceive &rArr; xTaskResumeAll &rArr; xTaskIncrementTick
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ca]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;osMessageQueueGet

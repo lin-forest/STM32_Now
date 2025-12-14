@@ -1,6 +1,7 @@
+// #include "app_includes.h"
 
+// void Command_Task(void *argument)
+// {
+//       osDelay(1000);
 
-#include "app_includes.h"
-
-// #include "cmsis_os.h"
-// #include "app_task.h"
+// }
