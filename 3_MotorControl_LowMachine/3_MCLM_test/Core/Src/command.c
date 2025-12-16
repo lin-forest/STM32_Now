@@ -18,68 +18,6 @@
 
 // // 后续可实现比如“ls motor”“ls pid”等等
 
-// CommandMsg_t Command_ParseString(const char *cmdStr)
-// {
-//     CommandMsg_t msg = {CMD_NONE, 0};
-
-//     if (cmdStr == NULL)
-//         return msg;
-
-//     // /* ---------- 跳过前导空格 ---------- */
-//     // while (*cmdStr == ' ' || *cmdStr == '\t')
-//     //     cmdStr++;
-
-//     // if (*cmdStr == '\0')
-//     //     return msg;
-
-//     // /* ---------- ls / LS / ls xxx ---------- */
-//     // if ((cmdStr[0] == 'l' || cmdStr[0] == 'L') &&
-//     //     (cmdStr[1] == 's' || cmdStr[1] == 'S') &&
-//     //     (cmdStr[2] == '\0' || cmdStr[2] == ' ' || cmdStr[2] == '\r' || cmdStr[2] == '\n'))
-//     // {
-//     //     msg.type = CMD_LIST_STATUS;
-//     //     return msg;
-//     // }
-
-//     /* ---------- 单字符命令 ---------- */
-//     char c = cmdStr[0];
-
-//     /* 统一转大写 */
-//     if (c >= 'a' && c <= 'z')
-//         c -= 32;
-
-//     switch (c)
-//     {
-//         case 'S':   // Sxxx → 设置速度
-//         {
-//             const char *numPart = &cmdStr[1];
-//             if (*numPart == '\0')
-//                 return msg;
-
-//             msg.type  = CMD_SET_SPEED;
-//             msg.value = atoi(numPart);
-//             break;
-//         }
-
-//         case 'F':
-//             msg.type = CMD_FORWARD;
-//             break;
-
-//         case 'R':
-//             msg.type = CMD_REVERSE;
-//             break;
-
-//         case 'X':
-//             msg.type = CMD_STOP;
-//             break;
-
-//         default:
-//             break;
-//     }
-
-//     return msg;
-// }
-
 
 CommandMsg_t Command_ParseString(const char *cmdStr)
 {
@@ -145,4 +83,66 @@ CommandMsg_t Command_ParseString(const char *cmdStr)
 
     return msg;
 }
+
+// CommandMsg_t Command_ParseString(const char *cmdStr)
+// {
+//     CommandMsg_t msg = {CMD_NONE, 0};
+
+//     if (cmdStr == NULL)
+//         return msg;
+
+//     // /* ---------- 跳过前导空格 ---------- */
+//     // while (*cmdStr == ' ' || *cmdStr == '\t')
+//     //     cmdStr++;
+
+//     // if (*cmdStr == '\0')
+//     //     return msg;
+
+//     // /* ---------- ls / LS / ls xxx ---------- */
+//     // if ((cmdStr[0] == 'l' || cmdStr[0] == 'L') &&
+//     //     (cmdStr[1] == 's' || cmdStr[1] == 'S') &&
+//     //     (cmdStr[2] == '\0' || cmdStr[2] == ' ' || cmdStr[2] == '\r' || cmdStr[2] == '\n'))
+//     // {
+//     //     msg.type = CMD_LIST_STATUS;
+//     //     return msg;
+//     // }
+
+//     /* ---------- 单字符命令 ---------- */
+//     char c = cmdStr[0];
+
+//     /* 统一转大写 */
+//     if (c >= 'a' && c <= 'z')
+//         c -= 32;
+
+//     switch (c)
+//     {
+//         case 'S':   // Sxxx → 设置速度
+//         {
+//             const char *numPart = &cmdStr[1];
+//             if (*numPart == '\0')
+//                 return msg;
+
+//             msg.type  = CMD_SET_SPEED;
+//             msg.value = atoi(numPart);
+//             break;
+//         }
+
+//         case 'F':
+//             msg.type = CMD_FORWARD;
+//             break;
+
+//         case 'R':
+//             msg.type = CMD_REVERSE;
+//             break;
+
+//         case 'X':
+//             msg.type = CMD_STOP;
+//             break;
+
+//         default:
+//             break;
+//     }
+
+//     return msg;
+// }
 

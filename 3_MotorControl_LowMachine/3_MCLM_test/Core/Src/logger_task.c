@@ -1,7 +1,5 @@
 
-
 #include "app_includes.h"
-
 
 void Logger_Task(void *argument)
 {

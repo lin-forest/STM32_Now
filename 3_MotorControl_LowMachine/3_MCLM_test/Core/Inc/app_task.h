@@ -20,6 +20,8 @@ extern osThreadId_t Heartbeat_TaHandle;
 
 /* ===================== Queues ===================== */
 extern osMessageQueueId_t CommandQueueHandle;
+extern osMessageQueueId_t AckQueueHandle;
+extern osMessageQueueId_t MotorQueueHandle;
 
 /* ===================== Global Objects（不冲突） ===================== */
 extern Motor_t motor1;

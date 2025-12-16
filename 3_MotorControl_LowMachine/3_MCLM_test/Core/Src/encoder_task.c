@@ -1,7 +1,5 @@
 
-
 #include "app_includes.h"
-
 
 void Encoder_Task(void *argument)
 {

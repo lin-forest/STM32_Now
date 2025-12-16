@@ -116,6 +116,16 @@ osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
   .name = "CommandQueue"
 };
+/* Definitions for MotorQueue */
+osMessageQueueId_t MotorQueueHandle;
+const osMessageQueueAttr_t MotorQueue_attributes = {
+  .name = "MotorQueue"
+};
+/* Definitions for AckQueue */
+osMessageQueueId_t AckQueueHandle;
+const osMessageQueueAttr_t AckQueue_attributes = {
+  .name = "AckQueue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -154,7 +164,13 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of CommandQueue */
-  CommandQueueHandle = osMessageQueueNew (128, sizeof(uint64_t), &CommandQueue_attributes);
+  CommandQueueHandle = osMessageQueueNew (24, sizeof(uint64_t), &CommandQueue_attributes);
+
+  /* creation of MotorQueue */
+  MotorQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &MotorQueue_attributes);
+
+  /* creation of AckQueue */
+  AckQueueHandle = osMessageQueueNew (8, sizeof(uint16_t), &AckQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -197,12 +213,9 @@ void Start_MotorControl(void *argument)
 {
   /* USER CODE BEGIN Start_MotorControl */
   /* Infinite loop */
+
   MotorControl_Task(argument);
-  // for(;;)
-  // {
-  //   // MotorControl_Task();  // 从原来300行变成1行
-  //   osDelay(10);
-  // }
+
   /* USER CODE END Start_MotorControl */
 }
 
@@ -217,12 +230,9 @@ void Start_Encoder(void *argument)
 {
   /* USER CODE BEGIN Start_Encoder */
   /* Infinite loop */
+
   Encoder_Task(argument);
-  // for(;;)
-  // {
-  //   // Encoder_Task();       // 专门速度更新和标志位设置
-  //   osDelay(10);
-  // }
+
   /* USER CODE END Start_Encoder */
 }
 
@@ -237,12 +247,9 @@ void Start_Logger(void *argument)
 {
   /* USER CODE BEGIN Start_Logger */
   /* Infinite loop */
+  
   Logger_Task(argument);
-  // for(;;)
-  // {
-  //   // Logger_Task();        // 串口发送和格式化
-  //   osDelay(1);
-  // }
+
   /* USER CODE END Start_Logger */
 }
 
@@ -258,14 +265,12 @@ void Start_Command(void *argument)
   /* USER CODE BEGIN Start_Command */
   /* Infinite loop */
 
-    for(;;)
-  {
-   
-    osDelay(100);
-  }
+  Command_Task(argument);
 
-  // Command_Task(argument);
-  // osDelay(100);
+  //   for(;;)
+  // {
+  //   osDelay(100);
+  // }
   /* USER CODE END Start_Command */
 }
 
@@ -280,8 +285,6 @@ void Start_Heartbeat(void *argument)
 {
   /* USER CODE BEGIN Start_Heartbeat */
   /* Infinite loop */
-  // (void)argument; // 明确忽略
-  // Heartbeat_Task();   // 不再传 argument
 
   Heartbeat_Task(argument);
 

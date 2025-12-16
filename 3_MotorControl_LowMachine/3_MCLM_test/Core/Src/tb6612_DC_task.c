@@ -1,7 +1,5 @@
 
-
 #include "app_includes.h"
-
 
 void MotorControl_Task(void *argument)
 {
@@ -9,12 +7,13 @@ void MotorControl_Task(void *argument)
 
   // uint8_t cmd;
   CommandMsg_t cmdMsg;
+  // AckMsg_t ack;
 
   // main.c迁移
     Motor_Init(&motor1, &htim3, TIM_CHANNEL_1,
               GPIOB, GPIO_PIN_0,
               GPIOB, GPIO_PIN_1,
-              GPIOB, GPIO_PIN_10,              // EN (如果没有独立的使能引脚，则为 NULL, 0)
+              GPIOA, GPIO_PIN_7,              // EN (如果没有独立的使能引脚，则为 NULL, 0)
               1000, 1000, 10,
               0, MOTOR_STOP_BRAKE);
 
@@ -22,8 +21,13 @@ void MotorControl_Task(void *argument)
 
   for(;;)
   {
-    if (osMessageQueueGet(CommandQueueHandle, &cmdMsg, NULL, osWaitForever) == osOK)
+    if (osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, osWaitForever) == osOK)
     {
+      /* 默认 ACK */
+      // ack.type  = cmdMsg.type;
+      // ack.value = cmdMsg.value;
+      // ack.ok    = 1;   // 先假设成功
+
       switch (cmdMsg.type)
       {
         case CMD_FORWARD:
@@ -45,8 +49,12 @@ void MotorControl_Task(void *argument)
 
         default:
             // Motor_Stop(&motor1);
+            // ack.ok = 0;   // 未支持命令
             break;
       }
+
+      /* ======== 关键：投递 ACK ======== */
+      // osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
     }
     osDelay(10);
   }
