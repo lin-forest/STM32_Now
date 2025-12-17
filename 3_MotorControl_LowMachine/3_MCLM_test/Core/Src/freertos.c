@@ -111,6 +111,18 @@ const osThreadAttr_t Heartbeat_Ta_attributes = {
   .stack_size = sizeof(Heartbeat_TaBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for Ack_Ta */
+osThreadId_t Ack_TaHandle;
+uint32_t Ack_TaBuffer[ 128 ];
+osStaticThreadDef_t Ack_TaControlBlock;
+const osThreadAttr_t Ack_Ta_attributes = {
+  .name = "Ack_Ta",
+  .cb_mem = &Ack_TaControlBlock,
+  .cb_size = sizeof(Ack_TaControlBlock),
+  .stack_mem = &Ack_TaBuffer[0],
+  .stack_size = sizeof(Ack_TaBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
@@ -137,6 +149,7 @@ void Start_Encoder(void *argument);
 void Start_Logger(void *argument);
 void Start_Command(void *argument);
 void Start_Heartbeat(void *argument);
+void Start_Ack(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -164,13 +177,13 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of CommandQueue */
-  CommandQueueHandle = osMessageQueueNew (24, sizeof(uint64_t), &CommandQueue_attributes);
+  CommandQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &CommandQueue_attributes);
 
   /* creation of MotorQueue */
-  MotorQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &MotorQueue_attributes);
+  MotorQueueHandle = osMessageQueueNew (72, sizeof(uint64_t), &MotorQueue_attributes);
 
   /* creation of AckQueue */
-  AckQueueHandle = osMessageQueueNew (8, sizeof(uint16_t), &AckQueue_attributes);
+  AckQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &AckQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -191,6 +204,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Heartbeat_Ta */
   Heartbeat_TaHandle = osThreadNew(Start_Heartbeat, NULL, &Heartbeat_Ta_attributes);
+
+  /* creation of Ack_Ta */
+  Ack_TaHandle = osThreadNew(Start_Ack, NULL, &Ack_Ta_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -289,6 +305,27 @@ void Start_Heartbeat(void *argument)
   Heartbeat_Task(argument);
 
   /* USER CODE END Start_Heartbeat */
+}
+
+/* USER CODE BEGIN Header_Start_Ack */
+/**
+* @brief Function implementing the Ack_Ta thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_Ack */
+void Start_Ack(void *argument)
+{
+  /* USER CODE BEGIN Start_Ack */
+  /* Infinite loop */
+
+  Ack_Task(argument);
+
+  // for(;;)
+  // {
+  //   osDelay(1);
+  // }
+  /* USER CODE END Start_Ack */
 }
 
 /* Private application code --------------------------------------------------*/

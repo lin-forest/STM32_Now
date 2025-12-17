@@ -34,6 +34,7 @@ void Encoder_Task(void *argument);
 void Logger_Task(void *argument);
 void Command_Task(void *argument);
 void Heartbeat_Task(void *argument);
+void Ack_Task(void *argument);
 
 #ifdef __cplusplus
 }

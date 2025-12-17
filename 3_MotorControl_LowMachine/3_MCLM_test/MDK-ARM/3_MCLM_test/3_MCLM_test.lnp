@@ -12,6 +12,7 @@
 "3_mclm_test\tb6612_dc_task.o"
 "3_mclm_test\heartbeat_task.o"
 "3_mclm_test\app_task.o"
+"3_mclm_test\ack_task.o"
 "3_mclm_test\main.o"
 "3_mclm_test\gpio.o"
 "3_mclm_test\freertos.o"
