@@ -1,0 +1,89 @@
+<html>
+<body>
+<pre>
+<h1>�Vision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: ��Vision V5.41.0.0
+Copyright (C) 2024 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: 0 0, 0, LIC=JL28G-V6SEN-IIV5V-PFMRJ-LJ2CJ-HZ66I
+ 
+Tool Versions:
+Toolchain:       MDK-ARM Plus  Version: 5.41.0.0
+Toolchain Path:  C:\keil5\MDK-ARM\ARM\ARM_Compiler_5.06u7\Bin
+C Compiler:      Armcc.exe V5.06 update 7 (build 960)
+Assembler:       Armasm.exe V5.06 update 7 (build 960)
+Linker/Locator:  ArmLink.exe V5.06 update 7 (build 960)
+Library Manager: ArmAr.exe V5.06 update 7 (build 960)
+Hex Converter:   FromElf.exe V5.06 update 7 (build 960)
+CPU DLL:         SARMCM3.DLL V5.41.0.0
+Dialog DLL:      DCM.DLL V1.17.5.0
+Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.3.0.0
+Dialog DLL:      TCM.DLL V1.56.4.0
+ 
+<h2>Project:</h2>
+c:\Users\86173\Desktop\ProjectRequirement\MCU_Now\Lin_STM32\STM32_Now\USART_Return_DMA\USART_Return_DMA\MDK-ARM\USART_Return_DMA.uvprojx
+Project File Date:  09/26/2025
+
+<h2>Output:</h2>
+*** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\keil5\MDK-ARM\ARM\ARM_Compiler_5.06u7\Bin'
+Build target 'USART_Return_DMA'
+assembling startup_stm32f103xb.s...
+compiling main.c...
+../Core/Inc/usart.h(45): error:  #20: identifier "RX_BUF_SIZE" is undefined
+  extern uint8_t rx_buf[RX_BUF_SIZE];  // 声明DMA接收缓冲区，供其他文件引�?
+../Core/Src/main.c: 0 warnings, 1 error
+compiling usart.c...
+../Core/Inc/usart.h(45): error:  #20: identifier "RX_BUF_SIZE" is undefined
+  extern uint8_t rx_buf[RX_BUF_SIZE];  // 声明DMA接收缓冲区，供其他文件引�?
+../Core/Src/usart.c: 0 warnings, 1 error
+compiling stm32f1xx_hal_msp.c...
+compiling stm32f1xx_it.c...
+../Core/Src/stm32f1xx_it.c(227): error:  #20: identifier "RX_BUF_SIZE" is undefined
+      uint16_t rx_len = RX_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart1.hdmarx);  // 计算收到的长�?
+../Core/Src/stm32f1xx_it.c(229): error:  #20: identifier "rx_buf" is undefined
+      HAL_UART_Transmit(&huart1, rx_buf, rx_len, HAL_MAX_DELAY);  // 回传收到的数�?
+../Core/Src/stm32f1xx_it.c: 0 warnings, 2 errors
+compiling gpio.c...
+compiling stm32f1xx_hal_gpio_ex.c...
+compiling dma.c...
+compiling stm32f1xx_hal_gpio.c...
+compiling stm32f1xx_hal_rcc_ex.c...
+compiling stm32f1xx_hal.c...
+compiling stm32f1xx_hal_rcc.c...
+compiling stm32f1xx_hal_dma.c...
+compiling stm32f1xx_hal_uart.c...
+compiling stm32f1xx_hal_cortex.c...
+compiling stm32f1xx_hal_flash_ex.c...
+compiling system_stm32f1xx.c...
+compiling stm32f1xx_hal_exti.c...
+compiling stm32f1xx_hal_pwr.c...
+compiling stm32f1xx_hal_flash.c...
+"USART_Return_DMA\USART_Return_DMA.axf" - 4 Error(s), 0 Warning(s).
+
+<h2>Software Packages used:</h2>
+
+Package Vendor: ARM
+                https://www.keil.com/pack/ARM.CMSIS.6.1.0.pack
+                ARM::CMSIS@6.1.0
+                CMSIS (Common Microcontroller Software Interface Standard)
+   * Component: CORE Version: 6.1.0
+
+Package Vendor: Keil
+                https://www.keil.com/pack/Keil.STM32F1xx_DFP.2.4.1.pack
+                Keil::STM32F1xx_DFP@2.4.1
+                STMicroelectronics STM32F1 Series Device Support, Drivers and Examples
+
+<h2>Collection of Component include folders:</h2>
+  ./RTE/_USART_Return_DMA
+  C:/keil5/MDK-ARM/ARM/CMSIS/6.1.0/CMSIS/Core/Include
+  C:/keil5/MDK-ARM/Keil/STM32F1xx_DFP/2.4.1/Device/Include
+
+<h2>Collection of Component Files used:</h2>
+
+   * Component: ARM::CMSIS:CORE@6.1.0
+      Include file:  CMSIS/Core/Include/tz_context.h
+Target not created.
+Build Time Elapsed:  00:00:03
+</pre>
+</body>
+</html>

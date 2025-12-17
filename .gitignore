@@ -1,93 +1,73 @@
-#---------------------------------------------------
-# 1. MDK-Keil Compiler Build Output (Output Files)
-# These are generated during the build process
-#---------------------------------------------------
-*.axf         # Executable/Debug file
-*.htm         # Build log/error/info
-*.lnp         # Linker control file
-*.lst         # Listing files
-*.map         # Memory map file
-*.o           # Object files (intermediate)
-*.sct         # Scatter file (linker script - generally NOT ignored if custom)
-# *.sct         # Uncomment this line if you use the default generated scatter file
-*.tra         # Target setting file
-*.d           # Dependency files
-*.crf         # Cross-reference file
-*.build_log.htm
-*.dep
-*.iex
-
-#---------------------------------------------------
-# 2. MDK-Keil Project Configuration & User Settings
-# These store user preferences, window layouts, etc.
-#---------------------------------------------------
-*.uvoptx      # Project options file
-*.uvgui* # GUI layout file (old format)
-*.uvguix.* # GUI layout file (new format)
-*.bak         # Generic backup files (may include Keil/CubeMX)
-
-#---------------------------------------------------
-# 3. STM32CubeMX Specific
-#---------------------------------------------------
-*.ioc-backup* # CubeMX project backup files
-# Note: CubeMX project file (.ioc) itself should generally NOT be ignored.
-
-#---------------------------------------------------
-# 4. Common Build Output Directories (Keil/Generic)
-# These directories contain all generated output files
-#---------------------------------------------------
-/Objects/
-/Listings/
-/Output/
+# ================================
+# Build output (ALWAYS ignore)
+# ================================
 /build/
+/cmake-build-*/
 /Debug/
 /Release/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+*.o
+*.d
+*.map
+*.elf
+*.bin
+*.hex
 
-#---------------------------------------------------
-# 5. STM32CubeIDE Specific
-# These are generated files and folders for CubeIDE projects
-#---------------------------------------------------
-.cproject     # Eclipse/CubeIDE project file (Optional to ignore, but often ignored)
-.project      # Eclipse/CubeIDE project metadata (Optional to ignore)
-.settings/    # Eclipse/CubeIDE settings (Should be ignored)
-.mxproject    # CubeIDE specific project metadata
-# CubeIDE default build output folder
-/Debug/       # Included in section 4, but repeated for clarity
+# ================================
+# STM32Cube / IDE generated
+# ================================
+*.ioc-backup*
+*.bak
+*.pack
 
-#---------------------------------------------------
-# 6. CLion Specific (Based on CMake/Embedded Project)
-# These are generated files and folders for CLion
-#---------------------------------------------------
-.idea/        # CLion/JetBrains project settings folder (Crucial to ignore)
-cmake-build-*/  # CMake build directories (Default for CLion if using CMake)
-/cmake-build-debug/
-/cmake-build-release/
-/CMakeCache.txt # CMake cache file
-/CMakeFiles/   # CMake generated files
-*.iml         # IntelliJ/CLion module file
+# CubeIDE / Eclipse
+.project
+.cproject
+.settings/
 
-#---------------------------------------------------
-# 7. IDE/Editor Specific Files (VSCode/Generic)
-#---------------------------------------------------
-.vscode/            # VSCode settings folder
-*.code-workspace    # VSCode workspace file
-*~                  # Editor backup files
+# Keil
+*.uvoptx
+*.uvgui*
+*.uvguix.*
+
+# ================================
+# VS Code (keep minimal shared config)
+# ================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ================================
+# JetBrains
+# ================================
+.idea/
+*.iml
+
+# ================================
+# OS / Editor
+# ================================
+*~
+.DS_Store
+
 
 
 # #---------------------------------------------------
 # # 1. MDK-Keil Compiler Build Output (Output Files)
 # # These are generated during the build process
 # #---------------------------------------------------
-# *.axf         # Executable/Debug file
-# *.htm         # Build log/error/info
-# *.lnp         # Linker control file
-# *.lst         # Listing files
-# *.map         # Memory map file
-# *.o           # Object files (intermediate)
-# *.sct         # Scatter file (linker script)
-# *.tra         # Target setting file
-# *.d           # Dependency files
-# *.crf         # Cross-reference file
+# *.axf         # Executable/Debug file
+# *.htm         # Build log/error/info
+# *.lnp         # Linker control file
+# *.lst         # Listing files
+# *.map         # Memory map file
+# *.o           # Object files (intermediate)
+# *.sct         # Scatter file (linker script - generally NOT ignored if custom)
+# # *.sct         # Uncomment this line if you use the default generated scatter file
+# *.tra         # Target setting file
+# *.d           # Dependency files
+# *.crf         # Cross-reference file
 # *.build_log.htm
 # *.dep
 # *.iex
@@ -96,10 +76,10 @@ cmake-build-*/  # CMake build directories (Default for CLion if using CMake)
 # # 2. MDK-Keil Project Configuration & User Settings
 # # These store user preferences, window layouts, etc.
 # #---------------------------------------------------
-# *.uvoptx      # Project options file
+# *.uvoptx      # Project options file
 # *.uvgui* # GUI layout file (old format)
 # *.uvguix.* # GUI layout file (new format)
-# *.bak         # Generic backup files (may include Keil/CubeMX)
+# *.bak         # Generic backup files (may include Keil/CubeMX)
 
 # #---------------------------------------------------
 # # 3. STM32CubeMX Specific
@@ -108,7 +88,7 @@ cmake-build-*/  # CMake build directories (Default for CLion if using CMake)
 # # Note: CubeMX project file (.ioc) itself should generally NOT be ignored.
 
 # #---------------------------------------------------
-# # 4. Common Build Output Directories
+# # 4. Common Build Output Directories (Keil/Generic)
 # # These directories contain all generated output files
 # #---------------------------------------------------
 # /Objects/
@@ -119,7 +99,32 @@ cmake-build-*/  # CMake build directories (Default for CLion if using CMake)
 # /Release/
 
 # #---------------------------------------------------
-# # 5. IDE/Editor Specific Files (VSCode/Generic)
+# # 5. STM32CubeIDE Specific
+# # These are generated files and folders for CubeIDE projects
 # #---------------------------------------------------
-# .vscode/            # VSCode settings folder
-# *.code-workspace    # VSCode workspace file
+# .cproject     # Eclipse/CubeIDE project file (Optional to ignore, but often ignored)
+# .project      # Eclipse/CubeIDE project metadata (Optional to ignore)
+# .settings/    # Eclipse/CubeIDE settings (Should be ignored)
+# .mxproject    # CubeIDE specific project metadata
+# # CubeIDE default build output folder
+# /Debug/       # Included in section 4, but repeated for clarity
+
+# #---------------------------------------------------
+# # 6. CLion Specific (Based on CMake/Embedded Project)
+# # These are generated files and folders for CLion
+# #---------------------------------------------------
+# .idea/        # CLion/JetBrains project settings folder (Crucial to ignore)
+# cmake-build-*/  # CMake build directories (Default for CLion if using CMake)
+# /cmake-build-debug/
+# /cmake-build-release/
+# /CMakeCache.txt # CMake cache file
+# /CMakeFiles/   # CMake generated files
+# *.iml         # IntelliJ/CLion module file
+
+# #---------------------------------------------------
+# # 7. IDE/Editor Specific Files (VSCode/Generic)
+# #---------------------------------------------------
+# .vscode/            # VSCode settings folder
+# *.code-workspace    # VSCode workspace file
+# *~                  # Editor backup files
+
