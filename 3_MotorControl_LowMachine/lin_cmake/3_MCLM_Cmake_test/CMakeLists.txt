@@ -50,11 +50,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     App/app_task.c
 
     # ===== Drivers (no RTOS dependency) =====
-    App/drivers/BLDC.c
-    App/drivers/tb6612_DC.c
+    App/drivers/motor_BLDC.c
+    App/drivers/motor_DC_tb6612.c
+    App/drivers/motor_DC_ibt4.c
     App/drivers/encoder.c
-    App/drivers/command.c
-    App/drivers/logger.c
+    
 
     # ===== FreeRTOS tasks =====
     App/tasks/command_task.c
@@ -67,6 +67,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # ===== Modules =====
     App/modules/speed_map.c
+
+    # ===== Services =====
+    App/services/command.c
+    App/services/logger.c
+
 )
 
 # --------------------------------------------------
@@ -90,6 +95,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/App/drivers
     ${CMAKE_SOURCE_DIR}/App/tasks
     ${CMAKE_SOURCE_DIR}/App/modules
+    ${CMAKE_SOURCE_DIR}/App/services
 )
 
 # --------------------------------------------------

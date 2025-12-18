@@ -7,10 +7,12 @@ extern "C" {
 #endif
 
 /* ===================== FreeRTOS ===================== */
-#include "cmsis_os.h"
+// #include "cmsis_os.h"
 
-/* ===================== Drivers ===================== */
-#include "tb6612_DC.h"
+// /* ===================== Drivers ===================== */
+#include "motor_DC_tb6612.h"
+// #include "motor_BLDC.h"
+// #include "motor_DC_ibt4.h"
 
 /* ===================== Task Handles ===================== */
 extern osThreadId_t MotorControl_TaHandle;

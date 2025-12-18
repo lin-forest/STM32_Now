@@ -30,7 +30,7 @@ void Logger_Task(void *argument)
                    (unsigned long)HAL_GetTick(),
                    (unsigned long)cnt_val,
                    (int)speed_val,
-                   (int)(-motor1.target_logic_speed),
+                   (int)(motor1.target_logic_speed),
                    (int)motor1.pwm_output);
 
 
