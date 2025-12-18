@@ -66,6 +66,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     App/tasks/heartbeat_task.c
 
     # ===== Modules =====
+    App/modules/pid.c
     App/modules/speed_map.c
 
     # ===== Services =====
