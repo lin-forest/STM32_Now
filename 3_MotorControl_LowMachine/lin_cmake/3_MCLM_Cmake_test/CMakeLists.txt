@@ -64,6 +64,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     App/tasks/tb6612_DC_task.c
     App/tasks/Ack_task.c
     App/tasks/heartbeat_task.c
+
+    # ===== Modules =====
+    App/modules/speed_map.c
 )
 
 # --------------------------------------------------
@@ -86,6 +89,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/App
     ${CMAKE_SOURCE_DIR}/App/drivers
     ${CMAKE_SOURCE_DIR}/App/tasks
+    ${CMAKE_SOURCE_DIR}/App/modules
 )
 
 # --------------------------------------------------

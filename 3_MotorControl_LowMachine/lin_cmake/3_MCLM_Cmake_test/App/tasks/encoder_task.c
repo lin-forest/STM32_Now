@@ -1,5 +1,7 @@
 
 #include "app_includes.h"
+#include "speed_map.h"
+
 
 void Encoder_Task(void *argument)
 {
@@ -25,8 +27,9 @@ void Encoder_Task(void *argument)
       diff += 65536;
     }
     last_cnt = now;
-    motor1.current_speed = diff;
-
+    // motor1.current_speed = diff;
+    motor1.current_ticks = diff;
+    motor1.target_logic_speed = ticks_to_logic(diff);
 
     // // 2025.10.27 改进速度计算，解决计数器溢出问题
     // int16_t diff = (int16_t)(now - last_cnt);

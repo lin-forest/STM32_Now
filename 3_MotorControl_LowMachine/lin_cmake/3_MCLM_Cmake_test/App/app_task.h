@@ -1,6 +1,7 @@
 #ifndef __APP_TASKS_H__
 #define __APP_TASKS_H__
 
+#include "cmsis_os2.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,6 +18,7 @@ extern osThreadId_t Encoder_TaHandle;
 extern osThreadId_t Logger_TaHandle;
 extern osThreadId_t Command_TaHandle;
 extern osThreadId_t Heartbeat_TaHandle;
+extern osThreadId_t Ack_TaHandle;
 
 /* ===================== Queues ===================== */
 extern osMessageQueueId_t CommandQueueHandle;

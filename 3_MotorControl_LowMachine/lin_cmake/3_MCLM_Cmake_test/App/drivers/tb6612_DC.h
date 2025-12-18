@@ -8,6 +8,10 @@
 extern "C" {
 #endif
 
+// #define SPEED_TICKS_MAX   80     // 你当前实测的最大 ticks
+// #define SPEED_LOGIC_MAX  100
+
+
 /**
  * @brief 电机停止模式
  */
@@ -38,8 +42,11 @@ typedef struct {
     MotorStopMode_t StopMode; // 停止模式
 
     // --- 状态量 ---
-    int16_t current_speed;   // 实际速度（编码器反馈）
-    int16_t target_speed;    // 目标速度
+    // int16_t current_speed;   // 实际速度（编码器反馈）
+
+    int16_t current_ticks;   // 实际编码器 tick
+    int16_t current_logic_speed;     // 逻辑速度（-100 ~ +100）⭐ 新增
+    int16_t target_logic_speed;    // 目标速度
     int16_t pwm_output;      // 当前 PWM 输出值（新增）
 } Motor_t;
 

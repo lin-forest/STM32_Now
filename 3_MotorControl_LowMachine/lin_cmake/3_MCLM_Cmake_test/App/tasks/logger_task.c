@@ -18,7 +18,7 @@ void Logger_Task(void *argument)
     // 收到标志位 (每 10ms 唤醒一次) 后执行耗时 I/O：
 
     // 1. 安全地读取速度
-    int16_t speed_val = motor1.current_speed;
+    int16_t speed_val = motor1.current_ticks;
     uint32_t cnt_val = __HAL_TIM_GET_COUNTER(&htim2); 
 
     // // 2. 格式化数据
@@ -30,7 +30,7 @@ void Logger_Task(void *argument)
                    (unsigned long)HAL_GetTick(),
                    (unsigned long)cnt_val,
                    (int)speed_val,
-                   (int)(-motor1.target_speed),
+                   (int)(-motor1.target_logic_speed),
                    (int)motor1.pwm_output);
 
 

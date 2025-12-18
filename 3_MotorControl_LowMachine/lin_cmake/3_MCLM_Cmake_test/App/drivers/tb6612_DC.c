@@ -52,8 +52,8 @@ void Motor_Init(Motor_t *motor,
     motor->StopMode = (StopMode == MOTOR_STOP_BRAKE) ? MOTOR_STOP_BRAKE : MOTOR_STOP_COAST;
 
     // 初始化状态
-    motor->current_speed = 0;
-    motor->target_speed  = 0;
+    motor->current_ticks = 0;
+    motor->target_logic_speed  = 0;
     motor->pwm_output    = 0;
 
     // 启动 PWM
@@ -109,7 +109,7 @@ void Motor_SetSpeed(Motor_t *motor, int16_t speed)
     }
 
     // 更新结构体状态
-    motor->target_speed = speed;
+    motor->target_logic_speed = speed;
     motor->pwm_output = pwmVal;
 }
 
@@ -135,8 +135,8 @@ void Motor_Stop(Motor_t *motor)
     }
 
     // 更新状态
-    motor->current_speed = 0;
-    motor->target_speed  = 0;
+    motor->current_ticks = 0;
+    motor->target_logic_speed  = 0;
     motor->pwm_output    = 0;
 }
 

@@ -20,11 +20,17 @@ extern "C" {
 #include "queue.h"
 #include "semphr.h"
 
+/* ===================== Application Config ===================== */
+#include "app_config.h"
+
+
 /* ===================== Drivers & Modules ===================== */
 #include "tb6612_DC.h"      // 电机结构体 Motor_t
 #include "command.h"        // 命令解析模块
 #include "logger.h"         // Logger 函数
 #include "app_task.h"       // 全局任务句柄 & motor1
+#include "speed_map.h"
+
 
 /* ===================== C STD ===================== */
 #include <stdio.h>
