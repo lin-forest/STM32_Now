@@ -131,4 +131,5 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         CAN_UserRxCallback(RxHeader.StdId, RxData, RxHeader.DLC);
     }
 }
+// 可以继续实现其他自定义CAN相关函数
 /* USER CODE END 1 */
