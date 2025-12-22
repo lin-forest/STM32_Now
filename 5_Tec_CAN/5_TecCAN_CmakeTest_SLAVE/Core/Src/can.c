@@ -121,5 +121,14 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+extern CAN_RxHeaderTypeDef RxHeader;
+extern uint8_t RxData[8];
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+    {
+        CAN_UserRxCallback(RxHeader.StdId, RxData, RxHeader.DLC);
+    }
+}
 /* USER CODE END 1 */
