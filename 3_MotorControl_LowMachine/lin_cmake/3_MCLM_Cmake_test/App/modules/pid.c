@@ -1,5 +1,6 @@
 #include "pid.h"
 
+
 /**
  * @brief 初始化PID控制器
  * @param pid 指向PID控制器结构体的指针
@@ -36,7 +37,8 @@ float PID_Compute(PID_Controller *pid, float current_value)
     error = pid->setpoint - current_value;
 
     // 2. 计算积分项 (带抗积分饱和)
-    pid->integral += error;
+    float Ts = 0.01f; // 采样周期，10ms
+    pid->integral += error * Ts;
     if (pid->integral > pid->integral_limit)
     {
         pid->integral = pid->integral_limit;
@@ -47,7 +49,10 @@ float PID_Compute(PID_Controller *pid, float current_value)
     }
 
     // 3. 计算微分项
+    static float last_derivative = 0.0f;
     derivative = error - pid->prev_error;
+    derivative = 0.7f * last_derivative + 0.3f * derivative; // 简单一阶滤波
+    last_derivative = derivative;
 
     // 4. 计算总输出
     output = pid->Kp * error + pid->Ki * pid->integral + pid->Kd * derivative;

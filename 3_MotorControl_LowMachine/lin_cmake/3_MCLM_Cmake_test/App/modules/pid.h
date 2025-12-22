@@ -17,6 +17,10 @@ typedef struct
     float integral_limit;   // 积分限幅
     float output_limit;     // 输出限幅
 
+    // 在 PID_Controller 结构体中增加
+    float last_derivative;
+    // 并在 PID_Compute 中使用 pid->last_derivative
+
 } PID_Controller;
 
 void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd, float integral_limit, float output_limit);

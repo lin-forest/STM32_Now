@@ -11,6 +11,7 @@ extern "C" {
 
 // /* ===================== Drivers ===================== */
 #include "motor_DC_tb6612.h"
+#include "pid.h"
 // #include "motor_BLDC.h"
 // #include "motor_DC_ibt4.h"
 
@@ -30,6 +31,7 @@ extern osMessageQueueId_t MotorQueueHandle;
 /* ===================== Global Objects（不冲突） ===================== */
 extern Motor_t motor1;
 extern uint8_t tx_buf[64];
+extern PID_Controller motor_pid;
 
 /* ===================== Task Body Prototypes（你缺的关键部分） ===================== */
 /* 这些函数就是你在各个 .c 文件中真正写逻辑的函数 */
@@ -39,6 +41,8 @@ void Logger_Task(void *argument);
 void Command_Task(void *argument);
 void Heartbeat_Task(void *argument);
 void Ack_Task(void *argument);
+void tb6612_DC_Task(void *argument);
+void Motor_PID_Init(void);
 
 #ifdef __cplusplus
 }

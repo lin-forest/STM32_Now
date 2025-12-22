@@ -229,7 +229,8 @@ void Start_MotorControl(void *argument)
   /* USER CODE BEGIN Start_MotorControl */
   /* Infinite loop */
 
-  MotorControl_Task(argument);
+  // MotorControl_Task(argument);
+  tb6612_DC_Task(argument);
 
   // for(;;)
   // {
