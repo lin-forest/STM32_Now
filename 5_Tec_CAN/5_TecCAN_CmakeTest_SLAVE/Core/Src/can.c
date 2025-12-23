@@ -44,11 +44,11 @@ void MX_CAN_Init(void)
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
   hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = DISABLE;
+  hcan.Init.AutoBusOff = ENABLE;
   hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = DISABLE;
+  hcan.Init.AutoRetransmission = ENABLE;
   hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = DISABLE;
+  hcan.Init.TransmitFifoPriority = ENABLE;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();
@@ -124,12 +124,12 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 extern CAN_RxHeaderTypeDef RxHeader;
 extern uint8_t RxData[8];
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
-    {
-        CAN_UserRxCallback(RxHeader.StdId, RxData, RxHeader.DLC);
-    }
-}
+// void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+// {
+//     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+//     {
+//         CAN_UserRxCallback(RxHeader.StdId, RxData, RxHeader.DLC);
+//     }
+// }
 // 可以继续实现其他自定义CAN相关函数
 /* USER CODE END 1 */

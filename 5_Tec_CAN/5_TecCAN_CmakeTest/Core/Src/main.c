@@ -107,7 +107,7 @@ sFilterConfig.FilterMaskIdHigh = 0x0000;
 sFilterConfig.FilterMaskIdLow = 0x0000; // 0表示允许所有ID通过
 sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
 sFilterConfig.FilterActivation = ENABLE;
-sFilterConfig.SlaveStartFilterBank = 14;
+sFilterConfig.SlaveStartFilterBank = 0;
 
 if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK) {
     Error_Handler();
@@ -129,9 +129,16 @@ TxData[0] = 0xAA; // 测试数据
 
   while (1)
   {
-    HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
-    // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // 翻转电平（用于观察）
-    HAL_Delay(500); // 每半秒发一次
+    if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) > 0)
+    {
+        HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+    }
+    HAL_Delay(100);
+    // HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+    // // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); // 翻转电平（用于观察）
+    // HAL_Delay(500); // 每半秒发一次
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

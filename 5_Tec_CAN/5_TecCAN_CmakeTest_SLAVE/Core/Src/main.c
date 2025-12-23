@@ -42,6 +42,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE BEGIN PV */
 CAN_TxHeaderTypeDef TxHeader;
 CAN_RxHeaderTypeDef RxHeader;
@@ -138,7 +139,7 @@ int main(void)
     {
         HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
     }
-    HAL_Delay(500);
+    HAL_Delay(100);
     
     /* USER CODE END WHILE */
 
@@ -187,25 +188,25 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void CAN_UserRxCallback(uint32_t id, uint8_t *data, uint8_t len)
-{
-    if (id == 0x123)
-    {
-        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    }
-}
-
-// void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+// void CAN_UserRxCallback(uint32_t id, uint8_t *data, uint8_t len)
 // {
-//     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+//     if (id == 0x123)
 //     {
-//         // 如果收到了 ID 为 0x123 的消息（就是model-A发的）
-//         if (RxHeader.StdId == 0x123)
-//         {
-//             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//         }
+//         HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 //     }
 // }
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+    {
+        // 如果收到了 ID 为 0x123 的消息（就是model-A发的）
+        if (RxHeader.StdId == 0x123)
+        {
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        }
+    }
+}
 
 /* USER CODE END 4 */
 

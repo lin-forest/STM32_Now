@@ -41,8 +41,7 @@ extern CAN_HandleTypeDef hcan;
 void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void CAN_UserRxCallback(uint32_t id, uint8_t *data, uint8_t len);
-// 可以继续声明其他自定义CAN相关函数
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
