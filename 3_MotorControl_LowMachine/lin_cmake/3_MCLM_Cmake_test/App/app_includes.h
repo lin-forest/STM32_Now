@@ -30,6 +30,7 @@ extern "C" {
 #include "logger.h"         // Logger 函数
 #include "app_task.h"       // 全局任务句柄 & motor1
 #include "speed_map.h"
+#include "can_service.h"
 
 #include "motor_DC_tb6612.h"
 #include "motor_BLDC.h"

@@ -137,6 +137,11 @@ osMessageQueueId_t AckQueueHandle;
 const osMessageQueueAttr_t AckQueue_attributes = {
   .name = "AckQueue"
 };
+/* Definitions for CanMotorCmdQueue */
+osMessageQueueId_t CanMotorCmdQueueHandle;
+const osMessageQueueAttr_t CanMotorCmdQueue_attributes = {
+  .name = "CanMotorCmdQueue"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -183,6 +188,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of AckQueue */
   AckQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &AckQueue_attributes);
+
+  /* creation of CanMotorCmdQueue */
+  CanMotorCmdQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &CanMotorCmdQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
