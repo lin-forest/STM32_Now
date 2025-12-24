@@ -6,8 +6,8 @@ PID_Controller motor_pid; // 全局，只定义一次
 void Motor_PID_Init(void)
 {
     float integral_limit = 500.0f;
-    float output_limit = 1000.0f;
-    PID_Init(&motor_pid, 0.4584f, 0.1766f, 0.2976f, integral_limit, output_limit);
+    float output_limit = 100.0f; // 将输出限幅改为100.0f
+    PID_Init(&motor_pid, 0.4584f, 17.66f, 0.002976f, integral_limit, output_limit);
 }
 
 void tb6612_DC_Task(void *argument)
@@ -16,14 +16,13 @@ void tb6612_DC_Task(void *argument)
     /* USER CODE BEGIN Start_MotorControl */
 
     CommandMsg_t cmdMsg;
-    // PID_Controller motor_pid; // 定义一个PID控制器实例
 
     // main.c迁移
     Motor_Init(&motor1, &htim3, TIM_CHANNEL_1,\
                 GPIOB, GPIO_PIN_0,\
                 GPIOB, GPIO_PIN_1,\
                 GPIOA, GPIO_PIN_7, /* EN (如果没有独立的使能引脚，则为 NULL, 0) */\
-                1000, 1000, 10,\
+                100, 100, 10,   // 将MaxPWM和MaxSpeed改为100
                 0, MOTOR_STOP_BRAKE);
 
     // // 3. 初始化PID控制器
