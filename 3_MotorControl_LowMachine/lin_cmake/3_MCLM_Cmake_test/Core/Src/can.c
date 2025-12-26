@@ -22,6 +22,38 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "cmsis_os.h" // 使用 CMSIS-OS API
+#include "stm32f1xx_hal_gpio.h"
+#include "string.h"
+#include "stdint.h"
+#include "command.h"
+
+// 使用在 freertos.c 中定义的 CMSIS 句柄
+extern osMessageQueueId_t CanMotorCmdQueueHandle; 
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_RxHeaderTypeDef rxHeader;
+    uint8_t rxData[8];
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+    {
+        // 确认ID (虽然过滤器已经保证了)
+        if (rxHeader.StdId == 0x7B) 
+        {
+            // 3. 构建并发送 CommandMsg_t 结构体
+            CommandMsg_t cmdMsg;
+            cmdMsg.type = CAN_CMD_SET_SPEED;
+            // 从CAN数据帧的第二个字节获取速度值
+            // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
+            // 如果是 unsigned，请使用 uint8_t
+            cmdMsg.value = (int8_t)rxData[1]; 
+
+            // 使用 CMSIS API 从中断发送队列
+            osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
+        }
+    }
+}
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -31,7 +63,7 @@ void MX_CAN_Init(void)
 {
 
   /* USER CODE BEGIN CAN_Init 0 */
-
+    CAN_FilterTypeDef sFilterConfig;
   /* USER CODE END CAN_Init 0 */
 
   /* USER CODE BEGIN CAN_Init 1 */
@@ -54,7 +86,34 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
+    // 配置CAN过滤器，只接收ID为 0x7B 的消息
+    sFilterConfig.FilterBank = 0;
+    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+    sFilterConfig.FilterIdHigh = 0x0000;
+    sFilterConfig.FilterIdLow = 0x0000;
+    sFilterConfig.FilterMaskIdHigh = 0x0000;
+    sFilterConfig.FilterMaskIdLow = 0x0000;
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+    sFilterConfig.FilterActivation = ENABLE;
+    sFilterConfig.SlaveStartFilterBank = 14;
 
+    if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    // 启动CAN
+    if (HAL_CAN_Start(&hcan) != HAL_OK)
+    {
+        Error_Handler();
+    }
+
+    // 使能接收中断
+    if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+    {
+        Error_Handler();
+    }
   /* USER CODE END CAN_Init 2 */
 
 }

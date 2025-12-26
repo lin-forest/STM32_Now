@@ -14,12 +14,11 @@ void Motor_PID_Init(void)
 void tb6612_DC_Task(void *argument)
 {
     Motor_PID_Init(); // 初始化参数
-    CanService_Init(); // 初始化 CAN 服务（确保在电机初始化前）
-    /* USER CODE BEGIN Start_MotorControl */
 
     CommandMsg_t cmdMsg;
-    CanFeedback_t canFeedback;
-    uint8_t feedbackCounter = 0; // 反馈周期计数器（每10次循环发送一次）
+    uint64_t queueData; // 用于接收两个队列的数据
+    // CanFeedback_t canFeedback;
+    // uint8_t feedbackCounter = 0;
 
     // main.c迁移
     Motor_Init(&motor1, &htim3, TIM_CHANNEL_1,\
@@ -32,60 +31,66 @@ void tb6612_DC_Task(void *argument)
     /* Infinite loop */
     for(;;)
     {
-        // 4. 不再永远等待，而是以超时0的方式检查新指令
-        // 恢复 osMessageQueueGet 逻辑，确保 cmdMsg 被使用
-        if (osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0) == osOK)
+        osStatus_t serialStatus, canStatus;
+        uint8_t messageProcessed = 0;
+
+        // 1. 检查来自串口的指令 (MotorQueue)
+        serialStatus = osMessageQueueGet(MotorQueueHandle, &queueData, NULL, 0);
+        if (serialStatus == osOK)
         {
-            // 如果收到了新指令，就更新PID的目标值
+            messageProcessed = 1;
+            memcpy(&cmdMsg, &queueData, sizeof(CommandMsg_t));
             if (cmdMsg.type == CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
             }
             else if (cmdMsg.type == CMD_STOP)
             {
-                motor_pid.setpoint = 0.0f; // 设置目标值为0
+                motor_pid.setpoint = 0.0f;
             }
         }
 
-        // 新增：处理 CAN 指令队列
-        if (xQueueReceive(CanMotorCmdQueueHandle, &cmdMsg, 0) == pdPASS)
+        // 2. 检查来自CAN的指令 (CanMotorCmdQueue)
+        canStatus = osMessageQueueGet(CanMotorCmdQueueHandle, &queueData, NULL, 0);
+        if (canStatus == osOK)
         {
-            if (cmdMsg.type == CAN_CMD_SET_SPEED) // 使用统一的 CommandType_t
+            messageProcessed = 1;
+            memcpy(&cmdMsg, &queueData, sizeof(CommandMsg_t));
+            if (cmdMsg.type == CAN_CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
             }
-            else if (cmdMsg.type == CAN_CMD_STOP) // 使用统一的 CommandType_t
+            else if (cmdMsg.type == CAN_CMD_STOP)
             {
                 motor_pid.setpoint = 0.0f;
             }
         }
 
-        // 5. 执行PID闭环控制计算（不变）
+        // 3. 执行PID闭环控制 (逻辑不变)
         if (motor_pid.setpoint != 0.0f)
         {
             float current_speed = motor1.target_logic_speed;
             float output = PID_Compute(&motor_pid, current_speed);
             Motor_SetSpeed(&motor1, (int16_t)output);
         }
-        else // 目标值为0时，明确停止电机
+        else
         {
             Motor_Stop(&motor1);
         }
         
-        // 新增：周期性发送 CAN 反馈（每100ms发送一次，对应10次osDelay(10)）
-        if (++feedbackCounter >= 10)
-        {
-            canFeedback.current_logic_speed = motor1.current_logic_speed;
-            canFeedback.pwm_output = motor1.pwm_output;
-            canFeedback.motor_state = (motor_pid.setpoint != 0.0f) ? 1 : 0;
-            CanService_SendFeedback(&canFeedback);
-            feedbackCounter = 0;
-        }
+        // // 4. 周期性发送CAN反馈 (逻辑不变)
+        // if (++feedback_count >= 10)
+        // {
+        //     feedback_count = 0;
+        //     // CanService_SendFeedback(CAN_CMD_SET_SPEED, current_speed); // This was the call
+        // }
 
-        // 6. 以固定周期运行
-        osDelay(10); // 保持与编码器测速周期一致
+        // 如果本次循环没有处理任何消息，就短暂休眠以让出CPU
+        if (!messageProcessed) {
+            osDelay(5); 
+        }
+        osDelay(10);
     }
-    /* USER CODE END Start_MotorControl */
 }
 
 // #include "cmsis_os.h"

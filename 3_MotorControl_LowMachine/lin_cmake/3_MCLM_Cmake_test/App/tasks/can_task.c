@@ -1,21 +1,19 @@
-// #include "app_includes.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include <stdint.h>
 
-// void CAN_Task(void *argument)
-// {
-//     uint8_t rx_data[8];
-//     char cmdStr[9];
+// 队列句柄声明（确保在 freertos.c 中定义）
+extern QueueHandle_t CanMotorCmdQueue;
 
-//     for (;;)
-//     {
-//         if (osMessageQueueGet(CanRxQueueHandle, rx_data, NULL, osWaitForever) == osOK)
-//         {
-//             memset(cmdStr, 0, sizeof(cmdStr));
-//             memcpy(cmdStr, rx_data, 8);
 
-//             CommandMsg_t msg = Command_ParseString(cmdStr);
-//             msg.src = CMD_SRC_CAN;
-
-//             Command_Push(&msg);
-//         }
-//     }
-// }
+void CanRecvTask(void *argument)
+{
+    uint64_t msg;
+    for (;;)
+    {
+        if (xQueueReceive(CanMotorCmdQueue, &msg, portMAX_DELAY) == pdPASS)
+        {
+            // 这里可以处理接收到的CAN消息
+        }
+    }
+}

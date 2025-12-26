@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "app_task.h"
+#include "command.h"
 
 /* USER CODE END Includes */
 
@@ -122,6 +123,18 @@ const osThreadAttr_t Ack_Ta_attributes = {
   .stack_size = sizeof(Ack_TaBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CanRx_Ta */
+osThreadId_t CanRx_TaHandle;
+uint32_t CanRx_TaBuffer[ 128 ];
+osStaticThreadDef_t CanRx_TaControlBlock;
+const osThreadAttr_t CanRx_Ta_attributes = {
+  .name = "CanRx_Ta",
+  .cb_mem = &CanRx_TaControlBlock,
+  .cb_size = sizeof(CanRx_TaControlBlock),
+  .stack_mem = &CanRx_TaBuffer[0],
+  .stack_size = sizeof(CanRx_TaBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
@@ -154,6 +167,7 @@ void Start_Logger(void *argument);
 void Start_Command(void *argument);
 void Start_Heartbeat(void *argument);
 void Start_Ack(void *argument);
+void Start_CanRx_Ta(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -190,7 +204,7 @@ void MX_FREERTOS_Init(void) {
   AckQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &AckQueue_attributes);
 
   /* creation of CanMotorCmdQueue */
-  CanMotorCmdQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &CanMotorCmdQueue_attributes);
+  CanMotorCmdQueueHandle = osMessageQueueNew (256, sizeof(CommandMsg_t), &CanMotorCmdQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -214,6 +228,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Ack_Ta */
   Ack_TaHandle = osThreadNew(Start_Ack, NULL, &Ack_Ta_attributes);
+
+  /* creation of CanRx_Ta */
+  CanRx_TaHandle = osThreadNew(Start_CanRx_Ta, NULL, &CanRx_Ta_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -350,6 +367,24 @@ void Start_Ack(void *argument)
   //   osDelay(1);
   // }
   /* USER CODE END Start_Ack */
+}
+
+/* USER CODE BEGIN Header_Start_CanRx_Ta */
+/**
+* @brief Function implementing the CanRx_Ta thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_CanRx_Ta */
+void Start_CanRx_Ta(void *argument)
+{
+  /* USER CODE BEGIN Start_CanRx_Ta */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END Start_CanRx_Ta */
 }
 
 /* Private application code --------------------------------------------------*/

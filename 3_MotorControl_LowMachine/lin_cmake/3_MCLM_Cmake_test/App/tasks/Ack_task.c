@@ -3,12 +3,14 @@
 void Ack_Task(void *argument)
 {
     AckMsg_t ack;
+    uint64_t queueData; // 用于接收队列数据
 
     for(;;)
     {
-        // 阻塞等待 AckQueue
-        if(osMessageQueueGet(AckQueueHandle, &ack, NULL, osWaitForever) == osOK)
+        if(osMessageQueueGet(AckQueueHandle, &queueData, NULL, osWaitForever) == osOK)
         {
+            memcpy(&ack, &queueData, sizeof(AckMsg_t));
+            
             char buf[64];
 
             if(ack.ok)

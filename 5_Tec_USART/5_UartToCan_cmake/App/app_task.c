@@ -1,4 +1,6 @@
 #include "app_task.h"
+#include "stm32f103xb.h"
+#include "stm32f1xx_hal_gpio.h"
 #include "string.h" // For strcmp, strlen
 #include "stdio.h"  // For sscanf
 
@@ -40,6 +42,7 @@ void UartRxTask(void *argument)
         // osWaitForever 表示如果队列为空，任务将一直等待直到有数据。
         if (osMessageQueueGet(UartRxQueueHandle, &uart_rx_byte, NULL, osWaitForever) == osOK)
         {
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
             // 检查接收到的字节是否是换行符或回车符，这通常标志着一个命令的结束
             if (uart_rx_byte == '\n' || uart_rx_byte == '\r')
             {
@@ -63,7 +66,7 @@ void UartRxTask(void *argument)
                     // 缓冲区溢出处理：重置缓冲区，丢弃当前命令
                     rx_buffer_idx = 0;
                     // 可以在这里添加错误指示，例如点亮LED
-                    // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+                    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
                 }
             }
         }
@@ -102,7 +105,7 @@ void UartRxParser(const char *cmd_str)
             if (osMessageQueuePut(CanCmdQueueHandle, &can_cmd, 0, 0) != osOK)
             {
                 // 队列满错误处理，例如切换LED指示
-            //     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+                HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_14);
             }
         }
         else
@@ -163,7 +166,9 @@ void CanTxTask(void *argument)
             if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox) != HAL_OK)
             {
                 // 发送错误处理，调用错误处理函数
-                Error_Handler();
+                // Error_Handler(); 
+                // 临时替换为LED闪烁，防止任务卡死
+                HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5); 
             }
         }
     }

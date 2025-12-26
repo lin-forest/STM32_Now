@@ -1,17 +1,18 @@
-
 #include "app_includes.h"
 
 void Command_Task(void *argument)
 {
-    CommandMsg_t cmd;
+    CommandMsg_t cmd; // 直接使用CommandMsg_t接收，因为这个任务不处理uint64_t
 
     for (;;)
     {
+        // 只从CommandQueue获取指令
         if (osMessageQueueGet(CommandQueueHandle, &cmd, NULL, osWaitForever) == osOK)
         {
             /* ================= 1. 生成 ACK 消息 ================= */
             AckMsg_t ack;
 
+            // 只处理非CAN命令
             switch (cmd.type)
             {
                 case CMD_FORWARD:
@@ -52,12 +53,18 @@ void Command_Task(void *argument)
             }
 
             /* ================= 2. 投递到 AckQueue ================= */
-            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+            // 注意：这里也需要遵循uint64_t规则
+            uint64_t ackQueueData = 0;
+            memcpy(&ackQueueData, &ack, sizeof(AckMsg_t));
+            osMessageQueuePut(AckQueueHandle, &ackQueueData, 0, 0);
 
             /* ================= 3. 分发给电机 ================= */
             if(cmd.type != CMD_NONE)
             {
-                osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
+                // 注意：这里也需要遵循uint64_t规则
+                uint64_t motorQueueData = 0;
+                memcpy(&motorQueueData, &cmd, sizeof(CommandMsg_t));
+                osMessageQueuePut(MotorQueueHandle, &motorQueueData, 0, 0);
             }
         }
     }

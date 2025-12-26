@@ -132,10 +132,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of UartRxQueue */
-  UartRxQueueHandle = osMessageQueueNew (64, sizeof(uint8_t), &UartRxQueue_attributes);
+  UartRxQueueHandle = osMessageQueueNew (256, sizeof(uint8_t), &UartRxQueue_attributes);
 
   /* creation of CanCmdQueue */
-  CanCmdQueueHandle = osMessageQueueNew (64, sizeof(CanCmd_t), &CanCmdQueue_attributes);
+  CanCmdQueueHandle = osMessageQueueNew (256, sizeof(CanCmd_t), &CanCmdQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -174,8 +174,8 @@ void Start_Heart_Ta(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_14);
-    osDelay(100);
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    osDelay(200);
   }
   /* USER CODE END Start_Heart_Ta */
 }
