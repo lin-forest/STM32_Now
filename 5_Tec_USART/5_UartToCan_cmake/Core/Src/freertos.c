@@ -22,10 +22,11 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
-#include "app_task.h"  // 添加这一行
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "app_task.h"
 
 /* USER CODE END Includes */
 
@@ -131,10 +132,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of UartRxQueue */
-  UartRxQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &UartRxQueue_attributes);
+  UartRxQueueHandle = osMessageQueueNew (64, sizeof(uint8_t), &UartRxQueue_attributes);
 
   /* creation of CanCmdQueue */
-  CanCmdQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &CanCmdQueue_attributes);
+  CanCmdQueueHandle = osMessageQueueNew (64, sizeof(CanCmd_t), &CanCmdQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -225,3 +226,4 @@ void Start_CanTx_Ta(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+
