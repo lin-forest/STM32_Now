@@ -33,6 +33,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticSemaphore_t osStaticSemaphoreDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -73,7 +74,7 @@ const osThreadAttr_t Encoder_Ta_attributes = {
   .cb_size = sizeof(Encoder_TaskControlBlock),
   .stack_mem = &Encoder_TaskBuffer[0],
   .stack_size = sizeof(Encoder_TaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for Logger_Ta */
 osThreadId_t Logger_TaHandle;
@@ -97,7 +98,7 @@ const osThreadAttr_t Command_Ta_attributes = {
   .cb_size = sizeof(Command_TaControlBlock),
   .stack_mem = &Command_TaBuffer[0],
   .stack_size = sizeof(Command_TaBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for Heartbeat_Ta */
 osThreadId_t Heartbeat_TaHandle;
@@ -123,18 +124,6 @@ const osThreadAttr_t Ack_Ta_attributes = {
   .stack_size = sizeof(Ack_TaBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for CanRx_Ta */
-osThreadId_t CanRx_TaHandle;
-uint32_t CanRx_TaBuffer[ 128 ];
-osStaticThreadDef_t CanRx_TaControlBlock;
-const osThreadAttr_t CanRx_Ta_attributes = {
-  .name = "CanRx_Ta",
-  .cb_mem = &CanRx_TaControlBlock,
-  .cb_size = sizeof(CanRx_TaControlBlock),
-  .stack_mem = &CanRx_TaBuffer[0],
-  .stack_size = sizeof(CanRx_TaBuffer),
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
@@ -155,6 +144,22 @@ osMessageQueueId_t CanMotorCmdQueueHandle;
 const osMessageQueueAttr_t CanMotorCmdQueue_attributes = {
   .name = "CanMotorCmdQueue"
 };
+/* Definitions for uart_rx_semaphore */
+osSemaphoreId_t uart_rx_semaphoreHandle;
+osStaticSemaphoreDef_t uart_rx_semaphoreControlBlock;
+const osSemaphoreAttr_t uart_rx_semaphore_attributes = {
+  .name = "uart_rx_semaphore",
+  .cb_mem = &uart_rx_semaphoreControlBlock,
+  .cb_size = sizeof(uart_rx_semaphoreControlBlock),
+};
+/* Definitions for can_rx_semaphore */
+osSemaphoreId_t can_rx_semaphoreHandle;
+osStaticSemaphoreDef_t can_rx_semaphoreControlBlock;
+const osSemaphoreAttr_t can_rx_semaphore_attributes = {
+  .name = "can_rx_semaphore",
+  .cb_mem = &can_rx_semaphoreControlBlock,
+  .cb_size = sizeof(can_rx_semaphoreControlBlock),
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -167,7 +172,6 @@ void Start_Logger(void *argument);
 void Start_Command(void *argument);
 void Start_Heartbeat(void *argument);
 void Start_Ack(void *argument);
-void Start_CanRx_Ta(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -185,6 +189,13 @@ void MX_FREERTOS_Init(void) {
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
+  /* Create the semaphores(s) */
+  /* creation of uart_rx_semaphore */
+  uart_rx_semaphoreHandle = osSemaphoreNew(1, 1, &uart_rx_semaphore_attributes);
+
+  /* creation of can_rx_semaphore */
+  can_rx_semaphoreHandle = osSemaphoreNew(1, 1, &can_rx_semaphore_attributes);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -195,13 +206,13 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of CommandQueue */
-  CommandQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &CommandQueue_attributes);
+  CommandQueueHandle = osMessageQueueNew (64, sizeof(CommandMsg_t), &CommandQueue_attributes);
 
   /* creation of MotorQueue */
-  MotorQueueHandle = osMessageQueueNew (72, sizeof(uint64_t), &MotorQueue_attributes);
+  MotorQueueHandle = osMessageQueueNew (72, sizeof(CommandMsg_t), &MotorQueue_attributes);
 
   /* creation of AckQueue */
-  AckQueueHandle = osMessageQueueNew (64, sizeof(uint64_t), &AckQueue_attributes);
+  AckQueueHandle = osMessageQueueNew (64, sizeof(AckMsg_t), &AckQueue_attributes);
 
   /* creation of CanMotorCmdQueue */
   CanMotorCmdQueueHandle = osMessageQueueNew (256, sizeof(CommandMsg_t), &CanMotorCmdQueue_attributes);
@@ -228,9 +239,6 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Ack_Ta */
   Ack_TaHandle = osThreadNew(Start_Ack, NULL, &Ack_Ta_attributes);
-
-  /* creation of CanRx_Ta */
-  CanRx_TaHandle = osThreadNew(Start_CanRx_Ta, NULL, &CanRx_Ta_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -367,24 +375,6 @@ void Start_Ack(void *argument)
   //   osDelay(1);
   // }
   /* USER CODE END Start_Ack */
-}
-
-/* USER CODE BEGIN Header_Start_CanRx_Ta */
-/**
-* @brief Function implementing the CanRx_Ta thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_CanRx_Ta */
-void Start_CanRx_Ta(void *argument)
-{
-  /* USER CODE BEGIN Start_CanRx_Ta */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END Start_CanRx_Ta */
 }
 
 /* Private application code --------------------------------------------------*/
