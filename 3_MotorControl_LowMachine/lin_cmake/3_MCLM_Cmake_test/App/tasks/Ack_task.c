@@ -1,7 +1,4 @@
 #include "app_includes.h"
-
-#include "command.h"
-#include "logger.h"
 #include "app_config.h" // Include app_config.h for ACK_MSG_BUF_SIZE
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,7 +63,7 @@ void Ack_Task(void *argument) {
             // TODO: UART2_Print is a blocking function. Consider replacing it with a non-blocking
             // mechanism (e.g., a FreeRTOS message queue to a dedicated UART transmit task)
             // to avoid blocking the ACK task.
-            UART2_Print(buf);
+            Logger_Print(buf); // 将 UART2_Print 替换为 Logger_Print
         }
     }
 }

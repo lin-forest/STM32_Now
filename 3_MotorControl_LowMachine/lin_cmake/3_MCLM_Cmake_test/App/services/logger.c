@@ -1,15 +1,11 @@
 
-
-#include "logger.h"
-#include "usart.h"
-#include "string.h"
-#include "command.h"
-#include "app_task.h"     // 需要 CommandQueueHandle
+#include "stdarg.h" // For va_list, va_start, va_end
+#include "app_includes.h"
 
 /* ===========================================================
  * UART2 接收缓冲区（行缓冲模式）
  * =========================================================== */
-static uint8_t uart2_rx_buf[UART2_RX_BUF_LEN];
+static uint8_t uart2_rx_buf[LOGGER_UART_RX_BUF_LEN]; // 修正为 LOGGER_UART_RX_BUF_LEN
 static uint16_t uart2_rx_index = 0;
 static uint8_t  uart2_rx_byte;
 
@@ -17,23 +13,24 @@ static uint8_t  uart2_rx_byte;
  * UART2 发送控制
  * =========================================================== */
 static volatile uint8_t uart2_tx_busy = 0;
-static uint8_t uart2_tx_buf[64];
+static uint8_t uart2_tx_buf[LOGGER_UART_TX_BUF_LEN]; // 使用 LOGGER_UART_TX_BUF_LEN
 
 /* ===========================================================
- * UART2 应用层初始化
+ * Logger 应用层初始化
  * =========================================================== */
-void UART_App_Init(void)
+LoggerStatus_t Logger_Init(void)
 {
     HAL_UART_Receive_IT(&huart2, &uart2_rx_byte, 1);   // 开始接收
+    return LOGGER_OK;
 }
 
 /* ===========================================================
- * UART2 异步打印
+ * Logger 异步打印
  * =========================================================== */
-void UART2_Print(const char *msg)
+LoggerStatus_t Logger_Print(const char *msg)
 {
     if (uart2_tx_busy)
-        return;     // 若上一次 TX 未完成 → 放弃本条（下位机常用策略）
+        return LOGGER_BUSY;     // 若上一次 TX 未完成 → 放弃本条（下位机常用策略）
 
     uint16_t len = strlen(msg);
     if (len >= sizeof(uart2_tx_buf))
@@ -42,7 +39,27 @@ void UART2_Print(const char *msg)
     memcpy(uart2_tx_buf, msg, len);
     uart2_tx_busy = 1;
 
-    HAL_UART_Transmit_IT(&huart2, uart2_tx_buf, len);
+    HAL_UART_Transmit_IT(&huart2, uart2_tx_buf, len); // 移除超时参数
+    return LOGGER_OK;
+}
+
+/* ===========================================================
+ * Logger 格式化打印
+ * =========================================================== */
+LoggerStatus_t Logger_Printf(const char *fmt, ...)
+{
+    char buffer[LOGGER_UART_TX_BUF_LEN]; // 临时缓冲区
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+    if (len < 0 || len >= sizeof(buffer)) {
+        // 错误或缓冲区溢出
+        return LOGGER_ERROR;
+    }
+
+    return Logger_Print(buffer);
 }
 
 /* ===========================================================
@@ -78,7 +95,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     /* ---------- 普通字符 ---------- */
     else
     {
-        if (uart2_rx_index < UART2_RX_BUF_LEN - 1)
+        if (uart2_rx_index < LOGGER_UART_RX_BUF_LEN - 1) // 修正为 LOGGER_UART_RX_BUF_LEN
         {
             uart2_rx_buf[uart2_rx_index++] = ch;
         }

@@ -27,32 +27,33 @@
 #include "string.h"
 #include "stdint.h"
 #include "command.h"
+#include "app_config.h"
 
 // 使用在 freertos.c 中定义的 CMSIS 句柄
 extern osMessageQueueId_t CanMotorCmdQueueHandle; 
 
-// void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-// {
-//     CAN_RxHeaderTypeDef rxHeader;
-//     uint8_t rxData[8];
-//     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-//     {
-//         // 确认ID (虽然过滤器已经保证了)
-//         if (rxHeader.StdId == 0x40) 
-//         {
-//             // 3. 构建并发送 CommandMsg_t 结构体
-//             CommandMsg_t cmdMsg;
-//             cmdMsg.type = CAN_CMD_SET_SPEED;
-//             // 从CAN数据帧的第二个字节获取速度值
-//             // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
-//             // 如果是 unsigned，请使用 uint8_t
-//             cmdMsg.value = (int8_t)rxData[1]; 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+    CAN_RxHeaderTypeDef rxHeader;
+    uint8_t rxData[8];
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+    {
+        // 确认ID (虽然过滤器已经保证了)
+        if (rxHeader.StdId == CAN_MOTOR_CMD_STDID)
+        {
+            // 3. 构建并发送 CommandMsg_t 结构体
+            CommandMsg_t cmdMsg;
+            cmdMsg.type = CAN_CMD_SET_SPEED;
+            // 从CAN数据帧的第二个字节获取速度值
+            // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
+            // 如果是 unsigned，请使用 uint8_t
+            cmdMsg.value = (int8_t)rxData[1]; 
 
-//             // 使用 CMSIS API 从中断发送队列
-//             osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
-//         }
-//     }
-// }
+            // 使用 CMSIS API 从中断发送队列
+            osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
+        }
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -70,33 +71,33 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 4;
-  hcan.Init.Mode = CAN_MODE_NORMAL;
-  hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_4TQ;
-  hcan.Init.TimeTriggeredMode = DISABLE;
-  hcan.Init.AutoBusOff = ENABLE;
-  hcan.Init.AutoWakeUp = DISABLE;
-  hcan.Init.AutoRetransmission = ENABLE;
-  hcan.Init.ReceiveFifoLocked = DISABLE;
-  hcan.Init.TransmitFifoPriority = ENABLE;
+  hcan.Init.Prescaler = CAN_PRESCALER;
+  hcan.Init.Mode = CAN_MODE;
+  hcan.Init.SyncJumpWidth = CAN_SYNC_JUMP_WIDTH;
+  hcan.Init.TimeSeg1 = CAN_TIME_SEG1;
+  hcan.Init.TimeSeg2 = CAN_TIME_SEG2;
+  hcan.Init.TimeTriggeredMode = CAN_TIME_TRIGGERED_MODE;
+  hcan.Init.AutoBusOff = CAN_AUTO_BUS_OFF;
+  hcan.Init.AutoWakeUp = CAN_AUTO_WAKE_UP;
+  hcan.Init.AutoRetransmission = CAN_AUTO_RETRANSMISSION;
+  hcan.Init.ReceiveFifoLocked = CAN_RECEIVE_FIFO_LOCKED;
+  hcan.Init.TransmitFifoPriority = CAN_TRANSMIT_FIFO_PRIORITY;
   if (HAL_CAN_Init(&hcan) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
     // 配置CAN过滤器，只接收ID为 0x7B 的消息
-    sFilterConfig.FilterBank = 0;
-    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-    sFilterConfig.FilterIdHigh = 0x0000;
-    sFilterConfig.FilterIdLow = 0x0000;
-    sFilterConfig.FilterMaskIdHigh = 0x0000;
-    sFilterConfig.FilterMaskIdLow = 0x0000;
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-    sFilterConfig.FilterActivation = ENABLE;
-    sFilterConfig.SlaveStartFilterBank = 14;
+    sFilterConfig.FilterBank = CAN_FILTER_BANK;
+    sFilterConfig.FilterMode = CAN_FILTER_MODE;
+    sFilterConfig.FilterScale = CAN_FILTER_SCALE;
+    sFilterConfig.FilterIdHigh = CAN_FILTER_ID_HIGH;
+    sFilterConfig.FilterIdLow = CAN_FILTER_ID_LOW;
+    sFilterConfig.FilterMaskIdHigh = CAN_FILTER_MASK_ID_HIGH;
+    sFilterConfig.FilterMaskIdLow = CAN_FILTER_MASK_ID_LOW;
+    sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO;
+    sFilterConfig.FilterActivation = CAN_FILTER_ACTIVATION;
+    sFilterConfig.SlaveStartFilterBank = CAN_SLAVE_START_FILTER_BANK;
 
     if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK)
     {

@@ -6,7 +6,7 @@ void Logger_Task(void *argument)
   /* Infinite loop */
 
   // main.c迁移过来的，对main.c进行解耦合
-  UART_App_Init();
+  Logger_Init();
 
   for(;;)
   {

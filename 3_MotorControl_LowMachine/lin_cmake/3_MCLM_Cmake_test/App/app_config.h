@@ -36,4 +36,34 @@
 // ACK Message Buffer Size
 #define ACK_MSG_BUF_SIZE            128 // 定义ACK消息缓冲区的最大大小
 
+// CAN Configuration
+#define CAN_MOTOR_CMD_STDID         0x40 // 定义电机控制命令的CAN标准ID
+
+// CAN Initialization Parameters
+#define CAN_PRESCALER               4
+#define CAN_MODE                    CAN_MODE_NORMAL
+#define CAN_SYNC_JUMP_WIDTH         CAN_SJW_1TQ
+#define CAN_TIME_SEG1               CAN_BS1_13TQ
+#define CAN_TIME_SEG2               CAN_BS2_4TQ
+#define CAN_TIME_TRIGGERED_MODE     DISABLE
+#define CAN_AUTO_BUS_OFF            ENABLE
+#define CAN_AUTO_WAKE_UP            DISABLE
+#define CAN_AUTO_RETRANSMISSION     ENABLE
+#define CAN_RECEIVE_FIFO_LOCKED     DISABLE
+#define CAN_TRANSMIT_FIFO_PRIORITY  ENABLE
+
+// CAN Filter Configuration
+#define CAN_FILTER_BANK             0    // CAN过滤器组
+#define CAN_FILTER_MODE             CAN_FILTERMODE_IDMASK // CAN过滤器模式，修改为 IDMASK
+#define CAN_FILTER_SCALE            CAN_FILTERSCALE_32BIT // CAN过滤器位宽
+#define CAN_FILTER_ID_HIGH          0x0000
+#define CAN_FILTER_ID_LOW           0x0000
+#define CAN_FILTER_MASK_ID_HIGH     0x0000
+#define CAN_FILTER_MASK_ID_LOW      0x0000
+#define CAN_FILTER_FIFO             CAN_RX_FIFO0 // CAN过滤器FIFO
+#define CAN_FILTER_ACTIVATION       ENABLE // 激活CAN过滤器
+#define CAN_SLAVE_START_FILTER_BANK 14
+
+// #define CAN_CMD_QUEUE_SIZE          10   // 新增：CAN 命令队列大小
+
 #endif // APP_CONFIG_H

@@ -29,6 +29,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "app_includes.h"
+#include "can_service.h" // 新增：包含 can_service.h
 // #include "app_task.h"
 
 /* USER CODE END Includes */
@@ -104,6 +105,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   Motor_PID_Init();
+  // CanService_Init(); // 新增：调用 CanService_Init
 
   /* USER CODE END 2 */
 
