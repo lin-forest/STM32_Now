@@ -114,7 +114,7 @@ const osThreadAttr_t Heartbeat_Ta_attributes = {
 };
 /* Definitions for Ack_Ta */
 osThreadId_t Ack_TaHandle;
-uint32_t Ack_TaBuffer[ 128 ];
+uint32_t Ack_TaBuffer[ 256 ];
 osStaticThreadDef_t Ack_TaControlBlock;
 const osThreadAttr_t Ack_Ta_attributes = {
   .name = "Ack_Ta",

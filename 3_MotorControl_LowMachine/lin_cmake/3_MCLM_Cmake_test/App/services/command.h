@@ -31,12 +31,13 @@ typedef struct {
 } CommandMsg_t;
 
 
-// ACK机制暂时无用
 /* ===================== 命令执行反馈（ACK） ===================== */
 typedef struct {
     CommandType_t type;   // 对应的命令类型
     int16_t value;        // 可选：速度 / 参数
     uint8_t ok;           // 1 = 成功执行，0 = 失败
+    int16_t current_logic_speed; // 新增：反馈当前逻辑速度
+    int16_t pwm_output;          // 新增：反馈当前PWM输出值
 } AckMsg_t;
 
 

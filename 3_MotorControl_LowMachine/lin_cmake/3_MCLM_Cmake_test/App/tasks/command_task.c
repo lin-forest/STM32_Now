@@ -1,5 +1,9 @@
 #include "app_includes.h"
 
+// 外部声明电机对象和互斥锁
+extern TB6612_Motor_t tb6612_motor1;
+extern osMutexId_t motor_mutexHandle;
+
 void Command_Task(void *argument)
 {
     CommandMsg_t cmd; // 直接使用CommandMsg_t接收，因为这个任务不处理uint64_t
@@ -11,6 +15,18 @@ void Command_Task(void *argument)
         {
             /* ================= 1. 生成 ACK 消息 ================= */
             AckMsg_t ack;
+
+            // 默认值
+            ack.current_logic_speed = 0;
+            ack.pwm_output = 0;
+
+            // 获取电机当前状态，需要互斥锁保护
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                ack.current_logic_speed = tb6612_motor1.current_logic_speed;
+                ack.pwm_output = tb6612_motor1.pwm_output;
+                osMutexRelease(motor_mutexHandle);
+            }
 
             // 只处理非CAN命令
             switch (cmd.type)

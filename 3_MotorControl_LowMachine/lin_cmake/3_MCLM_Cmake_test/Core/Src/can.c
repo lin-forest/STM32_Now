@@ -31,28 +31,28 @@
 // 使用在 freertos.c 中定义的 CMSIS 句柄
 extern osMessageQueueId_t CanMotorCmdQueueHandle; 
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-    CAN_RxHeaderTypeDef rxHeader;
-    uint8_t rxData[8];
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
-    {
-        // 确认ID (虽然过滤器已经保证了)
-        if (rxHeader.StdId == 0x40) 
-        {
-            // 3. 构建并发送 CommandMsg_t 结构体
-            CommandMsg_t cmdMsg;
-            cmdMsg.type = CAN_CMD_SET_SPEED;
-            // 从CAN数据帧的第二个字节获取速度值
-            // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
-            // 如果是 unsigned，请使用 uint8_t
-            cmdMsg.value = (int8_t)rxData[1]; 
+// void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+// {
+//     CAN_RxHeaderTypeDef rxHeader;
+//     uint8_t rxData[8];
+//     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+//     {
+//         // 确认ID (虽然过滤器已经保证了)
+//         if (rxHeader.StdId == 0x40) 
+//         {
+//             // 3. 构建并发送 CommandMsg_t 结构体
+//             CommandMsg_t cmdMsg;
+//             cmdMsg.type = CAN_CMD_SET_SPEED;
+//             // 从CAN数据帧的第二个字节获取速度值
+//             // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
+//             // 如果是 unsigned，请使用 uint8_t
+//             cmdMsg.value = (int8_t)rxData[1]; 
 
-            // 使用 CMSIS API 从中断发送队列
-            osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
-        }
-    }
-}
+//             // 使用 CMSIS API 从中断发送队列
+//             osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
+//         }
+//     }
+// }
 
 /* USER CODE END 0 */
 

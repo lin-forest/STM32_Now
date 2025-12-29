@@ -17,10 +17,11 @@ void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd, float integral_
     pid->Kd = Kd;
     pid->integral_limit = integral_limit;
     pid->output_limit = output_limit;
-    
+
     pid->setpoint = 0.0f;
     pid->integral = 0.0f;
     pid->prev_error = 0.0f;
+    pid->last_derivative = 0.0f; // 初始化 last_derivative
 }
 
 /**
@@ -49,10 +50,9 @@ float PID_Compute(PID_Controller *pid, float current_value)
     }
 
     // 3. 计算微分项
-    static float last_derivative = 0.0f;
     derivative = error - pid->prev_error;
-    derivative = 0.7f * last_derivative + 0.3f * derivative; // 简单一阶滤波
-    last_derivative = derivative;
+    pid->last_derivative = 0.7f * pid->last_derivative + 0.3f * derivative; // 简单一阶滤波
+    derivative = pid->last_derivative; // 使用结构体中的 last_derivative
 
     // 4. 计算总输出
     output = pid->Kp * error + pid->Ki * pid->integral + pid->Kd * derivative;

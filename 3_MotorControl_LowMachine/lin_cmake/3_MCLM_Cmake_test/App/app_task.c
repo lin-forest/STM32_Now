@@ -2,7 +2,7 @@
 // #include <stdint.h>
 // #include "can_service.h" // Add this line
 
-Motor_t motor1;          // 电机对象
+TB6612_Motor_t tb6612_motor1;          // 电机对象 // Changed from Motor_t motor1 to TB6612_Motor_t tb6612_motor1
 uint8_t tx_buf[64];      // 日志缓存
 
 // 移除这里的 ticks_to_logic, logic_to_pwm, logic_to_ticks 函数声明

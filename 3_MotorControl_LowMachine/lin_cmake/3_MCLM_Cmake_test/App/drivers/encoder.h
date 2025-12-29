@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-void Encoder_Init(TIM_HandleTypeDef *htim);
-int16_t Encoder_GetCount(TIM_HandleTypeDef *htim);
+// void Encoder_Init(TIM_HandleTypeDef *htim);
+// int16_t Encoder_GetCount(TIM_HandleTypeDef *htim);
 
 #endif /* __ENCODER_H */

@@ -22,9 +22,9 @@ void Logger_Task(void *argument)
     // --- Lock Mutex ---
     if (osMutexAcquire(motor_mutexHandle, 10) == osOK) // Wait max 10ms
     {
-        speed_val = motor1.current_ticks;
-        target_logic_speed = motor1.target_logic_speed;
-        pwm_output = motor1.pwm_output;
+        speed_val = tb6612_motor1.current_ticks;
+        target_logic_speed = tb6612_motor1.target_logic_speed;
+        pwm_output = tb6612_motor1.pwm_output;
         
         // --- Release Mutex ---
         osMutexRelease(motor_mutexHandle);

@@ -33,7 +33,7 @@ extern osMessageQueueId_t CanMotorCmdQueueHandle;
 extern osMutexId_t motor_mutexHandle;
 
 /* ===================== Global Objects（不冲突） ===================== */
-extern Motor_t motor1;
+extern TB6612_Motor_t tb6612_motor1; // Changed from Motor_t motor1 to TB6612_Motor_t tb6612_motor1
 extern uint8_t tx_buf[64];
 extern PID_Controller motor_pid;
 

@@ -30,22 +30,12 @@ void Encoder_Task(void *argument)
     // --- Lock Mutex ---
     if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
     {
-        motor1.current_ticks = diff;
-        motor1.target_logic_speed = ticks_to_logic(diff);
+        tb6612_motor1.current_ticks = diff;
+        tb6612_motor1.current_logic_speed = ticks_to_logic(diff); // 将实际速度赋值给 current_logic_speed
         
         // --- Release Mutex ---
         osMutexRelease(motor_mutexHandle);
     }
-
-    // // 2025.10.27 改进速度计算，解决计数器溢出问题
-    // int16_t diff = (int16_t)(now - last_cnt);
-    // last_cnt = now;
-    // current_speed = diff;  // 保留符号方向
-
-    // 1. 速度计算 (快速操作)
-    // current_speed =  (now - last_cnt);
-    // current_speed = - (now - last_cnt);
-    // last_cnt = now;
 
     // 2. 唤醒 LogTask (使用 CMSIS V2 任务通知)
     if (Logger_TaHandle != NULL)
@@ -56,11 +46,3 @@ void Encoder_Task(void *argument)
   }
   /* USER CODE END Start_SpeedMeasure */
 }
-
-
-// #include "cmsis_os.h"
-// #include "tb6612_DC.h"
-// // #include "task.h"
-// #include "command.h"
-// #include "tim.h"   // ← 必须加
-// #include "app_task.h"
