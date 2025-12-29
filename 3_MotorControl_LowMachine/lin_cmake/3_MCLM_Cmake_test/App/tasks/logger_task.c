@@ -1,4 +1,3 @@
-
 #include "app_includes.h"
 
 void Logger_Task(void *argument)
@@ -15,23 +14,34 @@ void Logger_Task(void *argument)
     // osThreadFlagsWait(flags, options, timeout)
     osThreadFlagsWait(0x01, osFlagsWaitAny, osWaitForever);
 
-    // 收到标志位 (每 10ms 唤醒一次) 后执行耗时 I/O：
-
-    // 1. 安全地读取速度
-    int16_t speed_val = motor1.current_ticks;
+    int16_t speed_val;
+    int16_t target_logic_speed;
+    int16_t pwm_output;
     uint32_t cnt_val = __HAL_TIM_GET_COUNTER(&htim2); 
 
-    // // 2. 格式化数据
-    // int len = sprintf((char *)tx_buf, "%ld,%ld,%ld,%ld,%ld\r\n",HAL_GetTick(), cnt_val, speed_val,
-    //                  - motor1.target_speed, motor1.pwm_output);
+    // --- Lock Mutex ---
+    if (osMutexAcquire(motor_mutexHandle, 10) == osOK) // Wait max 10ms
+    {
+        speed_val = motor1.current_ticks;
+        target_logic_speed = motor1.target_logic_speed;
+        pwm_output = motor1.pwm_output;
+        
+        // --- Release Mutex ---
+        osMutexRelease(motor_mutexHandle);
+    }
+    else
+    {
+        // Failed to acquire mutex, maybe skip this log cycle
+        continue;
+    }
 
     int len = snprintf((char *)tx_buf, sizeof(tx_buf),
                    "%lu,%lu,%d,%d,%d\r\n",
                    (unsigned long)HAL_GetTick(),
                    (unsigned long)cnt_val,
                    (int)speed_val,
-                   (int)(motor1.target_logic_speed),
-                   (int)motor1.pwm_output);
+                   (int)target_logic_speed,
+                   (int)pwm_output);
 
 
     // 3. 串口发送，DMA 方式
@@ -42,23 +52,13 @@ void Logger_Task(void *argument)
     }
     else 
     {
-      osDelay(5); // 如果 UART 忙，稍等一下再发
+      // If UART is busy, we might just skip this log frame.
+      // The osDelay(5) could be removed if we want to immediately
+      // go back to waiting for the next flag.
     }
-    // HAL_UART_Transmit_DMA(&huart1, tx_buf, len);
-
-    osDelay(10);
+    
+    // This delay is redundant because the task is synchronized by osThreadFlagsWait
+    // osDelay(10); 
   }
   /* USER CODE END Start_SerialLog */
 }
-
-
-// #include "cmsis_os.h"
-// #include "app_task.h"
-// #include "logger.h"
-// #include "string.h"
-// // #include "cmsis_os.h"
-// #include "tb6612_DC.h"
-// // #include "task.h"
-// #include "command.h"
-// #include "tim.h"   // ← 必须加
-// #include "app_task.h"

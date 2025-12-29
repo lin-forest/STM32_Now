@@ -27,6 +27,10 @@ extern osThreadId_t Ack_TaHandle;
 extern osMessageQueueId_t CommandQueueHandle;
 extern osMessageQueueId_t AckQueueHandle;
 extern osMessageQueueId_t MotorQueueHandle;
+extern osMessageQueueId_t CanMotorCmdQueueHandle;
+
+// 在 CubeMX 中创建名为 motor_mutex 的互斥锁后，添加此声明
+extern osMutexId_t motor_mutexHandle;
 
 /* ===================== Global Objects（不冲突） ===================== */
 extern Motor_t motor1;
@@ -42,6 +46,7 @@ void Command_Task(void *argument);
 void Heartbeat_Task(void *argument);
 void Ack_Task(void *argument);
 void tb6612_DC_Task(void *argument);
+// void at8236_DC_Task(void *argument);
 void Motor_PID_Init(void);
 
 #ifdef __cplusplus
@@ -49,37 +54,3 @@ void Motor_PID_Init(void);
 #endif
 
 #endif
-
-
-
-// #ifndef __APP_TASKS_H__
-// #define __APP_TASKS_H__
-
-// #ifdef __cplusplus
-// extern "C" {
-// #endif
-
-// #include "cmsis_os.h"
-// #include "tb6612_DC.h"
-
-// // ========== Task Handles ==========
-// extern osThreadId_t MotorControl_TaHandle;
-// extern osThreadId_t Encoder_TaHandle;
-// extern osThreadId_t Logger_TaHandle;
-// extern osThreadId_t Command_TaHandle;
-// extern osThreadId_t Heartbeat_TaHandle;
-
-// // ========== Queue ==========
-// extern osMessageQueueId_t CommandQueueHandle;
-
-// // ========== Global Objects ==========
-// extern Motor_t motor1;
-
-// // ========== logger buffer ==========
-// extern uint8_t tx_buf[64];
-
-// #ifdef __cplusplus
-// }
-// #endif
-
-// #endif

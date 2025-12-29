@@ -24,7 +24,7 @@ void tb6612_DC_Task(void *argument)
     Motor_Init(&motor1, &htim3, TIM_CHANNEL_1,\
                 GPIOB, GPIO_PIN_0,\
                 GPIOB, GPIO_PIN_1,\
-                GPIOA, GPIO_PIN_7, /* EN (如果没有独立的使能引脚，则为 NULL, 0) */\
+                GPIOB, GPIO_PIN_10, /* EN (如果没有独立的使能引脚，则为 NULL, 0) */\
                 100, 100, 10,
                 0, MOTOR_STOP_BRAKE);
 
@@ -69,9 +69,16 @@ void tb6612_DC_Task(void *argument)
         // 3. 执行PID闭环控制 (逻辑不变)
         if (motor_pid.setpoint != 0.0f)
         {
-            float current_speed = motor1.target_logic_speed;
-            float output = PID_Compute(&motor_pid, current_speed);
-            Motor_SetSpeed(&motor1, (int16_t)output);
+            // --- Lock Mutex ---
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                float current_speed = motor1.target_logic_speed;
+                float output = PID_Compute(&motor_pid, current_speed);
+                Motor_SetSpeed(&motor1, (int16_t)output);
+
+                // --- Release Mutex ---
+                osMutexRelease(motor_mutexHandle);
+            }
         }
         else
         {
@@ -92,8 +99,3 @@ void tb6612_DC_Task(void *argument)
         osDelay(10);
     }
 }
-
-// #include "cmsis_os.h"
-// #include "tb6612_DC.h"
-// #include "command.h"
-// #include "app_task.h"

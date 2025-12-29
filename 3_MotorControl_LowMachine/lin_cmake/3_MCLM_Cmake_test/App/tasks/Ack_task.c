@@ -3,14 +3,12 @@
 void Ack_Task(void *argument)
 {
     AckMsg_t ack;
-    uint64_t queueData; // 用于接收队列数据
 
     for(;;)
     {
-        if(osMessageQueueGet(AckQueueHandle, &queueData, NULL, osWaitForever) == osOK)
+        // Directly get the AckMsg_t struct from the queue.
+        if(osMessageQueueGet(AckQueueHandle, &ack, NULL, osWaitForever) == osOK)
         {
-            memcpy(&ack, &queueData, sizeof(AckMsg_t));
-            
             char buf[64];
 
             if(ack.ok)
@@ -24,7 +22,7 @@ void Ack_Task(void *argument)
                         sprintf(buf, "ACK: REVERSE\r\n");
                         break;
                     case CMD_STOP:
-                        sprintf(buf, "ACK: STOP\r\n");
+                        sprintf(buf, "ACK: STOP\r\n"); 
                         break;
                     case CMD_SET_SPEED:
                         sprintf(buf, "ACK: SPEED %d\r\n", ack.value);
@@ -33,16 +31,17 @@ void Ack_Task(void *argument)
                         sprintf(buf, "ACK: LS\r\n");
                         break;
                     default:
+                        // This case should ideally not be reached if ack.ok is true
                         sprintf(buf, "ACK: UNKNOWN\r\n");
                         break;
                 }
             }
             else
             {
-                sprintf(buf, "ACK: UNKNOWN\r\n");
+                sprintf(buf, "NACK: UNKNOWN COMMAND\r\n"); // Use NACK for clarity
             }
 
-            // 发送到 UART2
+            // Send to UART2
             UART2_Print(buf);
         }
     }

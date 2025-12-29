@@ -144,6 +144,11 @@ osMessageQueueId_t CanMotorCmdQueueHandle;
 const osMessageQueueAttr_t CanMotorCmdQueue_attributes = {
   .name = "CanMotorCmdQueue"
 };
+/* Definitions for motor_mutex */
+osMutexId_t motor_mutexHandle;
+const osMutexAttr_t motor_mutex_attributes = {
+  .name = "motor_mutex"
+};
 /* Definitions for uart_rx_semaphore */
 osSemaphoreId_t uart_rx_semaphoreHandle;
 osStaticSemaphoreDef_t uart_rx_semaphoreControlBlock;
@@ -184,6 +189,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of motor_mutex */
+  motor_mutexHandle = osMutexNew(&motor_mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -263,7 +271,10 @@ void Start_MotorControl(void *argument)
   /* Infinite loop */
 
   // MotorControl_Task(argument);
+  
   tb6612_DC_Task(argument);
+  // at8236_DC_Task(argument);
+  
 
   // for(;;)
   // {

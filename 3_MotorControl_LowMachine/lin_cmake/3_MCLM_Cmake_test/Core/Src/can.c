@@ -38,7 +38,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
     {
         // 确认ID (虽然过滤器已经保证了)
-        if (rxHeader.StdId == 0x7B) 
+        if (rxHeader.StdId == 0x40) 
         {
             // 3. 构建并发送 CommandMsg_t 结构体
             CommandMsg_t cmdMsg;

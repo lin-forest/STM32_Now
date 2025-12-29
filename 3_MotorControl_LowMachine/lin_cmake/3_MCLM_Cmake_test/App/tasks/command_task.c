@@ -53,65 +53,16 @@ void Command_Task(void *argument)
             }
 
             /* ================= 2. 投递到 AckQueue ================= */
-            // 注意：这里也需要遵循uint64_t规则
-            uint64_t ackQueueData = 0;
-            memcpy(&ackQueueData, &ack, sizeof(AckMsg_t));
-            osMessageQueuePut(AckQueueHandle, &ackQueueData, 0, 0);
+            // Directly put the address of the AckMsg_t struct into the queue.
+            // The queue was created with the correct item size.
+            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
 
             /* ================= 3. 分发给电机 ================= */
             if(cmd.type != CMD_NONE)
             {
-                // 注意：这里也需要遵循uint64_t规则
-                uint64_t motorQueueData = 0;
-                memcpy(&motorQueueData, &cmd, sizeof(CommandMsg_t));
-                osMessageQueuePut(MotorQueueHandle, &motorQueueData, 0, 0);
+                // Directly put the address of the CommandMsg_t struct into the queue.
+                osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
             }
         }
     }
 }
-
-
-// // 该部分为串口UART2-ISR成功的代码，留存；后改为ack-queue＆ack_task
-
-// #include "app_includes.h"
-
-// void Command_Task(void *argument)
-// {
-//     CommandMsg_t cmd;
-
-//     for (;;)
-//     {
-//         if (osMessageQueueGet(CommandQueueHandle, &cmd, NULL, osWaitForever) == osOK)
-//         {
-//             /* ========== 1. 发 ACK（命令被系统接纳） ========== */
-//             switch (cmd.type)
-//             {
-//                 case CMD_FORWARD:
-//                     UART2_Print("ACK: FORWARD\r\n");
-//                     break;
-//                 case CMD_REVERSE:
-//                     UART2_Print("ACK: REVERSE\r\n");
-//                     break;
-//                 case CMD_STOP:
-//                     UART2_Print("ACK: STOP\r\n");
-//                     break;
-//                 case CMD_SET_SPEED:
-//                 {
-//                     char buf[32];
-//                     sprintf(buf, "ACK: SPEED %d\r\n", cmd.value);
-//                     UART2_Print(buf);
-//                     break;
-//                 }
-//                 case CMD_LIST_STATUS:
-//                     UART2_Print("ACK: LS\r\n");
-//                     break;
-//                 default:
-//                     UART2_Print("ACK: UNKNOWN\r\n");
-//                     continue;   // 不往下发
-//             }
-
-//             /* ========== 2. 分发给电机 ========== */
-//             osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
-//         }
-//     }
-// }

@@ -11,4 +11,9 @@
 /* PWM 输出上限（与 TIM 配置一致） */
 #define PWM_MAX            999
 
-#endif
+// PID Constants for Motor Control
+// #define MOTOR_PID_KP 2.0f
+// #define MOTOR_PID_KI 1.0f
+// #define MOTOR_PID_KD 0.5f
+
+#endif // APP_CONFIG_H
