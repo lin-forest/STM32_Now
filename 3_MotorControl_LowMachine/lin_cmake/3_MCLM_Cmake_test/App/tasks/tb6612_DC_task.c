@@ -7,12 +7,6 @@
 
 PID_Controller motor_pid; // 全局，只定义一次
 
-void Motor_PID_Init(void)
-{
-    // float integral_limit = 500.0f;\n    // float output_limit = 100.0f; // 将输出限幅改为100.0f
-    PID_Init(&motor_pid, MOTOR_PID_KP, MOTOR_PID_KI, MOTOR_PID_KD, MOTOR_PID_INTEGRAL_LIMIT, MOTOR_PID_OUTPUT_LIMIT);
-}
-
 void tb6612_DC_Task(void *argument)
 {
     Motor_PID_Init(); // 初始化参数
@@ -116,4 +110,11 @@ void tb6612_DC_Task(void *argument)
         }
         osDelay(10);
     }
+}
+
+void Motor_PID_Init(void)
+{
+    // float integral_limit = 500.0f;\n    // float output_limit = 100.0f; // 将输出限幅改为100.0f
+    // 初始化PID控制器
+    PID_Init(&motor_pid, MOTOR_PID_KP, MOTOR_PID_KI, MOTOR_PID_KD, MOTOR_PID_INTEGRAL_LIMIT, MOTOR_PID_OUTPUT_LIMIT, PID_TS, PID_DERIVATIVE_FILTER_ALPHA);
 }

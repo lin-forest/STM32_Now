@@ -17,6 +17,8 @@
 #define MOTOR_PID_KD 0.002976f
 #define MOTOR_PID_INTEGRAL_LIMIT 500.0f
 #define MOTOR_PID_OUTPUT_LIMIT 100.0f
+#define PID_TS                      0.01f // PID 采样周期 (10ms)
+#define PID_DERIVATIVE_FILTER_ALPHA 0.3f  // 微分项滤波系数 (0.0 - 1.0)
 
 // Motor Initialization Parameters
 #define MOTOR1_TIM_HANDLE           &htim3

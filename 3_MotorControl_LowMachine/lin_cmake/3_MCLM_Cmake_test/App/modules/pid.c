@@ -9,18 +9,23 @@
  * @param Kd 微分系数
  * @param integral_limit 积分项限幅
  * @param output_limit 控制器总输出限幅
+ * @param Ts 采样周期
+ * @param derivative_filter_alpha 微分项滤波系数 (0.0 - 1.0), 0表示无滤波，1表示完全滤波
  */
-void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd, float integral_limit, float output_limit)
+void PID_Init(PID_Controller *pid, float Kp, float Ki, float Kd, float integral_limit, float output_limit, float Ts, float derivative_filter_alpha)
 {
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
     pid->integral_limit = integral_limit;
     pid->output_limit = output_limit;
+    pid->Ts = Ts;
+    pid->derivative_filter_alpha = derivative_filter_alpha;
 
     pid->setpoint = 0.0f;
     pid->integral = 0.0f;
     pid->prev_error = 0.0f;
+    pid->prev_value = 0.0f; // 初始化 prev_value
     pid->last_derivative = 0.0f; // 初始化 last_derivative
 }
 
@@ -38,8 +43,7 @@ float PID_Compute(PID_Controller *pid, float current_value)
     error = pid->setpoint - current_value;
 
     // 2. 计算积分项 (带抗积分饱和)
-    float Ts = 0.01f; // 采样周期，10ms
-    pid->integral += error * Ts;
+    pid->integral += error * pid->Ts; // 使用结构体中的 Ts
     if (pid->integral > pid->integral_limit)
     {
         pid->integral = pid->integral_limit;
@@ -49,10 +53,14 @@ float PID_Compute(PID_Controller *pid, float current_value)
         pid->integral = -pid->integral_limit;
     }
 
-    // 3. 计算微分项
-    derivative = error - pid->prev_error;
-    pid->last_derivative = 0.7f * pid->last_derivative + 0.3f * derivative; // 简单一阶滤波
-    derivative = pid->last_derivative; // 使用结构体中的 last_derivative
+    // 3. 计算微分项 (基于误差变化，并进行滤波)
+    // 考虑使用 (current_value - pid->prev_value) / pid->Ts 来计算微分项，避免 setpoint 突变时的微分冲击
+    // 但为了保持与原代码逻辑一致，这里仍基于误差变化
+    derivative = (error - pid->prev_error) / pid->Ts; // 除以 Ts 得到变化率
+
+    // 简单一阶滤波
+    pid->last_derivative = (1.0f - pid->derivative_filter_alpha) * pid->last_derivative + pid->derivative_filter_alpha * derivative;
+    derivative = pid->last_derivative; // 使用滤波后的微分项
 
     // 4. 计算总输出
     output = pid->Kp * error + pid->Ki * pid->integral + pid->Kd * derivative;
@@ -67,8 +75,31 @@ float PID_Compute(PID_Controller *pid, float current_value)
         output = -pid->output_limit;
     }
 
-    // 6. 更新历史误差
+    // 6. 更新历史误差和历史测量值
     pid->prev_error = error;
+    pid->prev_value = current_value;
 
     return output;
+}
+
+/**
+ * @brief 设置PID控制器的目标值
+ * @param pid 指向PID控制器结构体的指针
+ * @param new_setpoint 新的目标值
+ */
+void PID_SetSetpoint(PID_Controller *pid, float new_setpoint)
+{
+    pid->setpoint = new_setpoint;
+}
+
+/**
+ * @brief 重置PID控制器的内部状态 (积分项和历史误差)
+ * @param pid 指向PID控制器结构体的指针
+ */
+void PID_Reset(PID_Controller *pid)
+{
+    pid->integral = 0.0f;
+    pid->prev_error = 0.0f;
+    pid->last_derivative = 0.0f;
+    pid->prev_value = 0.0f;
 }
