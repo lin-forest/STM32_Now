@@ -81,6 +81,7 @@ static inline void TB6612_Motor_EmergencyStop(TB6612_Motor_t *motor) { // Update
 #endif
 
 /* === 添加全局电机对象声明（关键！） === */
-extern TB6612_Motor_t tb6612_motor1; // Updated type and name
+// extern TB6612_Motor_t tb6612_motor1; // REMOVED: This created a global dependency. The motor object should be managed by its task.
 
+// #endif // MOTOR_DC_TB6612_H
 #endif  // __tb6612_DC_H

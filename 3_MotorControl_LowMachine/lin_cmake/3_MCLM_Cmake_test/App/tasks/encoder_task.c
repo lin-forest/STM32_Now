@@ -30,8 +30,8 @@ void Encoder_Task(void *argument)
     // --- Lock Mutex ---
     if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
     {
-        tb6612_motor1.current_ticks = diff;
-        tb6612_motor1.current_logic_speed = ticks_to_logic(diff); // 将实际速度赋值给 current_logic_speed
+        g_motor_status.current_ticks = diff;
+        g_motor_status.current_logic_speed = ticks_to_logic(diff); // 将实际速度赋值给 current_logic_speed
         
         // --- Release Mutex ---
         osMutexRelease(motor_mutexHandle);

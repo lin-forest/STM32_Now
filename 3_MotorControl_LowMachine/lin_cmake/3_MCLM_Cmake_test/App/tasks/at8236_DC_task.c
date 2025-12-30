@@ -1,41 +1,122 @@
 #include "app_includes.h"
-#include "command.h"
-#include "logger.h"
-#include "motor_DC_at8236.h" // Include the header for AT8236 motor driver
+#include "pid.h"
+#include "motor_DC_at8236.h"
+#include "math.h"
+#include "float.h"
 
-// Declare the motor instance and the message queue as external
-extern At8236_Motor_t at8236_A;
-extern osMessageQueueId_t at8236_DC_QueueHandle; // Renamed for consistency with other queue handles
-extern TIM_HandleTypeDef htim3; // Assuming htim3 is used for PWM for AT8236 as well
+// Make the motor object local and static to this task
+static At8236_Motor_t at8236_A;
 
-void at8236_DC_Task(void *argument)
+// PID_Controller is now globally defined, so we don't need a local one.
+extern PID_Controller motor_pid;
+
+void AT8236_DC_Task(void *argument)
 {
-    CommandMsg_t cmdMsg; // Use the correct message type directly
+    // Initialize PID controller (assuming Motor_PID_Init is globally available)
+    Motor_PID_Init();
 
-    // Initialize the AT8236 motor
-    At8236_Motor_Init(&at8236_A, &htim3, TIM_CHANNEL_1, TIM_CHANNEL_2, 100, 100);
-    at8236_A.MinPwm = 30; // Set minimum PWM to 30% to overcome dead zone
+    CommandMsg_t cmdMsg;
 
-    // LOG_INFO("at8236_DC_Task is running.");
+    // Initialize the AT8236 motor with parameters from app_config.h
+    // Note: AT8236 uses two PWM channels. We need to define these in app_config.h
+    // For now, I'll use placeholders like MOTOR1_TIM_CHANNEL_2
+    At8236_Motor_Init(&at8236_A, 
+                      MOTOR1_TIM_HANDLE, 
+                      MOTOR1_TIM_CHANNEL, // Corresponds to IN1
+                      TIM_CHANNEL_2,      // Corresponds to IN2 - Placeholder!
+                      MOTOR1_MAX_PWM_OUTPUT, 
+                      MOTOR1_MAX_SPEED_LOGIC);
+    at8236_A.MinPwm = MOTOR1_MIN_PWM_OUTPUT;
 
     for (;;)
     {
-        // Wait for a command from the queue, receive into the struct directly
-        if (osMessageQueueGet(at8236_DC_QueueHandle, &cmdMsg, NULL, osWaitForever) == osOK) // Renamed queue handle
+        osStatus_t serialStatus, canStatus;
+        uint8_t messageProcessed = 0;
+        AckMsg_t ack;
+
+        // 1. Check for commands from the serial queue
+        serialStatus = osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0);
+        if (serialStatus == osOK)
         {
+            messageProcessed = 1;
             if (cmdMsg.type == CMD_SET_SPEED)
             {
-                // The speed is in the 'value' member
-                int16_t speed = cmdMsg.value;
-                At8236_Motor_SetSpeed(&at8236_A, speed);
-                // LOG_INFO("AT8236 Motor A speed set to %d", speed);
+                motor_pid.setpoint = (float)cmdMsg.value;
+                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = motor_pid.setpoint;
+                    osMutexRelease(motor_mutexHandle);
+                }
             }
             else if (cmdMsg.type == CMD_STOP)
             {
-                At8236_Motor_Stop(&at8236_A, AT8236_STOP_BRAKE);
-                // LOG_INFO("AT8236 Motor A stopped.");
+                motor_pid.setpoint = 0.0f;
+                 if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = 0.0f;
+                    osMutexRelease(motor_mutexHandle);
+                }
             }
-            // No need to free memory as the message is copied, not pointed to.
         }
+
+        // 2. Check for commands from the CAN queue
+        canStatus = osMessageQueueGet(CanMotorCmdQueueHandle, &cmdMsg, NULL, 0);
+        if (canStatus == osOK)
+        {
+            messageProcessed = 1;
+            if (cmdMsg.type == CAN_CMD_SET_SPEED)
+            {
+                motor_pid.setpoint = (float)cmdMsg.value;
+                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = motor_pid.setpoint;
+                    osMutexRelease(motor_mutexHandle);
+                }
+            }
+            else if (cmdMsg.type == CAN_CMD_STOP)
+            {
+                motor_pid.setpoint = 0.0f;
+                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = 0.0f;
+                    osMutexRelease(motor_mutexHandle);
+                }
+            }
+
+            // Generate and send ACK for CAN command
+            ack.type = cmdMsg.type;
+            ack.value = cmdMsg.value;
+            ack.ok = 1;
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                ack.current_logic_speed = g_motor_status.current_logic_speed;
+                ack.pwm_output = g_motor_status.pwm_output;
+                osMutexRelease(motor_mutexHandle);
+            }
+            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+        }
+
+        // 3. Execute PID control loop
+        if (fabsf(motor_pid.setpoint) > FLT_EPSILON)
+        {
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                float current_speed = g_motor_status.current_logic_speed;
+                float output = PID_Compute(&motor_pid, current_speed);
+                At8236_Motor_SetSpeed(&at8236_A, (int16_t)output);
+                g_motor_status.pwm_output = at8236_A.pwm_output; // Update global status
+                osMutexRelease(motor_mutexHandle);
+            }
+        }
+        else
+        {
+            At8236_Motor_Stop(&at8236_A, AT8236_STOP_BRAKE);
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                g_motor_status.pwm_output = 0;
+                osMutexRelease(motor_mutexHandle);
+            }
+        }
+
+        if (!messageProcessed) {
+            osDelay(5); 
+        }
+        osDelay(10);
     }
 }

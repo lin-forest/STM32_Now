@@ -7,8 +7,8 @@
 // #define MOTOR_DRIVER_IBT4    3 // Example for future extension
 
 /* Select the active motor driver */
-#define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_TB6612 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
-// #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_AT8236 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
+// #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_TB6612 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
+#define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_AT8236 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
 
 /* ===================== Speed Normalization ===================== */
 /* 编码器在一个控制周期内的最大可达 tick */
@@ -48,7 +48,7 @@
 #define ACK_MSG_BUF_SIZE            128 // 定义ACK消息缓冲区的最大大小
 
 // CAN Configuration
-#define CAN_MOTOR_CMD_STDID         0x40 // 定义电机控制命令的CAN标准ID
+#define CAN_MOTOR_CMD_STDID         0x50 // 定义电机控制命令的CAN标准ID
 
 // CAN Initialization Parameters
 #define CAN_PRESCALER               4
@@ -76,5 +76,8 @@
 #define CAN_SLAVE_START_FILTER_BANK 14
 
 // #define CAN_CMD_QUEUE_SIZE          10   // 新增：CAN 命令队列大小
+
+// For AT8236, which needs two PWM channels
+#define MOTOR1_TIM_CHANNEL_2       TIM_CHANNEL_2
 
 #endif // APP_CONFIG_H

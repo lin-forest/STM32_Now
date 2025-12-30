@@ -61,12 +61,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     App/tasks/command_task.c
     App/tasks/encoder_task.c
     App/tasks/logger_task.c
-    App/tasks/BLDC_task.c
-    App/tasks/tb6612_DC_task.c
     App/tasks/Ack_task.c
     App/tasks/heartbeat_task.c
+
+    App/tasks/BLDC_task.c
     App/tasks/ibt4_DC_task.c
-    App/tasks/at8236_DC_task.c
+    App/tasks/AT8236_DC_task.c
+    App/tasks/TB6612_DC_task.c
 
 
 

@@ -6,6 +6,8 @@
 #include "float.h"  // For FLT_EPSILON
 
 PID_Controller motor_pid; // 全局，只定义一次
+static TB6612_Motor_t tb6612_motor1; // Make motor object local to the task
+// TB6612_Motor_t tb6612_motor1;
 
 void TB6612_DC_Task(void *argument)
 {
@@ -40,6 +42,10 @@ void TB6612_DC_Task(void *argument)
             if (cmdMsg.type == CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
+                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = motor_pid.setpoint;
+                    osMutexRelease(motor_mutexHandle);
+                }
             }
             else if (cmdMsg.type == CMD_STOP)
             {
@@ -57,6 +63,10 @@ void TB6612_DC_Task(void *argument)
             if (cmdMsg.type == CAN_CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
+                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
+                    g_motor_status.target_logic_speed = motor_pid.setpoint;
+                    osMutexRelease(motor_mutexHandle);
+                }
             }
             else if (cmdMsg.type == CAN_CMD_STOP)
             {
@@ -71,8 +81,8 @@ void TB6612_DC_Task(void *argument)
             // 获取电机当前状态，需要互斥锁保护
             if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
             {
-                ack.current_logic_speed = tb6612_motor1.current_logic_speed;
-                ack.pwm_output = tb6612_motor1.pwm_output;
+                ack.current_logic_speed = g_motor_status.current_logic_speed;
+                ack.pwm_output = g_motor_status.pwm_output;
                 osMutexRelease(motor_mutexHandle);
             }
             osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
@@ -84,9 +94,10 @@ void TB6612_DC_Task(void *argument)
             // --- Lock Mutex ---
             if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
             {
-                float current_speed = tb6612_motor1.current_logic_speed; // 使用实际速度作为当前速度
+                float current_speed = g_motor_status.current_logic_speed; // 使用实际速度作为当前速度
                 float output = PID_Compute(&motor_pid, current_speed);
                 TB6612_Motor_SetSpeed(&tb6612_motor1, (int16_t)output); // Changed Motor_SetSpeed
+                g_motor_status.pwm_output = tb6612_motor1.pwm_output;
 
                 // --- Release Mutex ---
                 osMutexRelease(motor_mutexHandle);
@@ -95,6 +106,11 @@ void TB6612_DC_Task(void *argument)
         else
         {
             TB6612_Motor_Stop(&tb6612_motor1); // Changed Motor_Stop
+            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+            {
+                g_motor_status.pwm_output = 0;
+                osMutexRelease(motor_mutexHandle);
+            }
         }
         
         // // 4. 周期性发送CAN反馈 (逻辑不变)

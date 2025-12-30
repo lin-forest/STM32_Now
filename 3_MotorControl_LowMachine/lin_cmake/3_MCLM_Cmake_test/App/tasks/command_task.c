@@ -1,7 +1,6 @@
 #include "app_includes.h"
 
-// 外部声明电机对象和互斥锁
-extern TB6612_Motor_t tb6612_motor1;
+// 外部声明互斥锁
 extern osMutexId_t motor_mutexHandle;
 
 void Command_Task(void *argument)
@@ -23,8 +22,8 @@ void Command_Task(void *argument)
             // 获取电机当前状态，需要互斥锁保护
             if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
             {
-                ack.current_logic_speed = tb6612_motor1.current_logic_speed;
-                ack.pwm_output = tb6612_motor1.pwm_output;
+                ack.current_logic_speed = g_motor_status.current_logic_speed;
+                ack.pwm_output = g_motor_status.pwm_output;
                 osMutexRelease(motor_mutexHandle);
             }
 

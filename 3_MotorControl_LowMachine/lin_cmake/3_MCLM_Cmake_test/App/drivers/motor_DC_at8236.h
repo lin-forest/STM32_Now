@@ -12,6 +12,7 @@ typedef struct
     uint16_t MaxPwm;
     uint16_t MinPwm; // Minimum PWM value to overcome static friction
     int16_t MaxSpeed;
+    int16_t pwm_output;
 } At8236_Motor_t;
 
 typedef enum

@@ -12,8 +12,18 @@ extern "C" {
 // /* ===================== Drivers ===================== */
 #include "motor_DC_tb6612.h"
 #include "pid.h"
-// #include "motor_BLDC.h"
-// #include "motor_DC_ibt4.h"
+
+/* ===================== Global Motor Status ===================== */
+// A generic structure to hold the state of the active motor.
+// This decouples the encoder and other tasks from specific motor drivers.
+typedef struct {
+    float    target_logic_speed;    // The desired speed (-100 to 100)
+    float    current_logic_speed;   // The actual measured speed
+    int32_t  current_ticks;         // The raw encoder ticks in the last period
+    int16_t  pwm_output;            // The current PWM value applied to the motor
+} MotorStatus_t;
+
+extern MotorStatus_t g_motor_status;
 
 /* ===================== Task Handles ===================== */
 extern osThreadId_t MotorControl_TaHandle;
@@ -33,7 +43,7 @@ extern osMessageQueueId_t CanMotorCmdQueueHandle;
 extern osMutexId_t motor_mutexHandle;
 
 /* ===================== Global Objects（不冲突） ===================== */
-extern TB6612_Motor_t tb6612_motor1; // Changed from Motor_t motor1 to TB6612_Motor_t tb6612_motor1
+// extern TB6612_Motor_t tb6612_motor1; // REMOVED for decoupling
 extern uint8_t tx_buf[64];
 extern PID_Controller motor_pid;
 
