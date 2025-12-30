@@ -45,8 +45,8 @@ void Logger_Task(void *argument);
 void Command_Task(void *argument);
 void Heartbeat_Task(void *argument);
 void Ack_Task(void *argument);
-void tb6612_DC_Task(void *argument);
-// void at8236_DC_Task(void *argument);
+void TB6612_DC_Task(void *argument);
+void AT8236_DC_Task(void *argument);
 void Motor_PID_Init(void);
 
 #ifdef __cplusplus

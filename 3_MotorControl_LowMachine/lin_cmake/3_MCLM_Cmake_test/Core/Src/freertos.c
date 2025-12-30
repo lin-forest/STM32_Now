@@ -28,6 +28,7 @@
 
 #include "app_task.h"
 #include "command.h"
+#include "app_config.h"
 
 /* USER CODE END Includes */
 
@@ -270,9 +271,19 @@ void Start_MotorControl(void *argument)
   /* USER CODE BEGIN Start_MotorControl */
   /* Infinite loop */
 
-  // MotorControl_Task(argument);
-  
-  tb6612_DC_Task(argument);
+  #if ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612
+  TB6612_DC_Task(argument);
+  #elif ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236
+  AT8236_DC_Task(argument);
+
+  #else
+
+  #error "No valid motor driver selected! Please check ACTIVE_MOTOR_DRIVER in app_config.h"
+
+  #endif
+
+
+  TB6612_DC_Task(argument);
   // at8236_DC_Task(argument);
   
 
@@ -392,4 +403,3 @@ void Start_Ack(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-

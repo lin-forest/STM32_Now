@@ -1,6 +1,15 @@
 #ifndef __APP_CONFIG_H__
 #define __APP_CONFIG_H__
 
+/* ===================== Motor Driver Selection ===================== */
+#define MOTOR_DRIVER_TB6612 1
+#define MOTOR_DRIVER_AT8236 2
+// #define MOTOR_DRIVER_IBT4    3 // Example for future extension
+
+/* Select the active motor driver */
+#define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_TB6612 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
+// #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_AT8236 // <<<<<<< CHANGE THIS TO SWITCH DRIVERS
+
 /* ===================== Speed Normalization ===================== */
 /* 编码器在一个控制周期内的最大可达 tick */
 #define SPEED_TICKS_MAX     80

@@ -7,7 +7,7 @@
 
 PID_Controller motor_pid; // 全局，只定义一次
 
-void tb6612_DC_Task(void *argument)
+void TB6612_DC_Task(void *argument)
 {
     Motor_PID_Init(); // 初始化参数
 
