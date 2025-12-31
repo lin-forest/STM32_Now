@@ -281,12 +281,7 @@ void Start_MotorControl(void *argument)
   #error "No valid motor driver selected! Please check ACTIVE_MOTOR_DRIVER in app_config.h"
 
   #endif
-
-
-  TB6612_DC_Task(argument);
-  // at8236_DC_Task(argument);
   
-
   // for(;;)
   // {
   //   osDelay(1);

@@ -3,6 +3,9 @@
 #include "motor_DC_at8236.h"
 #include "math.h"
 #include "float.h"
+#include "stm32f1xx_hal_tim.h"
+
+#if (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236)
 
 // Make the motor object local and static to this task
 static At8236_Motor_t at8236_A;
@@ -22,8 +25,8 @@ void AT8236_DC_Task(void *argument)
     // For now, I'll use placeholders like MOTOR1_TIM_CHANNEL_2
     At8236_Motor_Init(&at8236_A, 
                       MOTOR1_TIM_HANDLE, 
-                      MOTOR1_TIM_CHANNEL, // Corresponds to IN1
-                      TIM_CHANNEL_2,      // Corresponds to IN2 - Placeholder!
+                      MOTOR1_PWM_CHANNEL1, // Corresponds to IN1
+                      MOTOR1_PWM_CHANNEL2,      // Corresponds to IN2 - Placeholder!
                       MOTOR1_MAX_PWM_OUTPUT, 
                       MOTOR1_MAX_SPEED_LOGIC);
     at8236_A.MinPwm = MOTOR1_MIN_PWM_OUTPUT;
@@ -120,3 +123,5 @@ void AT8236_DC_Task(void *argument)
         osDelay(10);
     }
 }
+
+#endif // (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236)

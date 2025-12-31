@@ -29,7 +29,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "app_includes.h"
-#include "can_service.h" // 新增：包含 can_service.h
+// #include "can_service.h" // 新增：包含 can_service.h
 // #include "app_task.h"
 
 /* USER CODE END Includes */
