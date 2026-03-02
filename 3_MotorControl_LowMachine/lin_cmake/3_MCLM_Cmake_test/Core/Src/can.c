@@ -23,14 +23,13 @@
 /* USER CODE BEGIN 0 */
 
 #include "cmsis_os.h" // 使用 CMSIS-OS API
+#include "stm32f103xb.h"
 #include "stm32f1xx_hal_gpio.h"
 #include "string.h"
 #include "stdint.h"
 #include "command.h"
 #include "app_config.h"
-
-// 使用在 freertos.c 中定义的 CMSIS 句柄
-extern osMessageQueueId_t CanMotorCmdQueueHandle; 
+#include "app_task.h" // 引入 app_task.h 以获取所有队列句柄的声明 
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -43,14 +42,22 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         {
             // 3. 构建并发送 CommandMsg_t 结构体
             CommandMsg_t cmdMsg;
+
+            // 260301改动：将CAN命令类型与字符串命令类型合并，避免重复定义
+            // cmdMsg.type = CMD_SET_SPEED; // MODIFIED: Use the unified command type
+
             cmdMsg.type = CAN_CMD_SET_SPEED;
             // 从CAN数据帧的第二个字节获取速度值
             // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
             // 如果是 unsigned，请使用 uint8_t
-            cmdMsg.value = (int8_t)rxData[1]; 
+            cmdMsg.value = (int8_t)rxData[1]; // 260302修正：注释掉错误的8位解析
 
-            // 使用 CMSIS API 从中断发送队列
-            osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
+
+            // Lin_test
+            HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_14);
+
+            // 使用 CMSIS API 从中断发送队列，统一发送到 CommandQueueHandle
+            osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
         }
     }
 }

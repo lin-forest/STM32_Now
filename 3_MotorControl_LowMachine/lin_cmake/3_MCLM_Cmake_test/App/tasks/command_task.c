@@ -1,4 +1,11 @@
+
+
+// 260301改动
+
 #include "app_includes.h"
+#include "app_task.h"
+#include "stm32f103xb.h"
+#include "stm32f1xx_hal_gpio.h"
 
 // 外部声明互斥锁
 extern osMutexId_t motor_mutexHandle;
@@ -6,6 +13,9 @@ extern osMutexId_t motor_mutexHandle;
 void Command_Task(void *argument)
 {
     CommandMsg_t cmd; // 直接使用CommandMsg_t接收，因为这个任务不处理uint64_t
+
+    // Lin_test
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 
     for (;;)
     {
@@ -27,7 +37,7 @@ void Command_Task(void *argument)
                 osMutexRelease(motor_mutexHandle);
             }
 
-            // 只处理非CAN命令
+            // 现在处理所有来源的命令，包括CAN
             switch (cmd.type)
             {
                 case CMD_FORWARD:
@@ -43,13 +53,15 @@ void Command_Task(void *argument)
                     break;
 
                 case CMD_STOP:
-                    ack.type  = CMD_STOP;
+                case CAN_CMD_STOP: // 添加CAN_CMD_STOP
+                    ack.type  = cmd.type; // 使用原始命令类型
                     ack.value = 0;
                     ack.ok    = 1;
                     break;
 
                 case CMD_SET_SPEED:
-                    ack.type  = CMD_SET_SPEED;
+                case CAN_CMD_SET_SPEED: // 添加CAN_CMD_SET_SPEED
+                    ack.type  = cmd.type; // 使用原始命令类型
                     ack.value = cmd.value;
                     ack.ok    = 1;
                     break;
@@ -67,16 +79,22 @@ void Command_Task(void *argument)
                     break;
             }
 
-            /* ================= 2. 投递到 AckQueue ================= */
-            // Directly put the address of the AckMsg_t struct into the queue.
-            // The queue was created with the correct item size.
-            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+            // Lin_test
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_4);
 
-            /* ================= 3. 分发给电机 ================= */
-            if(cmd.type != CMD_NONE)
+            /* ================= 2. 投递到 AckQueue & 3. 分发给电机 ================= */
+            // 只要是有效命令，就生成ACK
+            if (ack.ok)
             {
-                // Directly put the address of the CommandMsg_t struct into the queue.
-                osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
+                osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+
+                // 关键：只有电机需要执行的命令，才转发到MotorQueueHandle
+                if (cmd.type == CMD_SET_SPEED || cmd.type == CAN_CMD_SET_SPEED ||
+                    cmd.type == CMD_STOP      || cmd.type == CAN_CMD_STOP      ||
+                    cmd.type == CMD_FORWARD   || cmd.type == CMD_REVERSE)
+                {
+                    osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
+                }
             }
         }
     }

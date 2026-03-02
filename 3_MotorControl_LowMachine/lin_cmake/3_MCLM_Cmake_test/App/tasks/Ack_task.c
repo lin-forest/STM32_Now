@@ -44,12 +44,15 @@ void Ack_Task(void *argument) {
                     case CMD_LIST_STATUS: // Added CMD_LIST_STATUS
                         snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: List Status OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
                         break;
-                    case CAN_CMD_SET_SPEED: // Add CAN_CMD_SET_SPEED handling
-                        snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: CAN Set Speed OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
-                        break;
-                    case CAN_CMD_STOP: // Add CAN_CMD_STOP handling
-                        snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: CAN Stop OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
-                        break;
+
+                    // 260301改动
+
+                    // case CAN_CMD_SET_SPEED: // Add CAN_CMD_SET_SPEED handling
+                    //     snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: CAN Set Speed OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
+                    //     break;
+                    // case CAN_CMD_STOP: // Add CAN_CMD_STOP handling
+                    //     snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: CAN Stop OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
+                    //     break;
                     // You might want to add cases for CAN_CMD_SET_SPEED and CAN_CMD_STOP if they generate ACKs
                     default:
                         // Use snprintf to prevent buffer overflow

@@ -107,6 +107,13 @@ int main(void)
   Motor_PID_Init();
   // CanService_Init(); // 新增：调用 CanService_Init
 
+//   int a = 5;
+//   int b = 10;
+  
+// // test comment
+// int test = 123;
+// ;
+
   /* USER CODE END 2 */
 
   /* Init scheduler */

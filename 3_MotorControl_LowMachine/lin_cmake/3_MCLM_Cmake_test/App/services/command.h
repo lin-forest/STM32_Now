@@ -19,6 +19,8 @@ typedef enum {
     CMD_LIST_STATUS,     // ← 新增：ls
 
     // CAN 命令类型
+
+    // 260301改动：将CAN命令类型与字符串命令类型合并，避免重复定义
     CAN_CMD_SET_SPEED, // CAN 设置速度命令
     CAN_CMD_STOP,      // CAN 停止命令
 } CommandType_t;
