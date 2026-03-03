@@ -7,9 +7,11 @@
 
 #if (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612)
 
-PID_Controller motor_pid; // 全局，只定义一次
+// PID_Controller motor_pid; // 全局，只定义一次
 static TB6612_Motor_t tb6612_motor; // Make motor object local to the task
 // TB6612_Motor_t tb6612_motor1;
+
+extern PID_Controller motor_pid; // 全局，只定义一次
 
 void TB6612_DC_Task(void *argument)
 {
@@ -31,17 +33,17 @@ void TB6612_DC_Task(void *argument)
     /* Infinite loop */
     for(;;)
     {
-        osStatus_t serialStatus, canStatus;
+        osStatus_t status;
         uint8_t messageProcessed = 0;
-        AckMsg_t ack; // 在循环开始时声明 ack 消息
 
-        // 1. 检查来自串口的指令 (MotorQueue)
-        serialStatus = osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0);
-        if (serialStatus == osOK)
+        // 1. 从统一的指令队列获取指令 (串口和CAN指令现在都通过MotorQueueHandle发送)
+        status = osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0);
+        if (status == osOK)
         {
             messageProcessed = 1;
-            // memcpy(&cmdMsg, &queueData, sizeof(CommandMsg_t));
-            if (cmdMsg.type == CMD_SET_SPEED)
+
+            // 2. 根据指令类型处理
+            if (cmdMsg.type == CMD_SET_SPEED || cmdMsg.type == CAN_CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
                 if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
@@ -49,45 +51,12 @@ void TB6612_DC_Task(void *argument)
                     osMutexRelease(motor_mutexHandle);
                 }
             }
-            else if (cmdMsg.type == CMD_STOP)
+            else if (cmdMsg.type == CMD_STOP || cmdMsg.type == CAN_CMD_STOP)
             {
                 motor_pid.setpoint = 0.0f;
             }
-            // 串口命令的 ACK 已经在 Command_Task 中处理，这里不需要重复发送
-        }
-
-        // 2. 检查来自CAN的指令 (CanMotorCmdQueue)
-        canStatus = osMessageQueueGet(CanMotorCmdQueueHandle, &cmdMsg, NULL, 0);
-        if (canStatus == osOK)
-        {
-            messageProcessed = 1;
-            // memcpy(&cmdMsg, &queueData, sizeof(CommandMsg_t));
-            if (cmdMsg.type == CAN_CMD_SET_SPEED)
-            {
-                motor_pid.setpoint = (float)cmdMsg.value;
-                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
-                    g_motor_status.target_logic_speed = motor_pid.setpoint;
-                    osMutexRelease(motor_mutexHandle);
-                }
-            }
-            else if (cmdMsg.type == CAN_CMD_STOP)
-            {
-                motor_pid.setpoint = 0.0f;
-            }
-
-            // 为 CAN 命令生成 ACK 消息并发送
-            ack.type = cmdMsg.type;
-            ack.value = cmdMsg.value;
-            ack.ok = 1; // 假设 CAN 命令处理成功
-
-            // 获取电机当前状态，需要互斥锁保护
-            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
-            {
-                ack.current_logic_speed = g_motor_status.current_logic_speed;
-                ack.pwm_output = g_motor_status.pwm_output;
-                osMutexRelease(motor_mutexHandle);
-            }
-            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+            // 注意: ACK 消息由各自的命令源任务（如 Command_Task, Can_Service_Task）处理，
+            // 此任务只负责执行命令。
         }
 
         // 3. 执行PID闭环控制 (逻辑不变)

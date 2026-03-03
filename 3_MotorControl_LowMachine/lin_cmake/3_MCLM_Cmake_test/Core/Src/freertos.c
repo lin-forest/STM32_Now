@@ -145,6 +145,11 @@ osMessageQueueId_t CanMotorCmdQueueHandle;
 const osMessageQueueAttr_t CanMotorCmdQueue_attributes = {
   .name = "CanMotorCmdQueue"
 };
+/* Definitions for MotorCommandQueue */
+osMessageQueueId_t MotorCommandQueueHandle;
+const osMessageQueueAttr_t MotorCommandQueue_attributes = {
+  .name = "MotorCommandQueue"
+};
 /* Definitions for motor_mutex */
 osMutexId_t motor_mutexHandle;
 const osMutexAttr_t motor_mutex_attributes = {
@@ -224,7 +229,10 @@ void MX_FREERTOS_Init(void) {
   AckQueueHandle = osMessageQueueNew (64, sizeof(AckMsg_t), &AckQueue_attributes);
 
   /* creation of CanMotorCmdQueue */
-  CanMotorCmdQueueHandle = osMessageQueueNew (256, sizeof(CommandMsg_t), &CanMotorCmdQueue_attributes);
+  CanMotorCmdQueueHandle = osMessageQueueNew (128, sizeof(CommandMsg_t), &CanMotorCmdQueue_attributes);
+
+  /* creation of MotorCommandQueue */
+  MotorCommandQueueHandle = osMessageQueueNew (256, sizeof(CommandMsg_t), &MotorCommandQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -398,3 +406,4 @@ void Start_Ack(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+

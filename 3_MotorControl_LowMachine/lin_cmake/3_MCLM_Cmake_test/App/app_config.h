@@ -16,8 +16,8 @@
  *  <<<                                                                       >>>
  *  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
  */
-// #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_TB6612
-#define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_AT8236
+#define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_TB6612
+// #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_AT8236
 // #define ACTIVE_MOTOR_DRIVER MOTOR_DRIVER_IBT4
 
 

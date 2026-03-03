@@ -38,6 +38,7 @@ extern osMessageQueueId_t CommandQueueHandle;
 extern osMessageQueueId_t AckQueueHandle;
 extern osMessageQueueId_t MotorQueueHandle;
 extern osMessageQueueId_t CanMotorCmdQueueHandle;
+extern osMessageQueueId_t MotorCommandQueueHandle;
 
 // 在 CubeMX 中创建名为 motor_mutex 的互斥锁后，添加此声明
 extern osMutexId_t motor_mutexHandle;

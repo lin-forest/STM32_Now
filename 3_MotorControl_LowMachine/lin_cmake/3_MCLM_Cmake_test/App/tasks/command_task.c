@@ -27,7 +27,7 @@ void Command_Task(void *argument)
                 osMutexRelease(motor_mutexHandle);
             }
 
-            // 只处理非CAN命令
+            // 处理所有命令，包括CAN
             switch (cmd.type)
             {
                 case CMD_FORWARD:
@@ -56,6 +56,19 @@ void Command_Task(void *argument)
 
                 case CMD_LIST_STATUS:
                     ack.type  = CMD_LIST_STATUS;
+                    ack.value = 0;
+                    ack.ok    = 1;
+                    break;
+
+                // 新增对CAN命令的处理
+                case CAN_CMD_SET_SPEED:
+                    ack.type  = CAN_CMD_SET_SPEED;
+                    ack.value = cmd.value;
+                    ack.ok    = 1;
+                    break;
+
+                case CAN_CMD_STOP:
+                    ack.type  = CAN_CMD_STOP;
                     ack.value = 0;
                     ack.ok    = 1;
                     break;

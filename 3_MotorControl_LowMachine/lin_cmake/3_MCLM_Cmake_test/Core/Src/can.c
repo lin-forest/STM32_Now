@@ -30,7 +30,7 @@
 #include "app_config.h"
 
 // 使用在 freertos.c 中定义的 CMSIS 句柄
-extern osMessageQueueId_t CanMotorCmdQueueHandle; 
+extern osMessageQueueId_t CommandQueueHandle; 
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -50,7 +50,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             cmdMsg.value = (int8_t)rxData[1]; 
 
             // 使用 CMSIS API 从中断发送队列
-            osMessageQueuePut(CanMotorCmdQueueHandle, &cmdMsg, 0U, 0U);
+            osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
         }
     }
 }
