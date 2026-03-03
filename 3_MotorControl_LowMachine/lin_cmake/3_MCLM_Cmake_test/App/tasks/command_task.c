@@ -27,56 +27,30 @@ void Command_Task(void *argument)
                 osMutexRelease(motor_mutexHandle);
             }
 
+            // 默认生成成功ACK，后续根据命令类型微调
+            ack.type = cmd.type;
+            ack.value = cmd.value;
+            ack.ok = 1;
+
             // 处理所有命令，包括CAN
             switch (cmd.type)
             {
                 case CMD_FORWARD:
-                    ack.type  = CMD_FORWARD;
-                    ack.value = 0;
-                    ack.ok    = 1;
-                    break;
-
                 case CMD_REVERSE:
-                    ack.type  = CMD_REVERSE;
-                    ack.value = 0;
-                    ack.ok    = 1;
-                    break;
-
                 case CMD_STOP:
-                    ack.type  = CMD_STOP;
-                    ack.value = 0;
-                    ack.ok    = 1;
+                case CMD_LIST_STATUS:
+                case CAN_CMD_STOP:
+                    ack.value = 0; // 这些命令的ACK值域为0
                     break;
 
                 case CMD_SET_SPEED:
-                    ack.type  = CMD_SET_SPEED;
-                    ack.value = cmd.value;
-                    ack.ok    = 1;
-                    break;
-
-                case CMD_LIST_STATUS:
-                    ack.type  = CMD_LIST_STATUS;
-                    ack.value = 0;
-                    ack.ok    = 1;
-                    break;
-
-                // 新增对CAN命令的处理
                 case CAN_CMD_SET_SPEED:
-                    ack.type  = CAN_CMD_SET_SPEED;
-                    ack.value = cmd.value;
-                    ack.ok    = 1;
-                    break;
-
-                case CAN_CMD_STOP:
-                    ack.type  = CAN_CMD_STOP;
-                    ack.value = 0;
-                    ack.ok    = 1;
+                    // ack.value 已被正确设置为命令传入的值
                     break;
 
                 default:
-                    ack.type  = CMD_NONE;
+                    ack.ok = 0; // 未知命令，标记为失败
                     ack.value = 0;
-                    ack.ok    = 0;
                     break;
             }
 
