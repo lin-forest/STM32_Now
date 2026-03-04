@@ -1,0 +1,5 @@
+r
+h
+loadfile build/3_MCLM_Cmake_test.elf
+r
+q
