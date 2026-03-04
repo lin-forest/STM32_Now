@@ -146,4 +146,10 @@
 #define CAN_FILTER_ACTIVATION       ENABLE
 #define CAN_SLAVE_START_FILTER_BANK 14
 
+/* ================= CAN Protocol Definitions ================= */
+// 定义CAN数据帧中不同数据字段的索引
+#define CAN_DATA_INDEX_CMD      0   // 命令类型在数据帧中的索引
+#define CAN_DATA_INDEX_SPEED    1   // 速度值在数据帧中的索引
+
+
 #endif // __APP_CONFIG_H__

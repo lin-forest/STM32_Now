@@ -1,0 +1,5 @@
+r
+h
+loadfile build/5_UartToCan_test.elf
+r
+q

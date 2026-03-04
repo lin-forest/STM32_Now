@@ -43,11 +43,30 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         {
             // 3. 构建并发送 CommandMsg_t 结构体
             CommandMsg_t cmdMsg;
-            cmdMsg.type = CAN_CMD_SET_SPEED;
-            // 从CAN数据帧的第二个字节获取速度值
-            // 注意：这里假设速度值是一个 signed 8-bit integer (int8_t)
-            // 如果是 unsigned，请使用 uint8_t
-            cmdMsg.value = (int8_t)rxData[1]; 
+
+            // 根据协议，从第一个字节解析命令类型
+            CommandType_t canCmdType = (CommandType_t)rxData[CAN_DATA_INDEX_CMD];
+
+            // 默认值
+            cmdMsg.type = canCmdType;
+            cmdMsg.value = 0;
+
+            // 根据不同的命令类型，解析相应的数据
+            switch (canCmdType)
+            {
+                case CAN_CMD_SET_SPEED:
+                    // 从第二个字节获取速度值
+                    cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
+                    break;
+                
+                case CAN_CMD_STOP:
+                    // 停止命令没有额外的值
+                    break;
+
+                default:
+                    // 未知或不支持的CAN命令，可以忽略或记录日志
+                    return; // 直接返回，不发送到队列
+            }
 
             // 使用 CMSIS API 从中断发送队列
             osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);

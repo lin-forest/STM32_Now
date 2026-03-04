@@ -22,12 +22,13 @@ extern "C" {
 
 /* ===================== Application Config ===================== */
 #include "app_config.h"
+#include "app_globals.h"
+#include "app_task.h"       // 全局任务句柄 & motor1
 
 
 /* ===================== Drivers & Modules ===================== */
 #include "command.h"        // 命令解析模块
 #include "logger.h"         // Logger 函数
-#include "app_task.h"       // 全局任务句柄 & motor1
 #include "speed_map.h"
 // #include "can_service.h" // Deprecated, CAN logic is in Core/Src/can.c
 

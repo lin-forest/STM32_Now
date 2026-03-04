@@ -26,9 +26,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "app_includes.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -47,12 +50,51 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
+/* Definitions for UartToCan_Ta */
+osThreadId_t UartToCan_TaHandle;
+uint32_t uartToCanTaskBuffer[ 256 ];
+osStaticThreadDef_t uartToCanTaskControlBlock;
+const osThreadAttr_t UartToCan_Ta_attributes = {
+  .name = "UartToCan_Ta",
+  .cb_mem = &uartToCanTaskControlBlock,
+  .cb_size = sizeof(uartToCanTaskControlBlock),
+  .stack_mem = &uartToCanTaskBuffer[0],
+  .stack_size = sizeof(uartToCanTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for CanRxProcess_Ta */
+osThreadId_t CanRxProcess_TaHandle;
+uint32_t canRxProcessTasBuffer[ 256 ];
+osStaticThreadDef_t canRxProcessTasControlBlock;
+const osThreadAttr_t CanRxProcess_Ta_attributes = {
+  .name = "CanRxProcess_Ta",
+  .cb_mem = &canRxProcessTasControlBlock,
+  .cb_size = sizeof(canRxProcessTasControlBlock),
+  .stack_mem = &canRxProcessTasBuffer[0],
+  .stack_size = sizeof(canRxProcessTasBuffer),
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for Heartbeat_Ta */
+osThreadId_t Heartbeat_TaHandle;
+uint32_t Heartbeat_TaBuffer[ 128 ];
+osStaticThreadDef_t Heartbeat_TaControlBlock;
+const osThreadAttr_t Heartbeat_Ta_attributes = {
+  .name = "Heartbeat_Ta",
+  .cb_mem = &Heartbeat_TaControlBlock,
+  .cb_size = sizeof(Heartbeat_TaControlBlock),
+  .stack_mem = &Heartbeat_TaBuffer[0],
+  .stack_size = sizeof(Heartbeat_TaBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for canRxQueue */
+osMessageQueueId_t canRxQueueHandle;
+const osMessageQueueAttr_t canRxQueue_attributes = {
+  .name = "canRxQueue"
+};
+/* Definitions for uartToCanQueue */
+osMessageQueueId_t uartToCanQueueHandle;
+const osMessageQueueAttr_t uartToCanQueue_attributes = {
+  .name = "uartToCanQueue"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,7 +102,9 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
+void Start_UartToCan(void *argument);
+void Start_CanRxProcess(void *argument);
+void Start_Heartbeat(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -86,13 +130,26 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of canRxQueue */
+  canRxQueueHandle = osMessageQueueNew (16, sizeof(App_CAN_Message_t), &canRxQueue_attributes);
+
+  /* creation of uartToCanQueue */
+  uartToCanQueueHandle = osMessageQueueNew (16, sizeof(App_CAN_Message_t), &uartToCanQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of UartToCan_Ta */
+  UartToCan_TaHandle = osThreadNew(Start_UartToCan, NULL, &UartToCan_Ta_attributes);
+
+  /* creation of CanRxProcess_Ta */
+  CanRxProcess_TaHandle = osThreadNew(Start_CanRxProcess, NULL, &CanRxProcess_Ta_attributes);
+
+  /* creation of Heartbeat_Ta */
+  Heartbeat_TaHandle = osThreadNew(Start_Heartbeat, NULL, &Heartbeat_Ta_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -104,26 +161,55 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_Start_UartToCan */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the UartToCan_Ta thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+/* USER CODE END Header_Start_UartToCan */
+void Start_UartToCan(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN Start_UartToCan */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
+
+  UartToCan_Task_Run(argument);
+  /* USER CODE END Start_UartToCan */
+}
+
+/* USER CODE BEGIN Header_Start_CanRxProcess */
+/**
+* @brief Function implementing the CanRxProcess_Ta thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_CanRxProcess */
+void Start_CanRxProcess(void *argument)
+{
+  /* USER CODE BEGIN Start_CanRxProcess */
+  /* Infinite loop */
+  
+  CanRxProcess_Task_Run(argument);
+  /* USER CODE END Start_CanRxProcess */
+}
+
+/* USER CODE BEGIN Header_Start_Heartbeat */
+/**
+* @brief Function implementing the Heartbeat_Ta thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_Heartbeat */
+void Start_Heartbeat(void *argument)
+{
+  /* USER CODE BEGIN Start_Heartbeat */
+  /* Infinite loop */
+  
+  Heartbeat_Task_Run(argument);
+  /* USER CODE END Start_Heartbeat */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-
