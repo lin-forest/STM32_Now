@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
+#include "cmsis_os2.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
@@ -86,6 +87,18 @@ const osThreadAttr_t Heartbeat_Ta_attributes = {
   .stack_size = sizeof(Heartbeat_TaBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for ProtocolParser_ */
+osThreadId_t ProtocolParser_Handle;
+uint32_t ProtocolParser_Buffer[ 256 ];
+osStaticThreadDef_t ProtocolParser_ControlBlock;
+const osThreadAttr_t ProtocolParser__attributes = {
+  .name = "ProtocolParser_",
+  .cb_mem = &ProtocolParser_ControlBlock,
+  .cb_size = sizeof(ProtocolParser_ControlBlock),
+  .stack_mem = &ProtocolParser_Buffer[0],
+  .stack_size = sizeof(ProtocolParser_Buffer),
+  .priority = (osPriority_t) osPriorityHigh,
+};
 /* Definitions for canRxQueue */
 osMessageQueueId_t canRxQueueHandle;
 const osMessageQueueAttr_t canRxQueue_attributes = {
@@ -105,6 +118,7 @@ const osMessageQueueAttr_t uartToCanQueue_attributes = {
 void Start_UartToCan(void *argument);
 void Start_CanRxProcess(void *argument);
 void Start_Heartbeat(void *argument);
+void Start_ProtocolParser(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -135,7 +149,7 @@ void MX_FREERTOS_Init(void) {
   canRxQueueHandle = osMessageQueueNew (16, sizeof(App_CAN_Message_t), &canRxQueue_attributes);
 
   /* creation of uartToCanQueue */
-  uartToCanQueueHandle = osMessageQueueNew (16, sizeof(App_CAN_Message_t), &uartToCanQueue_attributes);
+  uartToCanQueueHandle = osMessageQueueNew (16, sizeof(App_UART_Message_t), &uartToCanQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -150,6 +164,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Heartbeat_Ta */
   Heartbeat_TaHandle = osThreadNew(Start_Heartbeat, NULL, &Heartbeat_Ta_attributes);
+
+  /* creation of ProtocolParser_ */
+  ProtocolParser_Handle = osThreadNew(Start_ProtocolParser, NULL, &ProtocolParser__attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -207,6 +224,26 @@ void Start_Heartbeat(void *argument)
   
   Heartbeat_Task_Run(argument);
   /* USER CODE END Start_Heartbeat */
+}
+
+/* USER CODE BEGIN Header_Start_ProtocolParser */
+/**
+* @brief Function implementing the ProtocolParser_ thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_ProtocolParser */
+void Start_ProtocolParser(void *argument)
+{
+  /* USER CODE BEGIN Start_ProtocolParser */
+  /* Infinite loop */
+  
+  for(;;)
+  {
+    osDelay(100); // 添加适当的延时，防止任务过度占用CPU资源
+  }
+  // ProtocolParser_Task_Run(argument);
+  /* USER CODE END Start_ProtocolParser */
 }
 
 /* Private application code --------------------------------------------------*/

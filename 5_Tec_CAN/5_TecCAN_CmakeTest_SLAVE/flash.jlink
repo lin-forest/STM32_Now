@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/5_TecCAN_CmakeTest_SLAVE.elf
+r
+q

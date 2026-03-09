@@ -13,13 +13,38 @@
 
 /* Public typedef ------------------------------------------------------------*/
 
+// 协议帧头定义
+#define FRAME_SOF 0xAA
+
+/**
+ * @brief 统一指令集枚举
+ */
+typedef enum {
+    CMD_SET_SPEED = 0x01, // 设置速度
+    CMD_GET_STATE = 0x02, // 获取状态
+    CMD_SET_MODE  = 0x03, // 设置模式
+    CMD_ESTOP     = 0x04, // 紧急停止
+} Command_ID_t;
+
+/**
+ * @brief 串口消息结构体 (用于uartToCanQueue)
+ * @note  这是从串口接收并解析后的结构化数据
+ */
+typedef struct {
+    uint8_t cmd;     // 指令, 来自 Command_ID_t
+    uint8_t id;      // 设备ID
+    uint8_t len;     // 数据长度
+    uint8_t data[8]; // 数据负载 (最多8字节, 对齐CAN)
+} App_UART_Message_t;
+
+
 /**
  * @brief 应用程序内部统一的CAN消息结构体
  * @note  这个结构体将用于在FreeRTOS队列中传递CAN报文
  */
 typedef struct {
-    uint32_t can_id;  // CAN ID (标准ID或扩展ID)
-    uint8_t  dlc;     // 数据长度 (0-8)
+    uint32_t id;      // CAN ID (标准ID或扩展ID)
+    uint8_t  len;     // 数据长度 (0-8)
     uint8_t  data[8]; // 数据负载
 } App_CAN_Message_t;
 

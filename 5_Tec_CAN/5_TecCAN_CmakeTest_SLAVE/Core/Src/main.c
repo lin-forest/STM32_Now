@@ -20,6 +20,7 @@
 #include "main.h"
 #include "can.h"
 #include "gpio.h"
+#include "stm32f1xx_hal_gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,7 +47,7 @@
 /* USER CODE BEGIN PV */
 CAN_TxHeaderTypeDef TxHeader;
 CAN_RxHeaderTypeDef RxHeader;
-// uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+uint8_t TxData[8] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 uint8_t RxData[8];
 uint32_t TxMailbox;
 /* USER CODE END PV */
@@ -135,11 +136,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) > 0)
+    // 发送测试消息
+     if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) > 0)
     {
-        // HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
+         HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox);
     }
-    // HAL_Delay(100);
+     HAL_Delay(100);
+    // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     
     /* USER CODE END WHILE */
 
@@ -188,6 +191,9 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// 弃用
+
 // void CAN_UserRxCallback(uint32_t id, uint8_t *data, uint8_t len)
 // {
 //     if (id == 0x123)
@@ -196,13 +202,23 @@ void SystemClock_Config(void)
 //     }
 // }
 
+/**
+ * @brief  CAN 接收 FIFO0 消息挂起回调函数（中断上下文）
+ * @note   当 FIFO0 收到一帧有效报文时，HAL 自动调用此函数
+ * @param  hcan：指向 CAN 句柄，携带接收 FIFO0 的报文
+ * @retval 无
+ */
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
+    /* 1. 从 FIFO0 读取报文，填充 RxHeader 与 RxData */
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
     {
+         /* 2. 仅处理来自 Model-A（标准 ID = 0x123）的心跳或指令帧 */
+
         // 如果收到了 ID 为 0x123 的消息（就是model-A发的）
-        if (RxHeader.StdId == 0x7B)
+        if (RxHeader.StdId == 0x123)
         {
+            /* 3. 翻转板载 LED（GPIOC13）以指示收到 Model-A 数据 */
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
         }
     }
