@@ -34,7 +34,7 @@ void Heartbeat_Task_Run(void *argument);
  * @param  argument: 任务参数 (未使用)
  * @retval None
  */
-// void ProtocolParser_Task_Run(void *argument);
+void ProtocolParser_Task_Run(void *argument);
 
 
 #endif /* APP_TASK_H */

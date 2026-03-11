@@ -19,7 +19,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "cmsis_os2.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
@@ -237,12 +236,8 @@ void Start_ProtocolParser(void *argument)
 {
   /* USER CODE BEGIN Start_ProtocolParser */
   /* Infinite loop */
-  
-  for(;;)
-  {
-    osDelay(100); // 添加适当的延时，防止任务过度占用CPU资源
-  }
-  // ProtocolParser_Task_Run(argument);
+
+  ProtocolParser_Task_Run(argument);
   /* USER CODE END Start_ProtocolParser */
 }
 

@@ -89,6 +89,8 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     /* CAN1 interrupt Init */
     HAL_NVIC_SetPriority(USB_HP_CAN1_TX_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
+    HAL_NVIC_SetPriority(USB_LP_CAN1_RX0_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
   /* USER CODE END CAN1_MspInit 1 */
@@ -114,6 +116,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 
     /* CAN1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(USB_HP_CAN1_TX_IRQn);
+    HAL_NVIC_DisableIRQ(USB_LP_CAN1_RX0_IRQn);
   /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
   /* USER CODE END CAN1_MspDeInit 1 */
@@ -121,5 +124,29 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+/**
+  * @brief  配置CAN总线的过滤器
+  * @param  None
+  * @retval None
+  */
+void CAN_Filter_Config(void)
+{
+    CAN_FilterTypeDef can_filter_st;
 
+    can_filter_st.FilterBank = 0;                     // 使用过滤器0
+    can_filter_st.FilterMode = CAN_FILTERMODE_IDMASK; // 设置为掩码模式
+    can_filter_st.FilterScale = CAN_FILTERSCALE_32BIT;  // 32位掩码
+    can_filter_st.FilterIdHigh = 0x0000;              // 过滤器ID高位
+    can_filter_st.FilterIdLow = 0x0000;               // 过滤器ID低位
+    can_filter_st.FilterMaskIdHigh = 0x0000;          // 过滤器掩码高位
+    can_filter_st.FilterMaskIdLow = 0x0000;           // 过滤器掩码低位 (ID和掩码全为0, 接收所有报文)
+    can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO0;  // 将通过过滤器的报文关联到FIFO0
+    can_filter_st.FilterActivation = ENABLE;          // 激活过滤器
+    can_filter_st.SlaveStartFilterBank = 14;            // 从过滤器14开始用于从CAN
+
+    if (HAL_CAN_ConfigFilter(&hcan, &can_filter_st) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
 /* USER CODE END 1 */

@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "ring_buffer.h" // 包含环形缓冲区的头文件
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef huart1;
@@ -44,7 +44,8 @@ void MX_USART1_UART_Init(void);
 void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+extern RingBuffer_t uart1_rx_buffer; // 声明UART1的接收环形缓冲区
+void UART_Receive_Start(void);       // 声明一个用于启动UART接收的函数
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

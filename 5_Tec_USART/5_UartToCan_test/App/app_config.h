@@ -29,12 +29,13 @@ typedef enum {
 /**
  * @brief 串口消息结构体 (用于uartToCanQueue)
  * @note  这是从串口接收并解析后的结构化数据
+ * @note  字段按对齐顺序排列: uint32_t优先, 避免3字节填充, sizeof=16字节
  */
 typedef struct {
-    uint8_t cmd;     // 指令, 来自 Command_ID_t
-    uint8_t id;      // 设备ID
-    uint8_t len;     // 数据长度
-    uint8_t data[8]; // 数据负载 (最多8字节, 对齐CAN)
+    uint32_t id;      // CAN ID (最大29位扩展帧)
+    uint8_t  cmd;     // 指令, 来自 Command_ID_t
+    uint8_t  len;     // 数据长度
+    uint8_t  data[8]; // 数据负载 (最多8字节, 对齐CAN)
 } App_UART_Message_t;
 
 

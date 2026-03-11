@@ -21,7 +21,10 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include "ring_buffer.h"
 
+RingBuffer_t uart1_rx_buffer; // 定义UART1的接收环形缓冲区
+uint8_t uart1_rx_byte;   // 用于存放单个接收字节的临时变量
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -198,5 +201,20 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+/**
+  * @brief  启动UART中断接收
+  * @param  None
+  * @retval None
+  */
+void UART_Receive_Start(void)
+{
+    // 初始化环形缓冲区
+    ring_buffer_init(&uart1_rx_buffer);
+    
+    // 启动UART1的IT接收 (每次只接收一个字节)
+    if (HAL_UART_Receive_IT(&huart1, &uart1_rx_byte, 1) != HAL_OK)
+    {
+        Error_Handler();
+    }
+}
 /* USER CODE END 1 */

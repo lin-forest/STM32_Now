@@ -94,7 +94,19 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  CAN_Filter_Config(); // 初始化CAN过滤器
 
+  if (HAL_CAN_Start(&hcan) != HAL_OK) // 启动CAN
+  {
+    Error_Handler();
+  }
+
+  if (HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) // 使能CAN接收中断
+  {
+    Error_Handler();
+  }
+
+  UART_Receive_Start(); // 启动UART接收
   /* USER CODE END 2 */
 
   /* Init scheduler */
