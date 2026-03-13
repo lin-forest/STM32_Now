@@ -4,7 +4,7 @@
     {
       "label": "Flash STM32 via J-Link",
       "type": "process",
-      "command": "C:\\Program Files\\SEGGER\\JLink_V920\\JLink.exe",
+      "command": "/opt/SEGGER/JLink/JLinkExe",
       "args": [
         "-Device", "STM32F103C8",
         "-If", "SWD",
