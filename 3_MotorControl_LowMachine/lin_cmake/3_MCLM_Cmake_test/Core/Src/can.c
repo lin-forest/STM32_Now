@@ -38,37 +38,49 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     uint8_t rxData[8];
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
     {
-        // 确认ID (虽然过滤器已经保证了)
-        if (rxHeader.StdId == CAN_MOTOR_CMD_STDID)
+        // [修改1] 移除 ID 检查，允许接收任意 ID 的消息
+        // 只要数据长度不为0
+        // if (rxHeader.DLC > 0)
+        if(rxHeader.StdId == 0x123) // 仍然保留对特定ID的过滤，但不限制数据内容
         {
-            // 3. 构建并发送 CommandMsg_t 结构体
             CommandMsg_t cmdMsg;
-
-            // 根据协议，从第一个字节解析命令类型
-            CommandType_t canCmdType = (CommandType_t)rxData[CAN_DATA_INDEX_CMD];
-
-            // 默认值
-            cmdMsg.type = canCmdType;
+            cmdMsg.type = CMD_NONE;
             cmdMsg.value = 0;
 
-            // 根据不同的命令类型，解析相应的数据
-            switch (canCmdType)
+            // [修改2] 协议解析与映射
+            // 根据接收到的第0个字节（命令字）进行判断
+            switch (rxData[0])
             {
+                // === 处理自定义数据帧: 11 22 33 44 55 66 77 00 ===
+                case 0x11: 
+                    // 将外部命令 0x11 映射为内部的 "设置速度" 指令
+                    cmdMsg.type = CMD_SET_SPEED; 
+                    
+                    // 提取参数：假设第1个字节 (0x22) 是速度值
+                    // 注意：0x22 = 34 (逻辑速度)
+                    cmdMsg.value = (int16_t)rxData[1]; 
+                    
+                    // 如果您的速度值是16位的 (例如由 22 33 组成)，可以使用:
+                    // cmdMsg.value = (int16_t)(rxData[1] | (rxData[2] << 8));
+                    break;
+
+                // === 兼容旧协议 ===
                 case CAN_CMD_SET_SPEED:
-                    // 从第二个字节获取速度值
+                    cmdMsg.type = CAN_CMD_SET_SPEED;
                     cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
                     break;
                 
                 case CAN_CMD_STOP:
-                    // 停止命令没有额外的值
+                    cmdMsg.type = CAN_CMD_STOP;
                     break;
 
                 default:
-                    // 未知或不支持的CAN命令，可以忽略或记录日志
-                    return; // 直接返回，不发送到队列
+                    // 未知命令，直接返回，不发送到队列
+                    return; 
             }
 
-            // 使用 CMSIS API 从中断发送队列
+            // 3. 将解析后的命令发送到 CommandQueue
+            // 保持原有的传递路径：CAN中断 -> CommandQueue -> CommandTask -> MotorTask
             osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
         }
     }

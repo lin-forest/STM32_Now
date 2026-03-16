@@ -119,7 +119,7 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN 协议 */
-#define CAN_MOTOR_CMD_STDID         0x5A  // 电机控制指令的CAN ID
+#define CAN_MOTOR_CMD_STDID         0x123  // 电机控制指令的CAN ID
 
 /* CAN 硬件初始化 */
 #define CAN_PRESCALER               4
@@ -150,6 +150,8 @@
 // 定义CAN数据帧中不同数据字段的索引
 #define CAN_DATA_INDEX_CMD      0   // 命令类型在数据帧中的索引
 #define CAN_DATA_INDEX_SPEED    1   // 速度值在数据帧中的索引
+
+
 
 
 #endif // __APP_CONFIG_H__
