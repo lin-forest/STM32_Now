@@ -11,7 +11,7 @@
 2. vscode+web agent/ide agent
 3. git+github
 4. jlink+ozone
-5. savvycan
+5. savvycan、salese等等
 ### ROS
 1. ros2,humble
 2. gazebo
