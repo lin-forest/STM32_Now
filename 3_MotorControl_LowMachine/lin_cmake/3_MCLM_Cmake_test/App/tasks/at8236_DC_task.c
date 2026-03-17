@@ -33,16 +33,17 @@ void AT8236_DC_Task(void *argument)
 
     for (;;)
     {
-        osStatus_t serialStatus, canStatus;
+        osStatus_t status;
         uint8_t messageProcessed = 0;
-        AckMsg_t ack;
 
-        // 1. Check for commands from the serial queue
-        serialStatus = osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0);
-        if (serialStatus == osOK)
+        // 1. 从统一的指令队列获取指令 (串口和CAN指令现在都通过MotorQueueHandle发送)
+        status = osMessageQueueGet(MotorQueueHandle, &cmdMsg, NULL, 0);
+        if (status == osOK)
         {
             messageProcessed = 1;
-            if (cmdMsg.type == CMD_SET_SPEED)
+
+            // 2. 根据指令类型处理
+            if (cmdMsg.type == CMD_SET_SPEED || cmdMsg.type == CAN_CMD_SET_SPEED)
             {
                 motor_pid.setpoint = (float)cmdMsg.value;
                 if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
@@ -50,30 +51,7 @@ void AT8236_DC_Task(void *argument)
                     osMutexRelease(motor_mutexHandle);
                 }
             }
-            else if (cmdMsg.type == CMD_STOP)
-            {
-                motor_pid.setpoint = 0.0f;
-                 if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
-                    g_motor_status.target_logic_speed = 0.0f;
-                    osMutexRelease(motor_mutexHandle);
-                }
-            }
-        }
-
-        // 2. Check for commands from the CAN queue
-        canStatus = osMessageQueueGet(CanMotorCmdQueueHandle, &cmdMsg, NULL, 0);
-        if (canStatus == osOK)
-        {
-            messageProcessed = 1;
-            if (cmdMsg.type == CAN_CMD_SET_SPEED)
-            {
-                motor_pid.setpoint = (float)cmdMsg.value;
-                if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
-                    g_motor_status.target_logic_speed = motor_pid.setpoint;
-                    osMutexRelease(motor_mutexHandle);
-                }
-            }
-            else if (cmdMsg.type == CAN_CMD_STOP)
+            else if (cmdMsg.type == CMD_STOP || cmdMsg.type == CAN_CMD_STOP)
             {
                 motor_pid.setpoint = 0.0f;
                 if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK) {
@@ -81,18 +59,8 @@ void AT8236_DC_Task(void *argument)
                     osMutexRelease(motor_mutexHandle);
                 }
             }
-
-            // Generate and send ACK for CAN command
-            ack.type = cmdMsg.type;
-            ack.value = cmdMsg.value;
-            ack.ok = 1;
-            if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
-            {
-                ack.current_logic_speed = g_motor_status.current_logic_speed;
-                ack.pwm_output = g_motor_status.pwm_output;
-                osMutexRelease(motor_mutexHandle);
-            }
-            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+            // 注意: ACK 消息由各自的命令源任务（如 Command_Task, Can_Service_Task）处理，
+            // 此任务只负责执行命令。
         }
 
         // 3. Execute PID control loop
@@ -117,9 +85,11 @@ void AT8236_DC_Task(void *argument)
             }
         }
 
+        // 如果本次循环没有处理任何消息，就短暂休眠以让出CPU
         if (!messageProcessed) {
-            osDelay(5); 
+            osDelay(5);
         }
+        // The main loop delay should be consistent with the PID computation period.
         osDelay(10);
     }
 }
