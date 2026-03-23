@@ -41,7 +41,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         // [修改1] 移除 ID 检查，允许接收任意 ID 的消息
         // 只要数据长度不为0
         // if (rxHeader.DLC > 0)
-        if(rxHeader.StdId == 0x125) // 仍然保留对特定ID的过滤，但不限制数据内容
+        if(rxHeader.StdId == 0x124 || rxHeader.StdId == 0x101 ||
+           rxHeader.StdId == 0x103 || rxHeader.StdId == 0x224)
         {
             CommandMsg_t cmdMsg;
             cmdMsg.type = CMD_NONE;
@@ -72,6 +73,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                 
                 case CAN_CMD_STOP:
                     cmdMsg.type = CAN_CMD_STOP;
+                    break;
+
+                case 0x01: // 查询命令（0x201帧）
+                    if (rxHeader.StdId == 0x201)
+                    {
+                        cmdMsg.type = CMD_QUERY_STATUS;
+                    }
                     break;
 
                 default:

@@ -16,7 +16,8 @@ typedef enum {
     CMD_STOP,          // 停止
     CMD_SET_SPEED,      // 设置速度：例如 "S500"
 
-    CMD_LIST_STATUS,     // ← 新增：ls
+    CMD_LIST_STATUS,     // ls：查询状态（UART）
+    CMD_QUERY_STATUS,    // 查询状态（CAN 0x201帧）
 
     // CAN 命令类型
     CAN_CMD_SET_SPEED, // CAN 设置速度命令
