@@ -40,7 +40,7 @@ void Command_Task(void *argument)
             {
                 // CAN回复帧 0x301：[target(2B), current(2B), pwm(2B), reserved(2B)]
                 CAN_TxHeaderTypeDef txHeader = {
-                    .StdId = 0x324,
+                    .StdId = 0x323,
                     .DLC   = 8,
                     .IDE   = CAN_ID_STD,
                     .RTR   = CAN_RTR_DATA,
