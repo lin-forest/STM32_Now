@@ -132,10 +132,10 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of UartRxQueue */
-  UartRxQueueHandle = osMessageQueueNew (256, sizeof(uint8_t), &UartRxQueue_attributes);
+  UartRxQueueHandle = osMessageQueueNew (128, sizeof(uint8_t), &UartRxQueue_attributes);
 
   /* creation of CanCmdQueue */
-  CanCmdQueueHandle = osMessageQueueNew (256, sizeof(CanCmd_t), &CanCmdQueue_attributes);
+  CanCmdQueueHandle = osMessageQueueNew (128, sizeof(CanCmd_t), &CanCmdQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
