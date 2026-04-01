@@ -22,6 +22,10 @@ typedef enum {
     // CAN 命令类型
     CAN_CMD_SET_SPEED, // CAN 设置速度命令
     CAN_CMD_STOP,      // CAN 停止命令
+
+    // 数据流控制
+    CMD_LOG_START,     // 开始发送实时电机数据
+    CMD_LOG_STOP,      // 停止发送实时电机数据
 } CommandType_t;
 
 /* ===================== 命令消息结构 ===================== */

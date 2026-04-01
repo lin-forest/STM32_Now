@@ -14,6 +14,9 @@ void Logger_Task(void *argument)
     // osThreadFlagsWait(flags, options, timeout)
     osThreadFlagsWait(0x01, osFlagsWaitAny, osWaitForever);
 
+    if (!g_logger_enabled)
+      continue;
+
     int16_t speed_val;
     int16_t target_logic_speed;
     int16_t pwm_output;

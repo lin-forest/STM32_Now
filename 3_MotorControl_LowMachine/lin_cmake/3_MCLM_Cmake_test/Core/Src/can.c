@@ -75,11 +75,21 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                     cmdMsg.type = CAN_CMD_STOP;
                     break;
 
-                case 0x01: // 查询命令（0x201帧）
+                case 0x01: // 查询命令（0x223帧）
                     if (rxHeader.StdId == 0x223)
                     {
                         cmdMsg.type = CMD_QUERY_STATUS;
                     }
+                    break;
+
+                case 0x04: // 开始发送实时电机数据（仅响应 0x223）
+                    if (rxHeader.StdId == 0x223)
+                        cmdMsg.type = CMD_LOG_START;
+                    break;
+
+                case 0x05: // 停止发送实时电机数据（仅响应 0x223）
+                    if (rxHeader.StdId == 0x223)
+                        cmdMsg.type = CMD_LOG_STOP;
                     break;
 
                 default:

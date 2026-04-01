@@ -19,6 +19,7 @@ typedef struct {
 } MotorStatus_t;
 
 extern MotorStatus_t g_motor_status;
+extern volatile uint8_t g_logger_enabled;  // 0=停止发送, 1=发送实时数据
 
 /* ===================== Task Handles ===================== */
 extern osThreadId_t MotorControl_TaHandle;

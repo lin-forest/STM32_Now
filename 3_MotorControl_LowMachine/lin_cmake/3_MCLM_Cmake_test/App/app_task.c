@@ -3,6 +3,7 @@
 
 // Define the global motor status object
 MotorStatus_t g_motor_status;
+volatile uint8_t g_logger_enabled = 0;  // 默认关闭，由CAN命令控制
 
 // Define the global PID controller object
 PID_Controller motor_pid;

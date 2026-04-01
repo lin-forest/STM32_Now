@@ -33,6 +33,10 @@ void Command_Task(void *argument)
             osMutexRelease(motor_mutexHandle);
         }
 
+        /* ===== 数据流控制命令 ===== */
+        if (cmd.type == CMD_LOG_START) { g_logger_enabled = 1; continue; }
+        if (cmd.type == CMD_LOG_STOP)  { g_logger_enabled = 0; continue; }
+
         /* ===== 查询命令：直接处理，不进电机队列 ===== */
         if (cmd.type == CMD_LIST_STATUS || cmd.type == CMD_QUERY_STATUS)
         {
