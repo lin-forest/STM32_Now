@@ -55,3 +55,20 @@ Encoder_Task(10ms): 读TIM2计数 → 更新g_motor_status → osThreadFlagsSet(
 - 最小改动原则，不加多余注释、不加防御性代码
 - 不新建文件，优先改现有文件
 - 不加 error handling for impossible cases
+
+
+## 优化方向（已部署基线，按优先级）
+
+### 低风险快速改动
+1. **mutex 合并**：[tb6612_DC_task.c](App/tasks/tb6612_DC_task.c) 每循环 3 次 mutex acquire → 合并为一次临界区
+2. **双重 osDelay 修复**：同文件末尾 `osDelay(5)` + `osDelay(10)` 叠加 → 无消息时实际延迟 15ms，应合并
+3. **编码器溢出简化**：[encoder_task.c](App/tasks/encoder_task.c) 手动 if/else 溢出处理 → `diff = (int16_t)diff;`
+
+### 功能扩展
+4. **速度指令范围校验**：[command.c](App/services/command.c) `atoi()` 无边界检查 → 在 `Command_ParseString` 加 clamp
+5. **死区补偿**：[speed_map.c](App/modules/speed_map.c) 低速 PWM 不足以克服静摩擦 → `ticks_to_pwm` 加最小有效 PWM 偏置
+6. **PID 运行时调参（CAN 扩展）**：新增 `0x223 | data[0]=0x10/0x11/0x12` 分别设 Kp/Ki/Kd，写入 `motor_pid`，免重烧
+
+### 按需考虑
+7. **filter.c 实现**：[filter.c](App/modules/filter.c) 当前为空 → 一阶 IIR 滤波编码器噪声
+8. **Logger 丢帧**：[logger_task.c](App/tasks/logger_task.c) DMA 忙时跳过 → 降低触发频率或乒乓缓冲

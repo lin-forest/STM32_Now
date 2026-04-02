@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_BMP280_t1.elf
+r
+q

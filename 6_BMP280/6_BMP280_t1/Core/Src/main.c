@@ -18,10 +18,18 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
+#include "stm32f103xb.h"
+#include "stm32f1xx_hal_gpio.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "bmp280.h"
+#include <stdio.h>
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -43,6 +51,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+extern I2C_HandleTypeDef hi2c1;
+extern UART_HandleTypeDef huart1;
+
+char msg[64];
 
 /* USER CODE END PV */
 
@@ -86,14 +99,77 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  // char msg[64];
+
+// sprintf(msg, "I2C Scan Start...\r\n");
+// HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+// for(uint8_t addr=1; addr<128; addr++)
+// {
+//     if(HAL_I2C_IsDeviceReady(&hi2c1, addr<<1, 1, 10) == HAL_OK)
+//     {
+//         sprintf(msg, "Found device: 0x%X\r\n", addr);
+//         HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+//     }
+// }
+
+// sprintf(msg, "Scan Done\r\n");
+// HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+  uint8_t id = BMP280_ReadID(&hi2c1);
+
+  sprintf(msg, "BMP280 ID: 0x%X\r\n", id);
+  HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+  if(id != 0x58)
+    {
+        sprintf(msg, "BMP280 NOT FOUND!\r\n");
+        HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+    }
+
+  BMP280_Init(&hi2c1);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  float temperature, pressure, altitude;
+  int32_t temp_int, temp_frac;
+  int32_t press_int, press_frac;
+  int32_t alt_int, alt_frac;
+
   while (1)
   {
+    BMP280_Read_Float(&hi2c1, &temperature, &pressure, &altitude);
+
+    // 将温度浮点数拆分为整数和小数部分
+    temp_int = (int32_t)temperature;
+    temp_frac = (int32_t)((temperature - temp_int) * 100);
+    if (temp_frac < 0) {
+        temp_frac = -temp_frac; // 处理负温度的小数部分
+    }
+
+    // 将气压浮点数拆分为整数和小数部分
+    press_int = (int32_t)pressure;
+    press_frac = (int32_t)((pressure - press_int) * 100);
+
+    // 将海拔浮点数拆分为整数和小数部分
+    alt_int = (int32_t)altitude;
+    alt_frac = (int32_t)((altitude - alt_int) * 100);
+    if (alt_frac < 0) {
+        alt_frac = -alt_frac;
+    }
+
+    sprintf(msg, "Temp: %ld.%02ld C, Press: %ld.%02ld Pa, Alt: %ld.%02ld m\r\n", temp_int, temp_frac, press_int, press_frac, alt_int, alt_frac);
+    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+    
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    HAL_Delay(1000);
+    // HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -114,7 +190,7 @@ void SystemClock_Config(void)
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
