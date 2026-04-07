@@ -27,6 +27,7 @@
 
 /* ------------------- 速度与PWM范围定义 (Speed & PWM Normalization) ------------------- */
 #define SPEED_TICKS_MAX     80    // 单个控制周期内编码器的最大计数值 (用于速度计算)
+#define ENCODER_FILTER_ALPHA    0.1f  // 编码器IIR滤波系数，越小越平滑，响应越慢
 #define SPEED_LOGIC_MAX     100   // 统一的逻辑速度最大值 (例如 0-100)
 #define PWM_MAX             999   // PWM最大值, 对应定时器的ARR寄存器值, 代表100%占空比
 
@@ -54,8 +55,11 @@
 
     /* ------------------- PID控制器参数 (PID Controller Constants) ------------------- */
     #define MOTOR1_PID_KP                0.4584f
+    // #define MOTOR1_PID_KP                0.01362f
     #define MOTOR1_PID_KI                17.66f
+    // #define MOTOR1_PID_KI                10.01f
     #define MOTOR1_PID_KD                0.002976f
+    // #define MOTOR1_PID_KD                0.0025f
     #define MOTOR1_PID_INTEGRAL_LIMIT    500.0f       // PID积分项限制
     #define MOTOR1_PID_OUTPUT_LIMIT      100.0f       // PID输出限制 (通常等于SPEED_LOGIC_MAX)
     #define MOTOR1_PID_TS                0.01f        // PID采样时间 (秒), 此处为10ms

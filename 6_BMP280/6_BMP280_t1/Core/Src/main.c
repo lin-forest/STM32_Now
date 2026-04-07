@@ -142,6 +142,10 @@ int main(void)
   int32_t press_int, press_frac;
   int32_t alt_int, alt_frac;
 
+  // 初始化完成后，传感器结构体中已包含第一次读数作为IIR滤波器的“种子”
+  // 我们直接将这个初始海拔设为基准零点
+  BMP280_Set_Base_Altitude(&hi2c1);
+
   while (1)
   {
     BMP280_Read_Float(&hi2c1, &temperature, &pressure, &altitude);
@@ -164,7 +168,7 @@ int main(void)
         alt_frac = -alt_frac;
     }
 
-    sprintf(msg, "Temp: %ld.%02ld C, Press: %ld.%02ld Pa, Alt: %ld.%02ld m\r\n", temp_int, temp_frac, press_int, press_frac, alt_int, alt_frac);
+    sprintf(msg, "Temp: %ld.%02ld C, Press: %ld.%02ld Pa, Rel. Alt: %ld.%02ld m\r\n", temp_int, temp_frac, press_int, press_frac, alt_int, alt_frac);
     HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
     
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);

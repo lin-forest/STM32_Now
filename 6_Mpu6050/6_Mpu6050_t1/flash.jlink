@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_Mpu6050_t1.elf
+r
+q

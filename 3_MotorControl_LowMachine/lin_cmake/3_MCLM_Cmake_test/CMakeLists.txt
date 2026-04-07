@@ -74,6 +74,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # ===== Modules =====
     App/modules/pid.c
     App/modules/speed_map.c
+    App/modules/filter.c
 
     # ===== Services =====
     App/services/command.c

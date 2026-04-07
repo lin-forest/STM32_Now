@@ -5,6 +5,5 @@
 
 int16_t ticks_to_logic(int16_t ticks);
 int16_t logic_to_pwm(int16_t logic);
-int16_t logic_to_ticks(int16_t logic); // 添加此声明
 
 #endif

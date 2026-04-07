@@ -2,6 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
+        "label": "Build",
+        "type": "shell",
+        "command": "cmake --build ${workspaceFolder}/build/Debug",
+        "problemMatcher": []
+    },
+    {
       "label": "Flash STM32 via J-Link",
       "type": "process",
       "command": "/opt/SEGGER/JLink/JLinkExe",
@@ -12,8 +18,8 @@
         "-CommanderScript", "${workspaceFolder}/flash.jlink"
       ],
       "group": { "kind": "build", "isDefault": true },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "dependsOn": "Build"
     }
   ]
 }
-
