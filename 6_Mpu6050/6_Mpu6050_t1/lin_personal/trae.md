@@ -128,7 +128,6 @@ graph TD
 | `Imu_TAHandle` | `freertos.c` | `osThreadId_t` | `Imu_TA` 任务的句柄，由 FreeRTOS 内核管理。 |
 
 
-下面是报错
 
 ---
 
@@ -406,5 +405,3 @@ graph TD
 | `imu_data` | `freertos.c` | `IMU_Data_t` | **最终成果容器**。在 `Imu_TA` 任务中，它既是传递给处理函数的输入（上一帧姿态），也是接收最新姿态的输出。 |
 | `last_tick`, `dt` | `freertos.c` | `uint32_t`, `float` | **时间基准**。在 `Imu_TA` 任务中，用于精确计算两帧之间的时间间隔 `dt`，是所有积分和滤波算法的命脉。 |
 | `alpha` | `imu_process.c` | `const float` | **互补滤波系数**。定义了陀螺仪和加速度计数据的信任权重，是算法调参的核心。 |
-
-

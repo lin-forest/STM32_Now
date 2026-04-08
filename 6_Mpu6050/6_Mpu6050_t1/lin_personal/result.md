@@ -746,3 +746,38 @@ Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
 Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
 Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
 Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+
+260408成功
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:4 Y:6 Z:993
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:7 Z:992
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:1 Y:1 Z:981
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:3 Y:1 Z:989
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-2 Y:6 Z:982
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:2 Y:6 Z:984
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-1 Y:4 Z:991
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-4 Y:2 Z:989
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:7 Z:989
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-2 Y:5 Z:995
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:2 Y:7 Z:986
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:5 Y:10 Z:986
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:5 Y:10 Z:989
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:1 Y:4 Z:991
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:2 Y:8 Z:987
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:11 Z:996
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:7 Z:981
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:6 Y:10 Z:980
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:3 Z:990
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:1 Y:11 Z:991
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-1 Y:1 Z:990
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-2 Y:0 Z:983
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:4 Y:0 Z:986
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:0 Y:10 Z:988
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-4 Y:7 Z:980
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-7 Y:4 Z:989
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-3 Y:6 Z:984
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-5 Y:6 Z:988
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-5 Y:6 Z:992
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:1 Y:4 Z:983
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-3 Y:4 Z:984
+Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-1 Y:5 Z:984
+
