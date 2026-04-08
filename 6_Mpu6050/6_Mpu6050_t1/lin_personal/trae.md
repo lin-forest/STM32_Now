@@ -1,4 +1,18 @@
 
+# MPU6050 开发与集成文档
+
+## 目录
+
+- [阶段一总结：原始数据读取成功](#阶段一总结原始数据读取成功)
+  - [代码审查、接口文档与数据流梳理 (V1.0)](#代码审查接口文档与数据流梳理)
+- [阶段二总结：工程化数据处理成功](#阶段二总结工程化数据处理成功)
+  - [代码审查、接口文档与数据流梳理 (V2.0)](#代码审查接口文档与数据流梳理-v20)
+- [阶段三总结：姿态解算与融合成功](#阶段三总结姿态解算与融合成功)
+  - [代码审查、接口文档与数据流梳理 (V3.0)](#代码审查接口文档与数据流梳理-v30)
+- [阶段四总结：系统集成与工程化成功](#阶段四总结系统集成与工程化成功)
+  - [代码审查、接口文档与数据流梳理 (V4.0)](#代码审查接口文档与数据流梳理-v40)
+  - [Change Log (V3.0 -> V4.0)](#4-change-log-v30---v40)
+
 ---
 
 # 阶段一总结：原始数据读取成功
@@ -405,3 +419,151 @@ graph TD
 | `imu_data` | `freertos.c` | `IMU_Data_t` | **最终成果容器**。在 `Imu_TA` 任务中，它既是传递给处理函数的输入（上一帧姿态），也是接收最新姿态的输出。 |
 | `last_tick`, `dt` | `freertos.c` | `uint32_t`, `float` | **时间基准**。在 `Imu_TA` 任务中，用于精确计算两帧之间的时间间隔 `dt`，是所有积分和滤波算法的命脉。 |
 | `alpha` | `imu_process.c` | `const float` | **互补滤波系数**。定义了陀螺仪和加速度计数据的信任权重，是算法调参的核心。 |
+
+
+
+---
+ 
+# 阶段四总结：系统集成与工程化成功
+ 
+我们已经成功完成了第四阶段的目标：**将姿态解算出的数据进行标准化处理，统一坐标系，并解耦输出，为后续的CAN通信或ROS集成做好准备**。
+ 
+## 完成的工作：
+ 
+1.  **数据结构解耦**:
+    *   在 `imu_process.h` 中，我们定义了一个全新的结构体 `IMU_Output_t`。
+    *   `IMU_Data_t` 继续作为模块**内部**进行姿态解算时的数据容器（单位：g, °/s, °）。
+    *   `IMU_Output_t` 作为模块**外部**的标准化输出接口（单位：m/s², rad/s, rad）。
+    *   这种设计将内部复杂的计算过程与外部清晰的数据输出完全分离，极大地提高了代码的可维护性和接口的稳定性。
+ 
+2.  **输出单位标准化**:
+    *   在 `imu_process.c` 的 `IMU_Process_Update` 函数中，增加了单位转换步骤。
+    *   角速度从 `°/s` 转换为 `rad/s`。
+    *   加速度从 `g` 转换为 `m/s²`。
+    *   姿态角从 `°` 转换为 `rad`。
+    *   所有输出单位均符合机器人领域（特别是ROS）的通用标准（`REP 103`）。
+ 
+3.  **坐标系统一**:
+    *   在 `IMU_Process_Update` 函数中，增加了一个明确的坐标变换步骤。
+    *   通过对调和取反部分轴的数据，我们将 MPU6050 芯片自身的坐标系，映射到了机器人 `base_link` 的标准前-左-上坐标系。
+    *   这一步确保了IMU数据在整个机器人系统中具有一致和正确的物理含义。
+ 
+4.  **接口更新与适配**:
+    *   更新了 `IMU_Process_Update` 的函数签名，以接收新的 `IMU_Output_t` 结构体指针。
+    *   在 `freertos.c` 的 `Imu_TA` 任务中，适配了新的函数调用方式，并修改 `printf` 以打印标准化后的 `IMU_Output_t` 数据。
+ 
+## 最终成果：
+ 
+*   项目现在输出的是一份完全符合工程应用标准的IMU数据包。
+*   代码架构通过接口解耦变得更加清晰和健壮。
+*   我们为将此IMU模块作为“黑盒”传感器节点集成到任何上层系统中（如CAN总线、ROS节点）铺平了道路。
+ 
+---
+ 
+# 代码审查、接口文档与数据流梳理 (V4.0)
+ 
+本章节旨在对第四阶段的代码进行全面审查，并形成清晰的文档。
+ 
+## 1. 文件结构与职责
+ 
+| 文件路径 | 核心职责 |
+| :--- | :--- |
+| `Core/Inc/imu_process.h` | **IMU 数据处理头文件**。职责升级为**定义内外两种数据接口**。定义了内部计算用的 `IMU_Data_t` 和外部输出用的 `IMU_Output_t`。 |
+| `Core/Src/imu_process.c` | **IMU 数据处理实现文件**。职责升级为**完成从原始数据到标准化输出的全流程**。在姿态解算后，增加了坐标变换和单位变换的最终处理步骤。 |
+| `Core/Src/freertos.c` | **FreeRTOS 任务定义与实现**。职责不变，作为应用层调度器，调用处理层，并消费（打印）最终的 `IMU_Output_t` 标准化数据。 |
+ 
+## 2. 接口文档 (API) - `imu_process.h`
+ 
+### 宏定义
+ 
+#### `GRAVITY_MSS` / `DEG_TO_RAD`
+- **定义**: `#define GRAVITY_MSS 9.80665f` / `#define DEG_TO_RAD 0.017453...f`
+- **作用**: 定义了重力加速度（m/s²）和角度到弧度的转换系数，用于单位标准化。
+ 
+### 数据结构
+ 
+#### `IMU_Output_t`
+- **定义**: `typedef struct { float linear_acceleration[3]; ... } IMU_Output_t;`
+- **作用**: **标准化的外部输出数据容器**。
+    - `linear_acceleration`: 线加速度 (m/s²)。
+    - `angular_velocity`: 角速度 (rad/s)。
+    - `attitude`: 姿态角 (rad)。
+    - `timestamp`: 时间戳 (ms)。
+ 
+### 函数
+ 
+#### `void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t *output, float dt)`
+- **功能**: 执行一次完整的从数据采集到标准化输出的更新。
+- **参数**:
+    - `...` (前两个参数不变)
+    - `IMU_Output_t *output`: 指向用于存储最终标准化结果的结构体。
+    - `float dt`: 时间间隔（秒）。
+- **执行流程**:
+    1.  (姿态解算) ... 完成互补滤波，结果存在 `data` 结构体中。
+    2.  **坐标变换**: 对 `data` 中的值进行轴映射，以符合机器人坐标系。
+    3.  **单位变换**: 将变换后的值乘以 `GRAVITY_MSS` 或 `DEG_TO_RAD`。
+    4.  **填充输出**: 将最终结果填入 `output` 结构体，并打上时间戳。
+ 
+## 3. 数据流梳理
+ 
+**目标**: 将 MPU6050 的物理信号，最终转换为一份符合 ROS 标准的、具有统一坐标系的 IMU 数据包。
+ 
+```mermaid
+graph TD
+    A[MPU6050 物理芯片] -- I2C --> B(STM32 I2C1);
+    
+    subgraph "驱动层 (mpu6050.c)"
+        C["MPU6050_Read_All()<br>读取原始数据"];
+    end
+ 
+    subgraph "数据处理层 (imu_process.c)"
+        D["IMU_Process_Update()<br>1. 校准, 单位转换 (g, °/s)<br>2. 互补滤波 (°, 存入 IMU_Data_t)<br>3. 坐标变换<br>4. 单位转换 (m/s², rad/s, rad)<br>5. 填充 IMU_Output_t"];
+    end
+ 
+    subgraph "应用层 (freertos.c)"
+        E["Start_Imu_TA 任务<br>1. 计算 dt<br>2. 调用 IMU_Process_Update<br>3. printf 打印 IMU_Output_t (整数*100)"];
+    end
+ 
+    subgraph "底层支持"
+        F["main.c<br>_write() 函数重定向"];
+    end
+ 
+    G(STM32 USART1) -- USB --> H[PC 串口助手];
+ 
+    B --> C;
+    C --> D;
+    D --> E;
+    E --> F;
+    F --> G;
+```
+ 
+**详细步骤**:
+ 
+1.  **`dt` 计算**: `Start_Imu_TA` 任务计算出精确的 `dt`。
+2.  **数据处理请求**: `Start_Imu_TA` 任务调用 `IMU_Process_Update`，传入 `imu_data` (用于内部计算) 和 `imu_output` (用于接收结果)。
+3.  **内部计算**: `IMU_Process_Update` 执行姿态解算，结果（°/s, g, °）保存在 `imu_data` 中。
+4.  **标准化处理**: `IMU_Process_Update` 紧接着对 `imu_data` 的结果进行**坐标变换**和**单位变换**。
+5.  **返回结果**: `IMU_Process_Update` 将标准化后的最终结果（rad/s, m/s², rad）填充到 `imu_output` 结构体中。
+6.  **消费数据**: `Start_Imu_TA` 任务从 `imu_output` 中提取数据，乘以100转为整数后，通过 `printf` 打印。
+7.  **串口发送**: 最终，PC串口助手显示出标准化单位（rad, rad/s, m/s²）乘以100后的整数值。
+ 
+## 4. Change Log (V3.0 -> V4.0)
+ 
+- **`Core/Inc/imu_process.h`**:
+    - **新增**: 宏定义 `GRAVITY_MSS` 和 `DEG_TO_RAD`，用于单位转换。
+    - **新增**: `IMU_Output_t` 结构体，用于标准化输出。
+    - **修改**: `IMU_Process_Update` 函数签名，增加 `IMU_Output_t *output` 参数。
+ 
+- **`Core/Src/imu_process.c`**:
+    - **修改**: `IMU_Process_Update` 函数实现：
+        - 在姿态解算之后，增加了**坐标变换**逻辑，将芯片坐标系映射到机器人坐标系。
+        - 增加了**单位转换**逻辑，将内部单位（g, °/s, °）转换为标准单位（m/s², rad/s, rad）。
+        - 增加了填充 `IMU_Output_t` 结构体的代码，包括线加速度、角速度、姿态和时间戳。
+ 
+- **`Core/Src/freertos.c`**:
+    - **修改**: `Start_Imu_TA` 任务实现：
+        - **新增**: `IMU_Output_t imu_output` 局部变量的定义。
+        - **修改**: `IMU_Process_Update` 的调用，传入 `&imu_output`。
+        - **修改**: `printf` 语句，使其从 `imu_output` 结构体中读取数据进行打印，并更新了打印的单位提示文本。
+
+
