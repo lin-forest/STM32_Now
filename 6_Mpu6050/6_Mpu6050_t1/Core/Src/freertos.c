@@ -132,8 +132,7 @@ void Start_Heartbeat_TA(void *argument)
   for(;;)
   {
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    osDelay(400);
-    
+    osDelay(500);
   }
   /* USER CODE END Start_Heartbeat_TA */
 }
@@ -148,33 +147,32 @@ void Start_Heartbeat_TA(void *argument)
 void Start_Imu_TA(void *argument)
 {
   /* USER CODE BEGIN Start_Imu_TA */
-    // 初始化 IMU 数据结构体，清零很重要
-    IMU_Data_t imu_data = {0};
-    uint32_t last_tick = 0;
-    float dt = 0.0f;
+  IMU_Process_Init(&hi2c1);
 
-    printf("Imu_Task Start\r\n");
+  IMU_Data_t imu_data = {0}; // 内部计算使用
+  IMU_Output_t imu_output = {0}; // 标准化输出使用
 
-    // 初始化 IMU，执行零偏校准
-    IMU_Process_Init(&hi2c1);
-
-    last_tick = osKernelGetTickCount(); // 获取初始 tick
-
+  uint32_t last_tick = osKernelGetTickCount();
   /* Infinite loop */
   for(;;)
   {
-      //-- 1. 计算 dt (时间差) --//
-      uint32_t current_tick = osKernelGetTickCount();
-      dt = (current_tick - last_tick) / 1000.0f;
-      last_tick = current_tick;
+    uint32_t current_tick = osKernelGetTickCount();
+    float dt = (current_tick - last_tick) / 1000.0f;
+    last_tick = current_tick;
 
-      //-- 2. 更新 IMU 数据和姿态 --//
-      // dt 现在是动态计算的，更精确
-      IMU_Process_Update(&hi2c1, &imu_data, dt);
+    IMU_Process_Update(&hi2c1, &imu_data, &imu_output, dt);
 
-      //-- 3. 打印最终的姿态角 --//
-      printf("Attitude (x100): Pitch=%ld, Roll=%ld, Yaw=%ld\r\n", (long)(imu_data.Pitch * 100), (long)(imu_data.Roll * 100), (long)(imu_data.Yaw * 100));
-      printf("\r\n");
+    // 打印标准化输出 (乘以100后转为整数，避免使用浮点printf)
+    printf("Att(rad*100): P:%ld R:%ld Y:%ld | Vel(rad/s*100): X:%ld Y:%ld Z:%ld | Acc(m/s^2*100): X:%ld Y:%ld Z:%ld\r\n",
+           (long)(imu_output.attitude[0] * 100),
+           (long)(imu_output.attitude[1] * 100),
+           (long)(imu_output.attitude[2] * 100),
+           (long)(imu_output.angular_velocity[0] * 100),
+           (long)(imu_output.angular_velocity[1] * 100),
+           (long)(imu_output.angular_velocity[2] * 100),
+           (long)(imu_output.linear_acceleration[0] * 100),
+           (long)(imu_output.linear_acceleration[1] * 100),
+           (long)(imu_output.linear_acceleration[2] * 100));
 
     osDelay(10);
   }

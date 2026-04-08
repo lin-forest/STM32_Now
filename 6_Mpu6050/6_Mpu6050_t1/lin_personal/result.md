@@ -725,3 +725,24 @@ Gyro (x100):  X=3, Y=31, Z=-3
 [proc] 命令“cube-cmake --build /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/build/Debug --”已退出，代码为 1
 [driver] 生成完毕: 00:00:00.095
 [build] 生成已完成，退出代码为 1
+
+
+260408
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
+Att(rad): P: R: Y: | Vel(rad/s): X: Y: Z: | Acc(m/s^2): X: Y: Z:
