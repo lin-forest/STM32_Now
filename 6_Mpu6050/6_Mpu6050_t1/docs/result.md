@@ -781,3 +781,76 @@ Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:1 Y
 Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-3 Y:4 Z:984
 Att(rad*100): P:0 R:0 Y:13 | Vel(rad/s*100): X:0 Y:0 Z:0 | Acc(m/s^2*100): X:-1 Y:5 Z:984
 
+
+lin@lin-virtual-machine:~/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1$ tree -L 3
+.
+├── 6_Mpu6050_t1.ioc
+├── App
+│   ├── Inc
+│   │   ├── imu_process.h
+│   │   └── mpu6050.h
+│   └── Src
+│       ├── imu_process.c
+│       └── mpu6050.c
+├── build
+│   └── Debug
+│       ├── 6_Mpu6050_t1.elf
+│       ├── 6_Mpu6050_t1.map
+│       ├── build.ninja
+│       ├── cmake
+│       ├── CMakeCache.txt
+│       ├── CMakeFiles
+│       ├── cmake_install.cmake
+│       └── compile_commands.json
+├── cmake
+│   ├── gcc-arm-none-eabi.cmake
+│   ├── starm-clang.cmake
+│   └── stm32cubemx
+│       └── CMakeLists.txt
+├── CMakeLists.txt
+├── CMakePresets.json
+├── Core
+│   ├── Inc
+│   │   ├── FreeRTOSConfig.h
+│   │   ├── gpio.h
+│   │   ├── i2c.h
+│   │   ├── main.h
+│   │   ├── stm32f1xx_hal_conf.h
+│   │   ├── stm32f1xx_it.h
+│   │   └── usart.h
+│   └── Src
+│       ├── freertos.c
+│       ├── gpio.c
+│       ├── i2c.c
+│       ├── main.c
+│       ├── stm32f1xx_hal_msp.c
+│       ├── stm32f1xx_hal_timebase_tim.c
+│       ├── stm32f1xx_it.c
+│       ├── syscalls.c
+│       ├── sysmem.c
+│       ├── system_stm32f1xx.c
+│       └── usart.c
+├── docs
+│   ├── goal.md
+│   ├── lin_personal
+│   ├── result.md
+│   └── trae.md
+├── Drivers
+│   ├── CMSIS
+│   │   ├── Device
+│   │   ├── Include
+│   │   └── LICENSE.txt
+│   └── STM32F1xx_HAL_Driver
+│       ├── Inc
+│       ├── LICENSE.txt
+│       └── Src
+├── flash.jlink
+├── Middlewares
+│   └── Third_Party
+│       └── FreeRTOS
+├── newlib_lock_glue.c
+├── startup_stm32f103xb.s
+├── STM32F103XX_FLASH.ld
+└── stm32_lock.h
+
+24 directories, 44 files
