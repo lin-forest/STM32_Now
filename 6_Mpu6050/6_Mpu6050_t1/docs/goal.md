@@ -2007,3 +2007,8 @@ ROS标准：
 👉 **“RViz已经动了”** 或卡在哪一步**（我帮你定位）**
 
 
+# 260409
+## 01
+1️⃣ orientation（四元数）✅必须
+2️⃣ angular_velocity（角速度）✅必须
+3️⃣ linear_acceleration（加速度）✅必须

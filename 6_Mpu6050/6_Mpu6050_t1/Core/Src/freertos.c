@@ -173,14 +173,29 @@ void Start_Imu_TA(void *argument)
     //        (long)(imu_data.Roll * 10),
     //        (long)(imu_data.Yaw * 10));
 
-    printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
-           (long)(imu_output.orientation[0] * 100),
-           (long)(imu_output.orientation[1] * 100),
-           (long)(imu_output.orientation[2] * 100),
-           (long)(imu_output.orientation[3] * 100),
-           (long)(imu_data.Pitch * 10),
-           (long)(imu_data.Roll * 10),
-           (long)(imu_data.Yaw * 10));
+    // printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
+    //        (long)(imu_output.orientation[0] * 100),
+    //        (long)(imu_output.orientation[1] * 100),
+    //        (long)(imu_output.orientation[2] * 100),
+    //        (long)(imu_output.orientation[3] * 100),
+    //        (long)(imu_data.Pitch * 10),
+    //        (long)(imu_data.Roll * 10),
+    //        (long)(imu_data.Yaw * 10));
+
+    printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
+            (long)(imu_output.orientation[0] * 100),
+            (long)(imu_output.orientation[1] * 100),
+            (long)(imu_output.orientation[2] * 100),
+            (long)(imu_output.orientation[3] * 100),
++           (long)(imu_output.linear_acceleration[0] * 100),
++           (long)(imu_output.linear_acceleration[1] * 100),
++           (long)(imu_output.linear_acceleration[2] * 100),
++           (long)(imu_output.angular_velocity[0] * 100),
++           (long)(imu_output.angular_velocity[1] * 100),
++           (long)(imu_output.angular_velocity[2] * 100),
++           (long)(imu_data.Pitch * 10), // Pitch, Roll, Yaw 仍使用度, 方便观察
++           (long)(imu_data.Roll * 10),
++           (long)(imu_data.Yaw * 10));
 
     osDelay(10);
   }
