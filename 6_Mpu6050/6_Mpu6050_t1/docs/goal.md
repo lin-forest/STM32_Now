@@ -1308,3 +1308,702 @@ ax ay az gx gy gz (float or int16 scaled)
 *   **EKF 融合**: 将发布的 `/imu` 话题与轮式里程计 `/odom` 话题，通过 `robot_localization` 包进行扩展卡尔曼滤波，输出高精度的全局里程计。
 
 ---
+
+
+# 阶段五
+我认真看完了你的文档——先给你一个**非常明确的评价**：
+
+---
+
+# 🧠 一句话评价你的工程
+
+> ✅ **这已经不是“MPU6050实验”，而是一个“标准IMU模块（工程级）”**
+
+你现在缺的真的只剩最后一块拼图：
+
+> 🎯 **把“姿态角系统”升级为“ROS可用IMU接口”**
+
+---
+
+# 🚨 一、直接回答你的问题
+
+> **是不是下一步在 STM32F103 里实现四元数输出？**
+
+---
+
+## ✅ 正确答案（非常关键）：
+
+> ✔ **是，但不是“实现”，而是“架构升级”**
+
+---
+
+## ❗你当前算法是：
+
+```text
+互补滤波（Euler域）
+```
+
+👉 这意味着：
+
+```text
+❌ 你现在“没有四元数”
+```
+
+---
+
+## ⚠️ 和你之前情况不一样！
+
+之前我说：
+
+> “Mahony 里已经有四元数”
+
+👉 那是建立在：
+
+```text
+你用 Mahony/Madgwick
+```
+
+---
+
+## 🚨 但你现在是：
+
+```text
+atan2 + 互补滤波
+```
+
+👉 所以：
+
+```text
+❗ 你必须“自己增加四元数模块”
+```
+
+---
+
+# 🧩 二、你现在有两条路线（非常重要的分叉）
+
+我帮你做一个工程级决策👇
+
+---
+
+# 🥇 路线 A（推荐你走）
+
+## 👉 升级为 Mahony（或 Madgwick）
+
+---
+
+## 🔥 架构变成：
+
+```text
+MPU6050
+   ↓
+Mahony
+   ↓
+Quaternion（主输出）
+   ↓
+Euler（可选）
+```
+
+---
+
+## ✅ 优点（非常关键）
+
+* 原生四元数 ✅
+* 数学一致性强 ✅
+* 可直接接 ROS 2 ✅
+* 可扩展磁力计（你已经买了 AK09911C）✅
+
+---
+
+## ❗这是“工业标准路线”
+
+你后面要用的：
+
+* robot_localization
+* nav2
+* 四足控制
+
+👉 **全部默认 quaternion**
+
+---
+
+# 🥈 路线 B（不推荐，但可以过渡）
+
+## 👉 在你现有系统上“补四元数”
+
+---
+
+## 做法：
+
+```text
+Euler → Quaternion
+```
+
+---
+
+## ✅ 优点
+
+* 改动小
+* 立刻能用
+
+---
+
+## ❌ 致命问题
+
+* 数学不连续
+* 有奇异性（gimbal lock）
+* 后面迟早要推翻
+
+---
+
+# ⚠️ 我给你的明确建议
+
+---
+
+> ❗ **不要在互补滤波上“打补丁”**
+
+---
+
+# 🚀 三、结合你履历，我给你的最优路径
+
+你不是初学者，你是：
+
+```text
+正在搭机器人系统的人
+```
+
+---
+
+所以建议是：
+
+---
+
+# 🥇 直接升级架构
+
+## 👉 把 imu_process.c 改成：
+
+```text
+IMU_Process_Update():
+    ↓
+读数据
+    ↓
+校准
+    ↓
+单位转换
+    ↓
+Mahony_Update()
+    ↓
+输出 quaternion
+```
+
+---
+
+## 🎯 然后：
+
+```text
+Quaternion → Euler（仅用于打印）
+```
+
+---
+
+# 🧱 四、你需要改的东西（非常少）
+
+---
+
+## ✅ 1. 替换这一段：
+
+```c
+// 旧的
+atan2 + 互补滤波
+```
+
+👉 换成：
+
+```c
+Mahony_Update(ax, ay, az, gx, gy, gz, dt);
+```
+
+---
+
+## ✅ 2. 增加输出结构
+
+```c
+typedef struct
+{
+    float ax, ay, az;
+    float gx, gy, gz;
+
+    float qw, qx, qy, qz;   // ⭐ 主输出
+
+    float roll, pitch, yaw; // 调试用
+} IMU_Data_t;
+```
+
+---
+
+## ✅ 3. Euler 仅用于 debug
+
+---
+
+# 🔥 五、你现在这个时间点，为什么必须升级？
+
+---
+
+## 因为你马上要做：
+
+```text
+IMU → CAN → ROS2 → EKF
+```
+
+---
+
+如果你继续用 Euler：
+
+```text
+❌ ROS 不认
+❌ EKF 不稳
+❌ 后期全部推翻
+```
+
+---
+
+如果你现在换：
+
+```text
+✅ 一步到位
+✅ 后面全部通
+```
+
+---
+
+# 🧭 六、你这个项目的“正确进化路径”
+
+结合你当前进度👇
+
+---
+
+## 当前（你）
+
+```text
+MPU6050 + 互补滤波 + Euler
+```
+
+---
+
+## 下一步（必须）
+
+```text
+MPU6050 + Mahony + Quaternion
+```
+
+---
+
+## 再下一步（你已经准备好了）
+
+```text
++ AK09911C（磁力计）
+→ 9轴 AHRS
+→ 无漂移 yaw
+```
+
+---
+
+## 最终形态
+
+```text
+IMU → ROS2 /imu → robot_localization → odom
+```
+
+---
+
+# 🧩 七、一句话结论
+
+---
+
+> ❌ 不是“在 F103 里补四元数”
+> ✅ 而是：**把整个姿态解算升级到 quaternion 体系（Mahony）**
+
+---
+
+# 👉 我建议你下一步直接做这个（我可以带你一步到位）：
+
+### 🔧「把你现在 imu_process.c 重构成 Mahony 版本（完全贴合你工程）」
+
+我可以：
+
+* 按你现在文件结构改
+* 保留 FreeRTOS 架构
+* 直接给你可跑代码
+
+---
+
+你只需要说一句：
+
+👉 **“重构 imu_process.c”**
+
+我直接帮你改成**工业级版本（可接 ROS）** 🚀
+
+
+# 阶段六
+好，这一步是**质变** 🚀
+你马上从“嵌入式IMU”进入“机器人系统”。
+
+我给你一个**最小可跑通方案（一步一步）**，保证你很快在 RViz 看到你的IMU动起来。
+
+---
+
+# 🧭 总目标
+
+```text
+STM32 → 串口 → ROS2 → /imu/data → RViz显示
+```
+
+---
+
+# 🧩 一、整体架构（你要理解这个）
+
+```
+STM32 (你已完成)
+   ↓ 串口 UART
+PC / 树莓派
+   ↓ Python节点
+ROS2 Topic: /imu/data
+   ↓
+RViz 可视化
+```
+
+---
+
+# ⚙️ 二、STM32这边要做什么（你只需小改）
+
+你已经有：
+
+```c
+IMU_Output_t
+```
+
+👉 包含：
+
+* quaternion ✔
+* angular_velocity ✔
+* linear_acceleration ✔
+
+---
+
+## ✅ 改成串口输出（关键）
+
+建议输出**一行数据（CSV或JSON）**
+
+---
+
+### ✔ 推荐格式（简单版 CSV）：
+
+```text
+ax,ay,az,gx,gy,gz,qw,qx,qy,qz
+```
+
+---
+
+### 示例：
+
+```text
+0.01,0.02,9.80,0.001,0.002,0.003,0.99,0.01,0.02,0.03
+```
+
+---
+
+👉 在 `freertos.c` 里改：
+
+```c
+printf("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\r\n",
+    output.linear_acceleration[0],
+    output.linear_acceleration[1],
+    output.linear_acceleration[2],
+    output.angular_velocity[0],
+    output.angular_velocity[1],
+    output.angular_velocity[2],
+    output.orientation[0],
+    output.orientation[1],
+    output.orientation[2],
+    output.orientation[3]);
+```
+
+---
+
+# 🖥️ 三、PC端：创建 ROS2 节点
+
+---
+
+## 1️⃣ 创建工作空间
+
+```bash
+mkdir -p ~/imu_ws/src
+cd ~/imu_ws
+colcon build
+source install/setup.bash
+```
+
+---
+
+## 2️⃣ 创建Python包
+
+```bash
+cd src
+ros2 pkg create imu_serial --build-type ament_python
+```
+
+---
+
+## 3️⃣ 安装依赖
+
+```bash
+pip install pyserial
+```
+
+---
+
+# 🧠 四、核心代码（最关键）
+
+创建：
+
+```bash
+imu_serial/imu_serial/imu_node.py
+```
+
+---
+
+## 🚀 代码如下（可直接用）
+
+```python
+import rclpy
+from rclpy.node import Node
+import serial
+from sensor_msgs.msg import Imu
+
+class ImuNode(Node):
+    def __init__(self):
+        super().__init__('imu_node')
+
+        self.ser = serial.Serial('/dev/ttyUSB0', 115200)
+
+        self.pub = self.create_publisher(Imu, '/imu/data', 10)
+
+        self.timer = self.create_timer(0.01, self.read_serial)
+
+    def read_serial(self):
+        try:
+            line = self.ser.readline().decode().strip()
+            data = list(map(float, line.split(',')))
+
+            if len(data) != 10:
+                return
+
+            msg = Imu()
+
+            # 加速度
+            msg.linear_acceleration.x = data[0]
+            msg.linear_acceleration.y = data[1]
+            msg.linear_acceleration.z = data[2]
+
+            # 角速度
+            msg.angular_velocity.x = data[3]
+            msg.angular_velocity.y = data[4]
+            msg.angular_velocity.z = data[5]
+
+            # 四元数
+            msg.orientation.w = data[6]
+            msg.orientation.x = data[7]
+            msg.orientation.y = data[8]
+            msg.orientation.z = data[9]
+
+            self.pub.publish(msg)
+
+        except Exception as e:
+            self.get_logger().warn(str(e))
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ImuNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+```
+
+---
+
+# ⚙️ 五、运行节点
+
+---
+
+## 编译：
+
+```bash
+cd ~/imu_ws
+colcon build
+source install/setup.bash
+```
+
+---
+
+## 运行：
+
+```bash
+ros2 run imu_serial imu_node
+```
+
+---
+
+## 查看数据：
+
+```bash
+ros2 topic echo /imu/data
+```
+
+---
+
+# 👁️ 六、RViz 可视化（最爽的一步）
+
+---
+
+## 打开：
+
+```bash
+rviz2
+```
+
+---
+
+## 添加：
+
+* Add → **IMU**
+
+---
+
+## 设置：
+
+```text
+Topic: /imu/data
+```
+
+---
+
+👉 你会看到：
+
+```text
+一个坐标轴跟着你转
+```
+
+---
+
+# ⚠️ 七、常见坑（帮你避雷）
+
+---
+
+## ❗1 串口权限问题
+
+```bash
+sudo chmod 666 /dev/ttyUSB0
+```
+
+---
+
+## ❗2 数据乱
+
+原因：
+
+* 波特率不一致
+* printf太快
+
+👉 解决：
+
+```c
+vTaskDelay(10);
+```
+
+---
+
+## ❗3 四元数顺序
+
+ROS标准：
+
+```text
+(x, y, z, w)
+```
+
+你现在是：
+
+```text
+(w, x, y, z)
+```
+
+👉 已在代码里处理 ✔
+
+---
+
+# 🚀 八、你完成后会发生什么
+
+你会拥有：
+
+---
+
+## ✅ 一个完整链路：
+
+```text
+硬件 → 算法 → ROS → 可视化
+```
+
+---
+
+## ✅ 一个“机器人级 IMU 模块”
+
+---
+
+# 🧠 九、下一步（提前告诉你）
+
+等你跑通后：
+
+---
+
+## 🔥 升级路线：
+
+### 1️⃣ 加磁力计（你已有 ak09911）
+
+→ 解决 Yaw
+
+---
+
+### 2️⃣ 上 robot_localization
+
+→ IMU + 里程计融合
+
+---
+
+### 3️⃣ TF坐标系统
+
+→ 真正进入机器人系统
+
+---
+
+# 🧩 最后一句（很重要）
+
+> 你现在做的，不是“把数据发出来”，而是：
+
+```text
+让你的IMU成为ROS世界的一部分
+```
+
+---
+
+# 👉 下一步我可以帮你：
+
+* 🔧 加时间戳 + frame_id（ROS规范）
+* 🚀 用 RViz 做3D姿态模型
+* 🤖 接入 robot_localization
+
+---
+
+你先跑起来，然后告诉我：
+
+👉 **“RViz已经动了”** 或卡在哪一步**（我帮你定位）**
+
+

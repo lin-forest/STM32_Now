@@ -147,10 +147,11 @@ void Start_Heartbeat_TA(void *argument)
 void Start_Imu_TA(void *argument)
 {
   /* USER CODE BEGIN Start_Imu_TA */
-  IMU_Process_Init(&hi2c1);
-
   IMU_Data_t imu_data = {0}; // 内部计算使用
   IMU_Output_t imu_output = {0}; // 标准化输出使用
+
+  // 注意: IMU_Process_Init 现在需要 imu_data 的地址来初始化四元数
+  IMU_Process_Init(&hi2c1, &imu_data);
 
   uint32_t last_tick = osKernelGetTickCount();
   /* Infinite loop */
@@ -162,17 +163,24 @@ void Start_Imu_TA(void *argument)
 
     IMU_Process_Update(&hi2c1, &imu_data, &imu_output, dt);
 
-    // 打印标准化输出 (乘以100后转为整数，避免使用浮点printf)
-    printf("Att(rad*100): P:%ld R:%ld Y:%ld | Vel(rad/s*100): X:%ld Y:%ld Z:%ld | Acc(m/s^2*100): X:%ld Y:%ld Z:%ld\r\n",
-           (long)(imu_output.attitude[0] * 100),
-           (long)(imu_output.attitude[1] * 100),
-           (long)(imu_output.attitude[2] * 100),
-           (long)(imu_output.angular_velocity[0] * 100),
-           (long)(imu_output.angular_velocity[1] * 100),
-           (long)(imu_output.angular_velocity[2] * 100),
-           (long)(imu_output.linear_acceleration[0] * 100),
-           (long)(imu_output.linear_acceleration[1] * 100),
-           (long)(imu_output.linear_acceleration[2] * 100));
+    // 打印四元数和调试用的欧拉角 (乘以100后转为整数，避免使用浮点printf)
+    // printf("Quat(x100): w:%ld x:%ld y:%ld z:%ld | Att(deg*10): P:%ld R:%ld Y:%ld\r\n",
+    //        (long)(imu_output.orientation[0] * 100),
+    //        (long)(imu_output.orientation[1] * 100),
+    //        (long)(imu_output.orientation[2] * 100),
+    //        (long)(imu_output.orientation[3] * 100),
+    //        (long)(imu_data.Pitch * 10),
+    //        (long)(imu_data.Roll * 10),
+    //        (long)(imu_data.Yaw * 10));
+
+    printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
+           (long)(imu_output.orientation[0] * 100),
+           (long)(imu_output.orientation[1] * 100),
+           (long)(imu_output.orientation[2] * 100),
+           (long)(imu_output.orientation[3] * 100),
+           (long)(imu_data.Pitch * 10),
+           (long)(imu_data.Roll * 10),
+           (long)(imu_data.Yaw * 10));
 
     osDelay(10);
   }

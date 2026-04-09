@@ -854,3 +854,35 @@ lin@lin-virtual-machine:~/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_
 └── stm32_lock.h
 
 24 directories, 44 files
+
+
+260409
+[main] 正在生成文件夹: /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/build/Debug 
+[build] 正在启动生成
+[driver] 注意: 你正在使用预设 Debug 进行生成，但正在从 VS Code 设置中应用一些替代。
+[proc] 正在执行命令: cube-cmake --build /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/build/Debug --
+[build] [1/3] Building C object CMakeFiles/6_Mpu6050_t1.dir/App/Src/imu_process.c.obj
+[build] FAILED: [code=1] CMakeFiles/6_Mpu6050_t1.dir/App/Src/imu_process.c.obj 
+[build] /home/lin/.local/share/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc -DDEBUG -DSTM32F103xB -DSTM32_THREAD_SAFE_STRATEGY=4 -DUSE_HAL_DRIVER -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Core/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/STM32F1xx_HAL_Driver/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/CMSIS/Include -mcpu=cortex-m3  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11 -MD -MT CMakeFiles/6_Mpu6050_t1.dir/App/Src/imu_process.c.obj -MF CMakeFiles/6_Mpu6050_t1.dir/App/Src/imu_process.c.obj.d -o CMakeFiles/6_Mpu6050_t1.dir/App/Src/imu_process.c.obj -c /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Src/imu_process.c
+[build] /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Src/imu_process.c:88:6: error: conflicting types for 'IMU_Process_Init'; have 'void(I2C_HandleTypeDef *, IMU_Data_t *)'
+[build]    88 | void IMU_Process_Init(I2C_HandleTypeDef *hi2c, IMU_Data_t *data)
+[build]       |      ^~~~~~~~~~~~~~~~
+[build] In file included from /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Src/imu_process.c:1:
+[build] /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Inc/imu_process.h:50:6: note: previous declaration of 'IMU_Process_Init' with type 'void(I2C_HandleTypeDef *)'
+[build]    50 | void IMU_Process_Init(I2C_HandleTypeDef *hi2c);
+[build]       |      ^~~~~~~~~~~~~~~~
+[build] [2/3] Building C object CMakeFiles/6_Mpu6050_t1.dir/Core/Src/freertos.c.obj
+[build] FAILED: [code=1] CMakeFiles/6_Mpu6050_t1.dir/Core/Src/freertos.c.obj 
+[build] /home/lin/.local/share/stm32cube/bundles/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc -DDEBUG -DSTM32F103xB -DSTM32_THREAD_SAFE_STRATEGY=4 -DUSE_HAL_DRIVER -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Core/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/STM32F1xx_HAL_Driver/Inc -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I/home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/cmake/stm32cubemx/../../Drivers/CMSIS/Include -mcpu=cortex-m3  -Wall -fdata-sections -ffunction-sections -fstack-usage -O0 -g3 -std=gnu11 -MD -MT CMakeFiles/6_Mpu6050_t1.dir/Core/Src/freertos.c.obj -MF CMakeFiles/6_Mpu6050_t1.dir/Core/Src/freertos.c.obj.d -o CMakeFiles/6_Mpu6050_t1.dir/Core/Src/freertos.c.obj -c /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/Core/Src/freertos.c
+[build] /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/Core/Src/freertos.c: In function 'Start_Imu_TA':
+[build] /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/Core/Src/freertos.c:154:3: error: too many arguments to function 'IMU_Process_Init'
+[build]   154 |   IMU_Process_Init(&hi2c1, &imu_data);
+[build]       |   ^~~~~~~~~~~~~~~~
+[build] In file included from /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/Core/Src/freertos.c:29:
+[build] /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/App/Inc/imu_process.h:50:6: note: declared here
+[build]    50 | void IMU_Process_Init(I2C_HandleTypeDef *hi2c);
+[build]       |      ^~~~~~~~~~~~~~~~
+[build] ninja: build stopped: subcommand failed.
+[proc] 命令“cube-cmake --build /home/lin/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1/build/Debug --”已退出，代码为 1
+[driver] 生成完毕: 00:00:00.068
+[build] 生成已完成，退出代码为 1

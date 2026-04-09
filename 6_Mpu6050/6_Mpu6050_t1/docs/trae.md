@@ -13,6 +13,79 @@
   - [代码审查、接口文档与数据流梳理 (V4.0)](#代码审查接口文档与数据流梳理-v40)
   - [Change Log (V3.0 -> V4.0)](#4-change-log-v30---v40)
 
+### 文件架构
+lin@lin-virtual-machine:~/ProjectRequirement/MCU/Lin_STM32/STM32_F103C8T6/STM32_Now/6_Mpu6050/6_Mpu6050_t1$ tree -L 3
+.
+├── 6_Mpu6050_t1.ioc
+├── App
+│   ├── Inc
+│   │   ├── imu_process.h
+│   │   └── mpu6050.h
+│   └── Src
+│       ├── imu_process.c
+│       └── mpu6050.c
+├── build
+│   └── Debug
+│       ├── 6_Mpu6050_t1.elf
+│       ├── 6_Mpu6050_t1.map
+│       ├── build.ninja
+│       ├── cmake
+│       ├── CMakeCache.txt
+│       ├── CMakeFiles
+│       ├── cmake_install.cmake
+│       └── compile_commands.json
+├── cmake
+│   ├── gcc-arm-none-eabi.cmake
+│   ├── starm-clang.cmake
+│   └── stm32cubemx
+│       └── CMakeLists.txt
+├── CMakeLists.txt
+├── CMakePresets.json
+├── Core
+│   ├── Inc
+│   │   ├── FreeRTOSConfig.h
+│   │   ├── gpio.h
+│   │   ├── i2c.h
+│   │   ├── main.h
+│   │   ├── stm32f1xx_hal_conf.h
+│   │   ├── stm32f1xx_it.h
+│   │   └── usart.h
+│   └── Src
+│       ├── freertos.c
+│       ├── gpio.c
+│       ├── i2c.c
+│       ├── main.c
+│       ├── stm32f1xx_hal_msp.c
+│       ├── stm32f1xx_hal_timebase_tim.c
+│       ├── stm32f1xx_it.c
+│       ├── syscalls.c
+│       ├── sysmem.c
+│       ├── system_stm32f1xx.c
+│       └── usart.c
+├── docs
+│   ├── goal.md
+│   ├── lin_personal
+│   ├── result.md
+│   └── trae.md
+├── Drivers
+│   ├── CMSIS
+│   │   ├── Device
+│   │   ├── Include
+│   │   └── LICENSE.txt
+│   └── STM32F1xx_HAL_Driver
+│       ├── Inc
+│       ├── LICENSE.txt
+│       └── Src
+├── flash.jlink
+├── Middlewares
+│   └── Third_Party
+│       └── FreeRTOS
+├── newlib_lock_glue.c
+├── startup_stm32f103xb.s
+├── STM32F103XX_FLASH.ld
+└── stm32_lock.h
+
+24 directories, 44 files
 ---
 
 # 阶段一总结：原始数据读取成功
@@ -568,3 +641,128 @@ graph TD
 
 
 # 更改了文件架构，引入了doc/,App/,/Inc,/Src
+
+
+# 阶段五总结：升级 Mahony AHRS 四元数姿态解算
+
+我们已经成功完成了第五阶段的目标：**将姿态解算系统从互补滤波升级为工业标准的 Mahony AHRS 算法，实现以四元数为核心的姿态输出，为对接 ROS 系统做好准备。**
+
+## 完成的工作：
+
+1.  **算法核心升级**:
+    *   在 `imu_process.c` 中，引入了完整的 `Mahony_Update` 算法实现，替换了原有的互补滤波逻辑。
+    *   算法的比例增益 (`Kp`) 和积分增益 (`Ki`) 被定义为可调参数，提供了优化的空间。
+
+2.  **数据结构重构 (四元数核心)**:
+    *   修改了 `imu_process.h`，将 `IMU_Data_t` 和 `IMU_Output_t` 的核心从欧拉角转向四元数。
+    *   `IMU_Output_t` 中增加了 `orientation[4]` 字段，用于存放 `w, x, y, z` 四元数，直接对应 ROS 的 `sensor_msgs/Imu` 消息格式。
+    *   欧拉角（Pitch, Roll, Yaw）被保留，但其角色转变为由四元数计算得出的“调试用”数据。
+
+3.  **接口与应用层适配**:
+    *   修改了 `IMU_Process_Init` 函数的接口，增加了 `IMU_Data_t *data` 参数，用于在初始化时设置四元数的初始状态 `q = {1, 0, 0, 0}`。
+    *   相应地，在 `freertos.c` 的 `Start_Imu_TA` 任务中，更新了 `IMU_Process_Init` 的调用方式。
+    *   更新了 `printf` 打印内容，现在主要输出四元数和调试用的欧拉角。
+
+4.  **编译错误修复**:
+    *   **问题描述**: 在重构过程中，由于 `imu_process.c` 中的 `IMU_Process_Init` 函数定义增加了参数，但 `imu_process.h` 中的函数声明未同步更新，导致了 `conflicting types` 和 `too many arguments` 的编译错误。
+    *   **解决方案**: 修正了 `imu_process.h` 中的 `IMU_Process_Init` 函数原型，使其与 `.c` 文件中的定义完全一致，成功解决了编译问题。
+
+## 最终成果：
+
+*   项目成功从欧拉角互补滤波架构，升级为基于四元数的 Mahony AHRS 工业级姿态解算架构。
+*   输出数据格式与 ROS 无缝对接，为后续的机器人系统集成铺平了道路。
+*   整个代码库在重构后编译通过，运行稳定。
+
+---
+
+# 代码审查、接口文档与数据流梳理 (V5.0)
+
+本章节旨在对第五阶段的代码进行全面审查，并形成清晰的文档。
+
+## 1. 文件结构与职责
+
+| 文件路径 | 核心职责 |
+| :--- | :--- |
+| `App/Inc/imu_process.h` | **IMU 数据处理头文件**。定义了以四元数为核心的数据结构 `IMU_Data_t`, `IMU_Output_t` 和处理函数接口。 |
+| `App/Src/imu_process.c` | **IMU 数据处理实现文件**。**项目的算法核心**。实现了 `Mahony_Update` 算法，负责将传感器数据融合成四元数姿态。 |
+| `Core/Src/freertos.c` | **FreeRTOS 任务定义与实现**。`Imu_TA` 任务负责调用 `IMU_Process_Update`，并消费（打印）最终的四元数和欧拉角数据。 |
+
+## 2. 接口文档 (API) - `imu_process.h`
+
+### 数据结构
+
+#### `IMU_Data_t`
+- **定义**: `typedef struct { ... float q[4]; ... } IMU_Data_t;`
+- **作用**: 内部计算使用的数据结构。核心成员是 `q[4]`，用于存储 `w, x, y, z` 四元数。`Pitch`, `Roll`, `Yaw` 字段现在作为调试项，由 `q` 计算得出。
+
+#### `IMU_Output_t`
+- **定义**: `typedef struct { ... float orientation[4]; ... } IMU_Output_t;`
+- **作用**: 标准化输出的数据结构。核心成员是 `orientation[4]`，用于对外提供 ROS 兼容的四元数姿态。
+
+### 函数
+
+#### `void IMU_Process_Init(I2C_HandleTypeDef *hi2c, IMU_Data_t *data)`
+- **功能**: 初始化 IMU 并进行静态校准，同时**初始化姿态四元数**。
+- **参数**:
+    - `I2C_HandleTypeDef *hi2c`: I2C 句柄。
+    - `IMU_Data_t *data`: 指向 IMU 数据结构，函数将对其内部的四元数 `q` 进行初始化 (`{1,0,0,0}`)。
+- **执行流程**:
+    1.  执行传感器零偏校准。
+    2.  设置 `data->q` 为单位四元数。
+
+#### `void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t *output, float dt)`
+- **功能**: 获取最新传感器数据，调用 Mahony AHRS 算法更新四元数，并填充所有输出数据。
+- **执行流程**:
+    1.  读取并校准传感器数据。
+    2.  将加速度(g)和角速度(rad/s)传入 `Mahony_Update` 函数。
+    3.  `Mahony_Update` 更新 `data->q` 四元数。
+    4.  根据最新的 `data->q` 计算出调试用的欧拉角。
+    5.  执行坐标系变换。
+    6.  填充 `output` 结构体，包括 `linear_acceleration`, `angular_velocity`, 和核心的 `orientation` 四元数。
+
+## 3. 数据流梳理
+
+**目标**: 将 MPU6050 的物理信号，通过 Mahony AHRS 算法，转换为标准的四元数姿态输出。
+
+```mermaid
+graph TD
+    A[MPU6050 物理芯片] -- I2C --> B(STM32 I2C1);
+    
+    subgraph "驱动层 (mpu6050.c)"
+        C["MPU6050_Read_All()<br>读取原始数据"];
+    end
+
+    subgraph "数据处理层 (imu_process.c)"
+        D["IMU_Process_Update()<br>1. 校准, 单位转换<br>2. 调用 Mahony_Update 更新四元数<br>3. 四元数转欧拉角(调试用)"];
+    end
+
+    subgraph "应用层 (freertos.c)"
+        E["Start_Imu_TA 任务<br>1. 计算 dt<br>2. 调用 IMU_Process_Update<br>3. printf 输出四元数"];
+    end
+
+    F(STM32 USART1) -- USB --> G[PC 串口助手];
+
+    B --> C;
+    C --> D;
+    D --> E;
+    E --> F;
+```
+
+**详细步骤**:
+
+1.  **任务调度**: `Start_Imu_TA` 任务被唤醒，并计算出精确的时间间隔 `dt`。
+2.  **数据更新请求**: `Start_Imu_TA` 调用 `IMU_Process_Update` 函数。
+3.  **数据处理**: `IMU_Process_Update` 内部获取并校准传感器数据，然后将其喂给 `Mahony_Update` 算法。
+4.  **姿态更新**: `Mahony_Update` 算法融合加速度计和陀螺仪数据，更新存储在 `IMU_Data_t` 结构体中的姿态四元数 `q`。
+5.  **数据回填**: `IMU_Process_Update` 将更新后的四元数、经过坐标变换的传感器数据等，填充到 `IMU_Output_t` 结构体中。
+6.  **格式化输出**: `Start_Imu_TA` 任务从 `IMU_Output_t` 中提取四元数，并通过 `printf` 打印到串口。
+
+## 4. 关键变量
+
+| 变量名 | 定义位置 | 类型 | 作用 |
+| :--- | :--- | :--- | :--- |
+| `twoKp`, `twoKi` | `imu_process.c` | `static volatile float` | Mahony AHRS 算法的比例和积分增益，`volatile` 关键字允许在运行时进行在线调试和调整。 |
+| `q` | `imu_process.h` (在 `IMU_Data_t` 中) | `float[4]` | **核心状态变量**。存储当前姿态的四元数 (`w, x, y, z`)。 |
+| `orientation` | `imu_process.h` (在 `IMU_Output_t` 中) | `float[4]` | **核心输出变量**。用于向外部（如 ROS）提供标准化的四元数姿态。 |
+| `imu_data` | `freertos.c` | `IMU_Data_t` | `Imu_TA` 任务中的实例，作为 `IMU_Process` 系列函数的输入和内部状态存储。 |
+

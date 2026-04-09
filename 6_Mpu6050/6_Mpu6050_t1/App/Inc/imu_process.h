@@ -20,28 +20,34 @@
 typedef struct {
     float Accel[3]; // x, y, z 加速度 (g)
     float Gyro[3];  // x, y, z 角速度 (dps)
+
+    // 主输出: 四元数
+    float q[4];     // w, x, y, z
+
+    // 调试用: 欧拉角
     float Pitch;    // 俯仰角 (°)
     float Roll;     // 横滚角 (°)
-    float Yaw;      // 航向角 (°) - 暂不使用
+    float Yaw;      // 航向角 (°)
 } IMU_Data_t;
 
 
 /**
  * @brief 标准化输出的数据结构 (为 CAN/ROS 准备)
- * @note  单位: m/s^2, rad/s, rad
+ * @note  单位: m/s^2, rad/s, 四元数(无单位), rad
  */
 typedef struct
 {
     // ROS 标准单位
     float linear_acceleration[3];   // m/s^2
     float angular_velocity[3];      // rad/s
-    float attitude[3];              // 俯仰, 横滚, 航向 (rad)
+    float orientation[4];           // 四元数 (w, x, y, z)
+    float attitude[3];              // 调试用欧拉角: 俯仰, 横滚, 航向 (rad)
 
     uint32_t timestamp;             // 时间戳 (ms)
 } IMU_Output_t;
 
 
-void IMU_Process_Init(I2C_HandleTypeDef *hi2c);
+void IMU_Process_Init(I2C_HandleTypeDef *hi2c, IMU_Data_t *data);
 void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t *output, float dt);
 
 #endif //__IMU_PROCESS_H
