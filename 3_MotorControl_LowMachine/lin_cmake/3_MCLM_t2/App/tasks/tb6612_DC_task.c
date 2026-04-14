@@ -43,7 +43,10 @@ void TB6612_DC_Task(void *argument)
             if (cmdMsg.type == CMD_SET_SPEED || cmdMsg.type == CAN_CMD_SET_SPEED)
                 motor_pid.setpoint = (float)cmdMsg.value;
             else if (cmdMsg.type == CMD_STOP || cmdMsg.type == CAN_CMD_STOP)
+            {
                 motor_pid.setpoint = 0.0f;
+                PID_Reset(&motor_pid);
+            }
         }
 
         if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)

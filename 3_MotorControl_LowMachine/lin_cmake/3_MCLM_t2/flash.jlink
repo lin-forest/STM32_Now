@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/3_MCLM_t2.elf
+r
+q

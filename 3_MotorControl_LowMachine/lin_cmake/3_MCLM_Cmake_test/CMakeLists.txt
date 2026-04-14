@@ -47,13 +47,13 @@ add_subdirectory(cmake/stm32cubemx)
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # ===== App core =====
-    App/app_task.c
+    App/config/app_task.c
 
     # ===== Drivers (no RTOS dependency) =====
-    App/drivers/motor_BLDC.c
+    # App/drivers/motor_BLDC.c
     App/drivers/motor_DC_tb6612.c
-    App/drivers/motor_DC_ibt4.c
-    App/drivers/encoder.c
+    # App/drivers/motor_DC_ibt4.c
+    # App/drivers/encoder.c
     App/drivers/motor_DC_at8236.c
     
 
@@ -64,8 +64,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     App/tasks/Ack_task.c
     App/tasks/heartbeat_task.c
 
-    App/tasks/BLDC_task.c
-    App/tasks/ibt4_DC_task.c
+    # App/tasks/BLDC_task.c
+    # App/tasks/ibt4_DC_task.c
     App/tasks/at8236_DC_task.c
     App/tasks/tb6612_DC_task.c
 
@@ -79,7 +79,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # ===== Services =====
     App/services/command.c
     App/services/logger.c
-    App/services/can_service.c # Add this line
+    # App/services/can_service.c # Add this line
 
 )
 
@@ -105,6 +105,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/App/tasks
     ${CMAKE_SOURCE_DIR}/App/modules
     ${CMAKE_SOURCE_DIR}/App/services
+    ${CMAKE_SOURCE_DIR}/App/config
 )
 
 # --------------------------------------------------
