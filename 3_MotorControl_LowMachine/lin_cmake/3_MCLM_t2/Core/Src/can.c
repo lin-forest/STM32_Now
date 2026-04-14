@@ -53,14 +53,14 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             switch (rxData[0])
             {
                 // === 处理自定义数据帧: 11 22 33 44 55 66 77 00 ===
-                case 0x11: 
+                case 0x11:
                     // 将外部命令 0x11 映射为内部的 "设置速度" 指令
-                    cmdMsg.type = CMD_SET_SPEED; 
-                    
+                    cmdMsg.type = CAN_CMD_SET_SPEED;
+
                     // 提取参数：假设第1个字节 (0x22) 是速度值
                     // 注意：0x22 = 34 (逻辑速度)
-                    cmdMsg.value = (int16_t)rxData[1]; 
-                    
+                    cmdMsg.value = (int16_t)rxData[1];
+
                     // 如果您的速度值是16位的 (例如由 22 33 组成)，可以使用:
                     // cmdMsg.value = (int16_t)(rxData[1] | (rxData[2] << 8));
                     break;

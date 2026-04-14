@@ -41,7 +41,16 @@ void TB6612_DC_Task(void *argument)
         {
             messageProcessed = 1;
             if (cmdMsg.type == CMD_SET_SPEED || cmdMsg.type == CAN_CMD_SET_SPEED)
-                motor_pid.setpoint = (float)cmdMsg.value;
+            {
+                float new_setpoint = (float)cmdMsg.value;
+                // setpoint 符号反转时清除积分，避免积分残留导致超调
+                if ((new_setpoint > 0.0f && motor_pid.setpoint < 0.0f) ||
+                    (new_setpoint < 0.0f && motor_pid.setpoint > 0.0f))
+                {
+                    PID_Reset(&motor_pid);
+                }
+                motor_pid.setpoint = new_setpoint;
+            }
             else if (cmdMsg.type == CMD_STOP || cmdMsg.type == CAN_CMD_STOP)
             {
                 motor_pid.setpoint = 0.0f;

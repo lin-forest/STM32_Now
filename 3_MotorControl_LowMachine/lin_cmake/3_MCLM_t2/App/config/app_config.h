@@ -54,16 +54,18 @@
     #define MOTOR1_DEAD_ZONE            10             // PWM死区, 低于此值的PWM输出将被忽略, 防止电机在零速时抖动
 
     /* ------------------- PID控制器参数 (PID Controller Constants) ------------------- */
-    #define MOTOR1_PID_KP                0.4584f
-    // #define MOTOR1_PID_KP                0.01362f
-    #define MOTOR1_PID_KI                17.66f
-    // #define MOTOR1_PID_KI                10.01f
-    #define MOTOR1_PID_KD                0.002976f
-    // #define MOTOR1_PID_KD                0.0025f
-    #define MOTOR1_PID_INTEGRAL_LIMIT    500.0f       // PID积分项限制
-    #define MOTOR1_PID_OUTPUT_LIMIT      100.0f       // PID输出限制 (通常等于SPEED_LOGIC_MAX)
-    #define MOTOR1_PID_TS                0.01f        // PID采样时间 (秒), 此处为10ms
-    #define MOTOR1_PID_DERIVATIVE_FILTER_ALPHA 0.3f   // 微分项的低通滤波器系数 (0.0 to 1.0)
+    // #define MOTOR1_PID_KP                0.4584f
+    // #define MOTOR1_PID_KP                0.01362f   // 过小，Kp贡献不足
+    #define MOTOR1_PID_KP                1.5f          // 提高比例项，让Kp主导动态响应
+    // #define MOTOR1_PID_KI                17.66f
+    // #define MOTOR1_PID_KI                10.01f      // 过大，积分快速饱和
+    #define MOTOR1_PID_KI                0.5f          // 降低积分，仅用于消除稳态误差
+    // #define MOTOR1_PID_KD                0.002976f
+    #define MOTOR1_PID_KD                0.0025f
+    #define MOTOR1_PID_INTEGRAL_LIMIT    10.0f         // integral_limit * Ki = 10*0.5 = 5, 远小于output_limit
+    #define MOTOR1_PID_OUTPUT_LIMIT      100.0f        // PID输出限制 (通常等于SPEED_LOGIC_MAX)
+    #define MOTOR1_PID_TS                0.01f         // PID采样时间 (秒), 此处为10ms
+    #define MOTOR1_PID_DERIVATIVE_FILTER_ALPHA 0.3f    // 微分项的低通滤波器系数 (0.0 to 1.0)
 
 
 #elif (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236)

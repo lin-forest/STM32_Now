@@ -18,7 +18,7 @@ void Logger_Task(void *argument)
       continue;
 
     int32_t speed_val;
-    int16_t target_logic_speed;
+    float   target_logic_speed;
     int16_t pwm_output;
     uint32_t cnt_val = __HAL_TIM_GET_COUNTER(&htim2); 
 
@@ -37,15 +37,29 @@ void Logger_Task(void *argument)
         // Failed to acquire mutex, maybe skip this log cycle
         continue;
     }
+    
+    // int len = snprintf((char *)tx_buf, sizeof(tx_buf),
+    //                "%lu,%lu,%d,%.1f,%d\r\n",
+    //                (unsigned long)HAL_GetTick(),
+    //                (unsigned long)cnt_val,
+    //                (int)speed_val,
+    //                target_logic_speed,
+    //                (int)pwm_output);
 
+    // 无法输出浮点数，当前是f103c8t6，如果需要输出浮点数，可以考虑以下两种方案：
+    // 1. 使用 sprintf 替代 snprintf，并且在编译选项中添加 -u _printf_float 来支持浮点数输出
+    // 2. 手动将浮点数转换为字符串，例如通过乘以10或100来保留一位或两位小数，然后输出整数部分和小数部分
+    // 例如：
+    int target_speed_int = (int)target_logic_speed; // 整数部分
+    int target_speed_dec = (int)((target_logic_speed - target_speed_int) * 10); // 小数部分，保留一位小数
     int len = snprintf((char *)tx_buf, sizeof(tx_buf),
-                   "%lu,%lu,%d,%d,%d\r\n",
+                   "%lu,%lu,%d,%d.%d,%d\r\n",
                    (unsigned long)HAL_GetTick(),
                    (unsigned long)cnt_val,
                    (int)speed_val,
-                   (int)target_logic_speed,
+                   target_speed_int,
+                   target_speed_dec,
                    (int)pwm_output);
-
 
     // 3. 串口发送，DMA 方式
     // HAL_UART_Transmit(&huart1, tx_buf, len, HAL_MAX_DELAY);
