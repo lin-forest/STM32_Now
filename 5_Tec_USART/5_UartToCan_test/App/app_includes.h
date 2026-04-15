@@ -13,7 +13,7 @@
 /* App-specific */
 #include "app_config.h"
 #include "app_globals.h"
-#include "app_task.h" // 我们将在下一步创建并取消注释此行
+#include "app_task.h"
 
 
 #endif /* APP_INCLUDES_H */

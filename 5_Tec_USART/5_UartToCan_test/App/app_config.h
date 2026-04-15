@@ -30,10 +30,11 @@ typedef enum {
  * @brief 串口消息结构体 (用于uartToCanQueue)
  * @note  这是从串口接收并解析后的结构化数据
  * @note  字段按对齐顺序排列: uint32_t优先, 避免3字节填充, sizeof=16字节
+ * @note  cmd 字段透传至 CAN 总线，由接收端根据 Command_ID_t 解释执行
  */
 typedef struct {
     uint32_t id;      // CAN ID (最大29位扩展帧)
-    uint8_t  cmd;     // 指令, 来自 Command_ID_t
+    uint8_t  cmd;     // 指令, 来自 Command_ID_t，透传至 CAN data[0]
     uint8_t  len;     // 数据长度
     uint8_t  data[8]; // 数据负载 (最多8字节, 对齐CAN)
 } App_UART_Message_t;
@@ -53,6 +54,17 @@ typedef struct {
 /* Public macro --------------------------------------------------------------*/
 /* Public variables ----------------------------------------------------------*/
 /* Public function prototypes ------------------------------------------------*/
+
+/**
+ * @brief 协议解析状态机状态枚举 (供 ProtocolParser_Task_Run 使用)
+ */
+typedef enum {
+    STATE_WAIT_SOF,  // 等待帧头 (Start of Frame)
+    STATE_WAIT_CMD,  // 等待指令ID
+    STATE_WAIT_ID,   // 等待4字节的CAN ID
+    STATE_WAIT_LEN,  // 等待数据长度
+    STATE_WAIT_DATA  // 等待数据负载
+} ParserState_t;
 
 
 #endif /* APP_CONFIG_H */

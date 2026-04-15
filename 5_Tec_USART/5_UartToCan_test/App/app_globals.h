@@ -17,5 +17,9 @@ extern UART_HandleTypeDef huart2;
 // FreeRTOS Object Handles
 extern osMessageQueueId_t canRxQueueHandle;
 extern osMessageQueueId_t uartToCanQueueHandle;
+extern osMutexId_t        uart1_tx_mutexHandle;  // 保护 huart1 的多任务并发发送
+extern osEventFlagsId_t   uart1_rx_eventHandle;  // ISR 通知 ProtocolParser 有新数据
+
+#define UART1_RX_FLAG  0x01U  // uart1_rx_eventHandle 使用的标志位
 
 #endif /* APP_GLOBALS_H */

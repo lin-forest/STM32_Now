@@ -94,7 +94,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // 1. 将接收到的字节放入环形缓冲区
         ring_buffer_put(&uart1_rx_buffer, uart1_rx_byte);
 
-        // 2. 再次启动下一次的单字节接收
+        // 2. 通知 ProtocolParser 任务有新数据（从ISR调用需使用 FromISR 变体）
+        osEventFlagsSet(uart1_rx_eventHandle, UART1_RX_FLAG);
+
+        // 3. 再次启动下一次的单字节接收
         HAL_UART_Receive_IT(&huart1, &uart1_rx_byte, 1);
     }
 }

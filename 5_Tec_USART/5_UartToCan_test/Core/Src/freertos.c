@@ -32,6 +32,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticSemaphore_t osStaticMutexDef_t;
+typedef StaticEventGroup_t osStaticEventGroupDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -52,7 +54,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE END Variables */
 /* Definitions for UartToCan_Ta */
 osThreadId_t UartToCan_TaHandle;
-uint32_t uartToCanTaskBuffer[ 256 ];
+uint32_t uartToCanTaskBuffer[ 512 ];
 osStaticThreadDef_t uartToCanTaskControlBlock;
 const osThreadAttr_t UartToCan_Ta_attributes = {
   .name = "UartToCan_Ta",
@@ -64,7 +66,7 @@ const osThreadAttr_t UartToCan_Ta_attributes = {
 };
 /* Definitions for CanRxProcess_Ta */
 osThreadId_t CanRxProcess_TaHandle;
-uint32_t canRxProcessTasBuffer[ 256 ];
+uint32_t canRxProcessTasBuffer[ 512 ];
 osStaticThreadDef_t canRxProcessTasControlBlock;
 const osThreadAttr_t CanRxProcess_Ta_attributes = {
   .name = "CanRxProcess_Ta",
@@ -76,7 +78,7 @@ const osThreadAttr_t CanRxProcess_Ta_attributes = {
 };
 /* Definitions for Heartbeat_Ta */
 osThreadId_t Heartbeat_TaHandle;
-uint32_t Heartbeat_TaBuffer[ 128 ];
+uint32_t Heartbeat_TaBuffer[ 64 ];
 osStaticThreadDef_t Heartbeat_TaControlBlock;
 const osThreadAttr_t Heartbeat_Ta_attributes = {
   .name = "Heartbeat_Ta",
@@ -96,7 +98,7 @@ const osThreadAttr_t ProtocolParser__attributes = {
   .cb_size = sizeof(ProtocolParser_ControlBlock),
   .stack_mem = &ProtocolParser_Buffer[0],
   .stack_size = sizeof(ProtocolParser_Buffer),
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityNormal1,
 };
 /* Definitions for canRxQueue */
 osMessageQueueId_t canRxQueueHandle;
@@ -107,6 +109,22 @@ const osMessageQueueAttr_t canRxQueue_attributes = {
 osMessageQueueId_t uartToCanQueueHandle;
 const osMessageQueueAttr_t uartToCanQueue_attributes = {
   .name = "uartToCanQueue"
+};
+/* Definitions for uart1_tx_mutex */
+osMutexId_t uart1_tx_mutexHandle;
+osStaticMutexDef_t uart1_tx_mutexControlBlock;
+const osMutexAttr_t uart1_tx_mutex_attributes = {
+  .name = "uart1_tx_mutex",
+  .cb_mem = &uart1_tx_mutexControlBlock,
+  .cb_size = sizeof(uart1_tx_mutexControlBlock),
+};
+/* Definitions for uart1_rx_event */
+osEventFlagsId_t uart1_rx_eventHandle;
+osStaticEventGroupDef_t uart1_rx_eventControlBlock;
+const osEventFlagsAttr_t uart1_rx_event_attributes = {
+  .name = "uart1_rx_event",
+  .cb_mem = &uart1_rx_eventControlBlock,
+  .cb_size = sizeof(uart1_rx_eventControlBlock),
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -121,6 +139,33 @@ void Start_ProtocolParser(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
+/* Hook prototypes */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
+
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)  
+{
+  /* 当检测到栈溢出时，程序会跳到这里 */
+   /* 1. 强制翻转或点亮 LED（比如 PC13）作为视觉报警 */
+   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET); 
+   
+   /* 2. 这里的 pcTaskName 指向溢出任务的名字，
+         你可以在 Ozone 的 Watch 窗口查看这个变量 */
+   (void)xTask;
+   (void)pcTaskName;
+
+   /* 3. 进入死循环，方便调试器接入 */
+   while (1) 
+   {
+       // 在这一行打一个断点！
+   }
+   
+   /* Run time stack overflow checking is performed if
+   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+   called if a stack overflow is detected. */
+}
+/* USER CODE END 4 */
+
 /**
   * @brief  FreeRTOS initialization
   * @param  None
@@ -130,6 +175,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of uart1_tx_mutex */
+  uart1_tx_mutexHandle = osMutexNew(&uart1_tx_mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -170,6 +218,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* creation of uart1_rx_event */
+  uart1_rx_eventHandle = osEventFlagsNew(&uart1_rx_event_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */

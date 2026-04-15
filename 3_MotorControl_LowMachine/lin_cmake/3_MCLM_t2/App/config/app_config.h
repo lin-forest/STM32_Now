@@ -93,7 +93,7 @@
 
 #elif (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_IBT4)
     /* --- IBT-4 硬件配置 (请根据实际连接修改) --- */
-    #define MOTOR1_TIM_HANDLE           &htim3        // 示例: TIM3
+    #define MOTOR1_TIM_HANDLE           &htim3 1      // 示例: TIM3
     #define MOTOR1_PWM_CHANNEL1         TIM_CHANNEL_3 // 示例: TIM3_CH3
     #define MOTOR1_PWM_CHANNEL2         TIM_CHANNEL_4 // 示例: TIM3_CH4
     #define MOTOR1_DEFAULT_STOP_MODE    IBT4_STOP_BRAKE // 默认停止模式

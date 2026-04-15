@@ -44,6 +44,7 @@ extern "C" {
 #include "stdint.h"
 #include "stdbool.h"
 // #include "stdlib.h"
+#include "string.h"
 
 #ifdef __cplusplus
 }

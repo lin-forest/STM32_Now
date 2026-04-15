@@ -4,18 +4,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// 定义环形缓冲区的大小，建议为2的幂(64, 128, 256)，这样在某些编译器下取模运算可以被优化为更快的位运算
+// 缓冲区大小必须固定为 256，使 uint8_t 的自然溢出回绕等价于取模运算
+// 这样 head/tail 的读写均为单字节操作，在 ARM Cortex-M3 上天然原子，无需临界区
 #define UART_RX_BUFFER_SIZE 256
 
 /**
  * @brief 环形缓冲区结构体
- * @note  head由中断服务程序写入，tail由应用程序任务读取。
- *        使用 volatile 关键字确保每次都从内存中读取，防止编译器过度优化。
+ * @note  head 由 ISR 写入，tail 由任务读取。
+ *        uint8_t 保证单字节原子读写；volatile 防止编译器缓存寄存器值。
+ *        缓冲区大小必须为 256，否则溢出回绕不等价于取模。
  */
 typedef struct {
     uint8_t buffer[UART_RX_BUFFER_SIZE];
-    volatile uint16_t head;
-    volatile uint16_t tail;
+    volatile uint8_t head;
+    volatile uint8_t tail;
 } RingBuffer_t;
 
 void ring_buffer_init(RingBuffer_t *rb);

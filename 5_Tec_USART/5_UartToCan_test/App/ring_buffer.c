@@ -18,7 +18,7 @@ void ring_buffer_init(RingBuffer_t *rb)
  */
 bool ring_buffer_put(RingBuffer_t *rb, uint8_t data)
 {
-    uint16_t next_head = (rb->head + 1) % UART_RX_BUFFER_SIZE;
+    uint8_t next_head = rb->head + 1; // uint8_t 溢出自动回绕，等价于 % 256
 
     // 如果缓冲区满了 (head的下一个位置就是tail)，则丢弃数据
     if (next_head == rb->tail) {
@@ -44,6 +44,6 @@ bool ring_buffer_get(RingBuffer_t *rb, uint8_t *data)
     }
 
     *data = rb->buffer[rb->tail];
-    rb->tail = (rb->tail + 1) % UART_RX_BUFFER_SIZE;
+    rb->tail = rb->tail + 1; // uint8_t 溢出自动回绕，等价于 % 256
     return true;
 }
