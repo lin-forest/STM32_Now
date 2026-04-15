@@ -26,16 +26,47 @@ void Command_Task(void *argument)
             continue;
 
         // 读取当前电机状态（所有命令都可能需要）
-        MotorStatus_t status = {0};
+        // MotorStatus_t status = {0};
+        Motor_t status = {0}; // 使用新的结构体类型
         if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
         {
-            status = g_motor_status;
+            status = g_motors[0];
             osMutexRelease(motor_mutexHandle);
         }
 
         /* ===== 数据流控制命令 ===== */
-        if (cmd.type == CMD_LOG_START) { g_logger_enabled = 1; continue; }
-        if (cmd.type == CMD_LOG_STOP)  { g_logger_enabled = 0; continue; }
+        if (cmd.type == CMD_LOG_START || cmd.type == CMD_LOG_STOP)
+        {
+            g_logger_enabled = (cmd.type == CMD_LOG_START);
+
+            // 1. 发送 CAN 反馈（重用 STATUS ID 或定义专用 ID）
+            // 让 CAN 总线上的发起者知道日志状态已切换
+            CAN_TxHeaderTypeDef txHeader = {
+                .StdId = CAN_MOTOR_STATUS_STDID,
+                .DLC   = 8,
+                .IDE   = CAN_ID_STD,
+                .RTR   = CAN_RTR_DATA,
+            };
+            uint8_t txData[8] = {0};
+            txData[0] = 0xCF; // Command Feedback 标识码
+            txData[1] = (uint8_t)cmd.type;
+            txData[2] = (uint8_t)g_logger_enabled;
+            
+            uint32_t txMailbox;
+            HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox);
+
+            // 2. 生成 UART ACK 消息，让 Ack_Task 进行打印反馈
+            AckMsg_t ack = {
+                .type  = cmd.type,
+                .value = g_logger_enabled,
+                .ok    = 1,
+                .current_logic_speed = (int16_t)status.current_logic_speed,
+                .pwm_output          = (int16_t)status.pwm_output,
+            };
+            osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
+            
+            continue; 
+        }
 
         /* ===== 查询命令：直接处理，不进电机队列 ===== */
         if (cmd.type == CMD_LIST_STATUS || cmd.type == CMD_QUERY_STATUS)

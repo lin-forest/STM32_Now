@@ -78,16 +78,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                 case 0x01: // 查询命令（0x22x帧）
                     if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
                         cmdMsg.type = CMD_QUERY_STATUS;
+                    // cmdMsg.type = CMD_QUERY_STATUS;
                     break;
 
                 case 0x04: // 开始发送实时电机数据（仅响应 0x22x）
                     if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
-                        cmdMsg.type = CMD_LOG_START;
+                    cmdMsg.type = CMD_LOG_START;
                     break;
 
                 case 0x05: // 停止发送实时电机数据（仅响应 0x22x）
                     if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
-                        cmdMsg.type = CMD_LOG_STOP;
+                    cmdMsg.type = CMD_LOG_STOP;
                     break;
 
                 default:
@@ -97,7 +98,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
             // 3. 将解析后的命令发送到 CommandQueue
             // 保持原有的传递路径：CAN中断 -> CommandQueue -> CommandTask -> MotorTask
-            osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
+            if (cmdMsg.type != CMD_NONE)
+            {
+                osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
+            }
         }
     }
 }
@@ -135,14 +139,14 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-    // 配置CAN过滤器，只接收ID为 0x7B 的消息
+    // 配置CAN过滤器，放行所有消息，由软件中断回调根据 ID 列表进行过滤
     sFilterConfig.FilterBank = CAN_FILTER_BANK;
     sFilterConfig.FilterMode = CAN_FILTER_MODE;
     sFilterConfig.FilterScale = CAN_FILTER_SCALE;
-    sFilterConfig.FilterIdHigh = CAN_FILTER_ID_HIGH;
-    sFilterConfig.FilterIdLow = CAN_FILTER_ID_LOW;
-    sFilterConfig.FilterMaskIdHigh = CAN_FILTER_MASK_ID_HIGH;
-    sFilterConfig.FilterMaskIdLow = CAN_FILTER_MASK_ID_LOW;
+    sFilterConfig.FilterIdHigh = 0x0000;
+    sFilterConfig.FilterIdLow = 0x0000;
+    sFilterConfig.FilterMaskIdHigh = 0x0000; // 掩码设为0，接收所有 StdID
+    sFilterConfig.FilterMaskIdLow = 0x0000;
     sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO;
     sFilterConfig.FilterActivation = CAN_FILTER_ACTIVATION;
     sFilterConfig.SlaveStartFilterBank = CAN_SLAVE_START_FILTER_BANK;

@@ -11,21 +11,21 @@ extern "C" {
 
 typedef enum {
     CMD_NONE = 0,      // 无效命令
-    CMD_FORWARD,       // 前进（具体速度由电机控制任务决定）
-    CMD_REVERSE,       // 后退
-    CMD_STOP,          // 停止
-    CMD_SET_SPEED,      // 设置速度：例如 "S500"
+    CMD_FORWARD = 1,       // 前进（具体速度由电机控制任务决定）
+    CMD_REVERSE = 2,       // 后退
+    CMD_STOP = 3,          // 停止
+    CMD_SET_SPEED = 4,      // 设置速度：例如 "S500"
 
-    CMD_LIST_STATUS,     // ls：查询状态（UART）
-    CMD_QUERY_STATUS,    // 查询状态（CAN 0x201帧）
+    CMD_LIST_STATUS = 5,     // ls：查询状态（UART）
+    CMD_QUERY_STATUS = 6,    // 查询状态（CAN 0x201帧）
 
     // CAN 命令类型
-    CAN_CMD_SET_SPEED, // CAN 设置速度命令
-    CAN_CMD_STOP,      // CAN 停止命令
+    CAN_CMD_SET_SPEED = 7, // CAN 设置速度命令
+    CAN_CMD_STOP = 8,      // CAN 停止命令
 
     // 数据流控制
-    CMD_LOG_START,     // 开始发送实时电机数据
-    CMD_LOG_STOP,      // 停止发送实时电机数据
+    CMD_LOG_START = 9,     // 开始发送实时电机数据
+    CMD_LOG_STOP = 10,      // 停止发送实时电机数据
 } CommandType_t;
 
 /* ===================== 命令消息结构 ===================== */

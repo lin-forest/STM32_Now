@@ -91,7 +91,7 @@ void CanRxProcess_Task_Run(void *argument)
     if (osMessageQueueGet(canRxQueueHandle, &rx_can_msg, NULL, osWaitForever) == osOK)
     {
       // 2. 成功接收到数据，将其格式化为可读字符串 (暂时禁用以排查死机问题)
-      /*
+    //   /*
       int offset = sprintf(tx_buffer, "CAN RX | ID: 0x%03lX | DLC: %d | Data: ", rx_can_msg.id, rx_can_msg.len);
       
       for (int i = 0; i < rx_can_msg.len; i++)
@@ -103,7 +103,7 @@ void CanRxProcess_Task_Run(void *argument)
 
       // 3. 调用UART发送函数，将格式化后的字符串发送出去
       uart1_send(tx_buffer, offset);
-      */
+    //   */
     }
   }
   /* USER CODE END CanRxProcess_Task_Run */

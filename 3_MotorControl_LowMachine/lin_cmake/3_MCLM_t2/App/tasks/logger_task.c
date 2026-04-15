@@ -1,4 +1,7 @@
+#include "app_globals.h"
 #include "app_includes.h"
+#include <stdio.h>
+#include <math.h>
 
 void Logger_Task(void *argument)
 {
@@ -25,9 +28,9 @@ void Logger_Task(void *argument)
     // --- Lock Mutex ---
     if (osMutexAcquire(motor_mutexHandle, 10) == osOK) // Wait max 10ms
     {
-        speed_val = g_motor_status.current_ticks;
-        target_logic_speed = g_motor_status.target_logic_speed;
-        pwm_output = g_motor_status.pwm_output;
+        speed_val = g_motors[0].current_ticks;
+        target_logic_speed = g_motors[0].target_logic_speed;
+        pwm_output = g_motors[0].pwm_output;
         
         // --- Release Mutex ---        
         osMutexRelease(motor_mutexHandle);
@@ -50,32 +53,30 @@ void Logger_Task(void *argument)
     // 1. 使用 sprintf 替代 snprintf，并且在编译选项中添加 -u _printf_float 来支持浮点数输出
     // 2. 手动将浮点数转换为字符串，例如通过乘以10或100来保留一位或两位小数，然后输出整数部分和小数部分
     // 例如：
-    int target_speed_int = (int)target_logic_speed; // 整数部分
-    int target_speed_dec = (int)((target_logic_speed - target_speed_int) * 10); // 小数部分，保留一位小数
+    int32_t target_speed_int = (int32_t)target_logic_speed;
+    // 处理负数小数部分的显示
+    int32_t target_speed_dec = (int32_t)(fabsf(target_logic_speed - (float)target_speed_int) * 10.0f);
+
     int len = snprintf((char *)tx_buf, sizeof(tx_buf),
-                   "%lu,%lu,%d,%d.%d,%d\r\n",
+                   "%lu,%lu,%d,%ld.%ld,%d\r\n",
                    (unsigned long)HAL_GetTick(),
                    (unsigned long)cnt_val,
                    (int)speed_val,
-                   target_speed_int,
-                   target_speed_dec,
+                   (long int)target_speed_int,
+                   (long int)target_speed_dec,
                    (int)pwm_output);
 
     // 3. 串口发送，DMA 方式
-    // HAL_UART_Transmit(&huart1, tx_buf, len, HAL_MAX_DELAY);
-    if (HAL_UART_GetState(&huart1) == HAL_UART_STATE_READY)
+    // 修改点：只检查发送状态 (gState)，避免因为 RX 引脚浮空报错导致无法发送
+    if (huart1.gState == HAL_UART_STATE_READY)
     {
       HAL_UART_Transmit_DMA(&huart1, tx_buf, len);
     }
-    else 
-    {
-      // If UART is busy, we might just skip this log frame.
-      // The osDelay(5) could be removed if we want to immediately
-      // go back to waiting for the next flag.
+
+    // 如果串口出现错误（如溢出），在此处尝试清除标志位，防止死锁
+    if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_ORE)) {
+        __HAL_UART_CLEAR_OREFLAG(&huart1);
     }
-    
-    // This delay is redundant because the task is synchronized by osThreadFlagsWait
-    // osDelay(10); 
   }
   /* USER CODE END Start_SerialLog */
 }

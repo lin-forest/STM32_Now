@@ -92,7 +92,7 @@ const osThreadAttr_t Encoder_Ta_attributes = {
 };
 /* Definitions for Logger_Ta */
 osThreadId_t Logger_TaHandle;
-uint32_t Logger_TaBuffer[ 384 ];
+uint32_t Logger_TaBuffer[ 512 ];
 osStaticThreadDef_t Logger_TaControlBlock;
 const osThreadAttr_t Logger_Ta_attributes = {
   .name = "Logger_Ta",
@@ -211,7 +211,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of CommandQueue */
-  CommandQueueHandle = osMessageQueueNew (64, sizeof(CommandMsg_t), &CommandQueue_attributes);
+  CommandQueueHandle = osMessageQueueNew (72, sizeof(CommandMsg_t), &CommandQueue_attributes);
 
   /* creation of MotorQueue */
   MotorQueueHandle = osMessageQueueNew (72, sizeof(CommandMsg_t), &MotorQueue_attributes);

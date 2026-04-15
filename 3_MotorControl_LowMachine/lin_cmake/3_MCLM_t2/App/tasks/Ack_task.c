@@ -44,6 +44,12 @@ void Ack_Task(void *argument) {
                     case CMD_LIST_STATUS: // Added CMD_LIST_STATUS
                         snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: List Status OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
                         break;
+                    case CMD_LOG_START:
+                        snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: Logger Enabled (UART1 DMA Stream Started)\r\n");
+                        break;
+                    case CMD_LOG_STOP:
+                        snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: Logger Disabled\r\n");
+                        break;
                     case CAN_CMD_SET_SPEED: // Add CAN_CMD_SET_SPEED handling
                         snprintf(buf, ACK_MSG_BUF_SIZE, "ACK: CAN Set Speed OK, Current Speed: %hd, PWM: %hd\r\n", ack.current_logic_speed, ack.pwm_output);
                         break;

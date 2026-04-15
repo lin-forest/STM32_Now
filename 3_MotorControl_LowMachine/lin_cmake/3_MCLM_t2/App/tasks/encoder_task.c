@@ -1,3 +1,4 @@
+#include "app_globals.h"
 #include "app_includes.h"
 #include "speed_map.h"
 #include "filter.h"
@@ -18,9 +19,9 @@ void Encoder_Task(void *argument)
 
     if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
     {
-        g_motor_status.current_ticks = diff;
-        g_motor_status.current_logic_speed = ticks_to_logic(diff);
-        // g_motor_status.current_logic_speed = ticks_to_logic(iir_filter(diff, ENCODER_FILTER_ALPHA));
+        g_motors[0].current_ticks = diff;
+        g_motors[0].current_logic_speed = ticks_to_logic(diff);
+        // g_motors[0].current_logic_speed = ticks_to_logic(iir_filter(diff, ENCODER_FILTER_ALPHA));
         osMutexRelease(motor_mutexHandle);
 
         // 数据更新成功后才唤醒 LogTask
