@@ -187,4 +187,46 @@ MOTOR1_PID_TS              = 0.01f
 2. 完成 Fix 10 后重新验证 target=64/85 是否能正常收敛
 3. 若仍有 CAN 命令偶发丢失，再处理 Fix 9（扩大 CommandQueue 容量至 8）
 
-# 第四阶段
+# 第四阶段：USART1 DMA TX 无输出
+
+## 现象
+
+- 发送 `0x04` 后有 CAN `0xCF` 回包，确认 `g_logger_enabled = 1` 已执行
+- huart2 诊断输出：`gs=32`（HAL_UART_STATE_BUSY_TX），`st=0`（HAL_OK）
+- 每次调用 `HAL_UART_Transmit_DMA` 返回成功，但 gState 永远不回到 READY
+- huart1（USART1）串口助手无任何数据输出
+
+## 根本原因
+
+**DMA1_Channel4（USART1_TX）的 NVIC 中断未使能。**
+
+`stm32f1xx_it.c` 中 `DMA1_Channel4_IRQHandler` 已存在且调用了 `HAL_DMA_IRQHandler(&hdma_usart1_tx)`，但 `usart.c` 的 `HAL_UART_MspInit` 中只配置了 USART1 的 UART 中断，**漏掉了 DMA TX channel 的 NVIC 使能**：
+
+```c
+// usart.c 中缺失的两行（应加在 __HAL_LINKDMA(uartHandle,hdmatx,...) 之后）
+HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 5, 0);
+HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+```
+
+DMA 传输完成后中断无法触发 → `HAL_UART_DMAConvCpltCallback` 永远不被调用 → HAL 状态机卡死在 `BUSY_TX` → 后续所有 `HAL_UART_Transmit_DMA` 因 `gState != READY` 被跳过。
+
+这是 CubeMX 的已知遗漏：生成代码时 DMA TX IRQ Handler 写入 it.c，但 MspInit 中不自动添加对应的 `HAL_NVIC_EnableIRQ`。
+
+## 修复方案
+
+### Fix 11: usart.c 补充 DMA1_Channel4 NVIC 使能
+
+**文件**: `Core/Src/usart.c`，`HAL_UART_MspInit` 的 USART1 分支
+
+在 `__HAL_LINKDMA(uartHandle,hdmatx,hdma_usart1_tx);` 之后、USART1 interrupt Init 之前添加：
+
+```c
+/* USART1 DMA TX interrupt Init */
+HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 5, 0);
+HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+```
+
+**注意**：usart.c 是 CubeMX 生成文件，重新生成代码会覆盖此修改。需要在 `.ioc` 中手动勾选 DMA1 Channel4 的 NVIC 中断，或将修改放在 `USER CODE BEGIN` 区域内。
+
+## 执行状态
+- [ ] Fix 11: usart.c 补充 DMA1_Channel4_IRQn NVIC 使能（已被 linter/CubeMX 覆盖，待重新添加）

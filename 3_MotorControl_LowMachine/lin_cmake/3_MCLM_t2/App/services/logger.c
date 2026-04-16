@@ -18,9 +18,12 @@ static uint8_t uart2_tx_buf[LOGGER_UART_TX_BUF_LEN]; // 使用 LOGGER_UART_TX_BU
 /* ===========================================================
  * Logger 应用层初始化
  * =========================================================== */
+static uint8_t uart1_rx_dummy;  // huart1 RX 占位，防止浮空引发 ORE 锁死 TX
+
 LoggerStatus_t Logger_Init(void)
 {
     HAL_UART_Receive_IT(&huart2, &uart2_rx_byte, 1);   // 开始接收
+    HAL_UART_Receive_IT(&huart1, &uart1_rx_dummy, 1);  // 防止 huart1 RX 浮空 ORE 锁死 TX
     return LOGGER_OK;
 }
 
@@ -67,6 +70,12 @@ LoggerStatus_t Logger_Printf(const char *fmt, ...)
  * =========================================================== */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+    // huart1 只用于防止 RX 浮空 ORE，收到数据后继续监听即可
+    if (huart->Instance == USART1) {
+        HAL_UART_Receive_IT(&huart1, &uart1_rx_dummy, 1);
+        return;
+    }
+
     if (huart->Instance != USART2)
         return;
 
