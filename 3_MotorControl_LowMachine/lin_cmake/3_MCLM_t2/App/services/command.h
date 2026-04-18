@@ -33,6 +33,7 @@ typedef enum {
 typedef struct {
     CommandType_t type;    // 命令类型
     int16_t value;         // 参数（如速度值），对无参数命令无效
+    uint8_t motor_index;   // 目标电机索引 (0:M1, 1:M2)
 } CommandMsg_t;
 
 
@@ -41,8 +42,9 @@ typedef struct {
     CommandType_t type;   // 对应的命令类型
     int16_t value;        // 可选：速度 / 参数
     uint8_t ok;           // 1 = 成功执行，0 = 失败
-    int16_t current_logic_speed; // 新增：反馈当前逻辑速度
+    int16_t measured_speed;      // 反馈当前测量速度（正常模式为逻辑值，校准模式为原始增量）
     int16_t pwm_output;          // 新增：反馈当前PWM输出值
+    uint8_t motor_index;   // 反馈对应的电机索引
 } AckMsg_t;
 
 

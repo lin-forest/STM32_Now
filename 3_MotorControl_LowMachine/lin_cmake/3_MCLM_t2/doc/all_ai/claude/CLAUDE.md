@@ -230,3 +230,44 @@ HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 
 ## 执行状态
 - [ ] Fix 11: usart.c 补充 DMA1_Channel4_IRQn NVIC 使能（已被 linter/CubeMX 覆盖，待重新添加）
+
+---
+
+# 第五阶段：USART1 DMA TX 问题真正根因 — 引脚重映射
+
+## 现象
+
+第四阶段修复（补充 DMA1_Channel4 NVIC 使能）后问题仍未解决。最终确认：**USART1 DMA TX 完全无输出，串口助手收不到任何数据。**
+
+## 真正根因
+
+**CubeMX 自动将 USART1 引脚从 PA9/PA10 重映射到了 PB6/PB7，但上位机串口连接的仍是 PA9/PA10。**
+
+`usart.c` 中 `HAL_UART_MspInit` 的 GPIO 配置：
+
+```c
+// CubeMX 生成的是 PB6/PB7（重映射后）
+__HAL_AFIO_REMAP_USART1_ENABLE();   // ← 启用了 USART1 重映射
+GPIO_InitStruct.Pin = GPIO_PIN_6;   // PB6 = TX
+HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+GPIO_InitStruct.Pin = GPIO_PIN_7;   // PB7 = RX
+HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+```
+
+物理连线接在 PA9/PA10，但信号实际从 PB6/PB7 输出，导致串口助手始终收不到数据。DMA、NVIC、HAL 状态机全部正常，只是数据从错误的引脚发出去了。
+
+## 修复方案
+
+### Fix 12: 对齐引脚连接与 CubeMX 配置（二选一）
+
+**方案 A（推荐）：物理连线改接 PB6/PB7**
+- TX 接 PB6，RX 接 PB7
+- 无需改代码，与 CubeMX 生成配置一致
+
+**方案 B：CubeMX 中取消重映射，改回 PA9/PA10**
+- 在 `.ioc` 中将 USART1 TX/RX 引脚改回 PA9/PA10
+- 删除 `__HAL_AFIO_REMAP_USART1_ENABLE()` 调用
+- 重新生成代码
+
+## 执行状态
+- [x] Fix 12: 物理连线改接 PB6/PB7，USART1 DMA TX 输出正常，功能完整实现

@@ -18,11 +18,14 @@
 
 定义于 `App/config/app_config.h`：
 
-| 宏定义 | ID | 方向 | 用途 |
-|---|---|---|---|
-| `CAN_MOTOR_CMD_STDID` | `0x125` | RX | 电机控制指令 |
-| `CAN_MOTOR_CMD_STATUS_STDID` | `0x225` | RX | 状态查询 / 日志控制 |
-| `CAN_MOTOR_STATUS_STDID` | `0x325` | TX | 电机状态反馈 |
+| 宏定义 | ID | 方向 | 用途 | 目标电机 |
+|---|---|---|---|---|
+| `CAN_MOTOR1_CMD_STDID` | `0x125` | RX | 控制指令 | 转向电机 (M1) |
+| `CAN_MOTOR1_CMD_STATUS_STDID` | `0x225` | RX/TX | 查询与 ACK | 转向电机 (M1) |
+| `CAN_MOTOR1_STATUS_STDID` | `0x325` | TX | 状态数据发送 | 转向电机 (M1) |
+| `CAN_MOTOR2_CMD_STDID` | `0x135` | RX | 控制指令 | 动力电机 (M2) |
+| `CAN_MOTOR2_CMD_STATUS_STDID` | `0x235` | RX/TX | 查询与 ACK | 动力电机 (M2) |
+| `CAN_MOTOR2_STATUS_STDID` | `0x335` | TX | 状态数据发送 | 动力电机 (M2) |
 | `CAN_CMD_STOP_STDID` | `0x101` | RX | 全车停止 |
 | `CAN_CMD_TURN_STDID` | `0x102` | RX | 转向命令 |
 | `CAN_CMD_POWER_STDID` | `0x103` | RX | 动力命令 |
@@ -93,10 +96,10 @@ CommandMsg_t Command_ParseCAN(const CAN_RxHeaderTypeDef *rxHeader,
 
 **ID 过滤（白名单）：**
 
-| StdId | 允许的命令字节 |
-|---|---|
-| `0x125` | `0x11`, `CAN_CMD_SET_SPEED`, `CAN_CMD_STOP` |
-| `0x225` | `0x01`(查询), `0x04`(日志开), `0x05`(日志关) |
+| StdId | 允许的命令字节 | 多电机支持 (Data[7]) |
+|---|---|---|
+| `0x125` | `0x11`, `0x03`(SET_SPEED), `0x02`(STOP) | `0x00`: 电机1, `0x01`: 电机2 |
+| `0x225` | `0x01`(查询), `0x04`(日志开), `0x05`(日志关) | `0x00`: 电机1, `0x01`: 电机2 |
 | `0x101` | `CAN_CMD_STOP` |
 | `0x102` | `CAN_CMD_SET_SPEED` |
 
@@ -111,6 +114,7 @@ CommandMsg_t Command_ParseCAN(const CAN_RxHeaderTypeDef *rxHeader,
 | `0x04` | StdId == `0x225` | `CMD_LOG_START` | 0 |
 | `0x05` | StdId == `0x225` | `CMD_LOG_STOP` | 0 |
 | 其他 | — | `CMD_NONE`（丢弃） | — |
+| **Data[7]** | 任意 | **motor_index** | 目标电机索引 (0-1) |
 
 ---
 
@@ -131,7 +135,8 @@ Command_Task
     │      [0..1] = target_logic_speed  (int16_t, little-endian)
     │      [2..3] = current_logic_speed (int16_t, little-endian)
     │      [4..5] = pwm_output          (int16_t, little-endian)
-    │      [6..7] = 0x0000 (reserved)
+|      [6]    = 0x00 (reserved)
+|      [7]    = motor_index (0 or 1)
     │  HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox)
     ▼
 CAN 总线  →  上位机 / 主控

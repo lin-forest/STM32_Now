@@ -126,6 +126,18 @@ const osThreadAttr_t Ack_Ta_attributes = {
   .stack_size = sizeof(Ack_TaBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for MotorControl_2T */
+osThreadId_t MotorControl_2THandle;
+uint32_t MotorControl_2TBuffer[ 128 ];
+osStaticThreadDef_t MotorControl_2TControlBlock;
+const osThreadAttr_t MotorControl_2T_attributes = {
+  .name = "MotorControl_2T",
+  .cb_mem = &MotorControl_2TControlBlock,
+  .cb_size = sizeof(MotorControl_2TControlBlock),
+  .stack_mem = &MotorControl_2TBuffer[0],
+  .stack_size = sizeof(MotorControl_2TBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
+};
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
@@ -174,6 +186,7 @@ void Start_Encoder(void *argument);
 void Start_Logger(void *argument);
 void Start_Command(void *argument);
 void Start_Ack(void *argument);
+void Start_MotorControl_2T(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -242,6 +255,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of Ack_Ta */
   Ack_TaHandle = osThreadNew(Start_Ack, NULL, &Ack_Ta_attributes);
 
+  /* creation of MotorControl_2T */
+  MotorControl_2THandle = osThreadNew(Start_MotorControl_2T, NULL, &MotorControl_2T_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -286,7 +302,7 @@ void Start_MotorControl(void *argument)
   /* Infinite loop */
   
   #if ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612
-  TB6612_DC_Task(argument);
+  TB6612_DC_Task(&g_motors[0]);
   #elif ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236
   AT8236_DC_Task(argument);
 
@@ -385,6 +401,26 @@ void Start_Ack(void *argument)
   //   osDelay(1);
   // }
   /* USER CODE END Start_Ack */
+}
+
+/* USER CODE BEGIN Header_Start_MotorControl_2T */
+/**
+* @brief Function implementing the MotorControl_2T thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_MotorControl_2T */
+void Start_MotorControl_2T(void *argument)
+{
+  /* USER CODE BEGIN Start_MotorControl_2T */
+  /* Infinite loop */
+  
+  // TB6612_DC_Task(&g_motors[1]); // M2 暂停，仅跑 M1
+  for(;;)
+  {
+    osDelay(100);
+  }
+  /* USER CODE END Start_MotorControl_2T */
 }
 
 /* Private application code --------------------------------------------------*/

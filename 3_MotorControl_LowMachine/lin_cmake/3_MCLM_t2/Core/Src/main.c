@@ -98,8 +98,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  // 启动电机 1 和电机 2 的 PWM 输出 (TIM1 CH1 & CH2)
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 
+  // 关键：TIM1 是高级定时器，必须使能主输出 (MOE) 才能在引脚上产生 PWM 信号
+  __HAL_TIM_MOE_ENABLE(&htim1);
   /* USER CODE END 2 */
 
   /* Init scheduler */

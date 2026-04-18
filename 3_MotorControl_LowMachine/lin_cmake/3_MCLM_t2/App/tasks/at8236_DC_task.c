@@ -68,7 +68,7 @@ void AT8236_DC_Task(void *argument)
         {
             if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
             {
-                float current_speed = g_motor_status.current_logic_speed;
+                float current_speed = g_motor_status.measured_speed;
                 float output = PID_Compute(&motor_pid, current_speed);
                 At8236_Motor_SetSpeed(&at8236_A, (int16_t)output);
                 g_motor_status.pwm_output = at8236_A.pwm_output; // Update global status

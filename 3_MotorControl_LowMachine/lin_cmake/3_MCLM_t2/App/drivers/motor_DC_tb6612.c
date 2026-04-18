@@ -42,12 +42,14 @@ void TB6612_Motor_Init(TB6612_Motor_t *motor, // Renamed from Motor_Init
     motor->MaxPWM = MaxPWM;
     motor->MaxSpeed = MaxSpeed;
     motor->DeadZone = DeadZone;
-    motor->Polarity = (Polarity > 0) ? 1 : 0;
-    motor->StopMode = (StopMode == TB6612_MOTOR_STOP_BRAKE) ? TB6612_MOTOR_STOP_BRAKE : TB6612_MOTOR_STOP_COAST; // Updated enum members
+    motor->Polarity = Polarity;
+    motor->StopMode = StopMode;
+    // motor->Polarity = (Polarity > 0) ? 1 : 0;
+    // motor->StopMode = (StopMode == TB6612_MOTOR_STOP_BRAKE) ? TB6612_MOTOR_STOP_BRAKE : TB6612_MOTOR_STOP_COAST; // Updated enum members
 
     // 初始化状态
     motor->current_ticks = 0;
-    motor->current_logic_speed = 0; // 确保初始化
+    motor->measured_speed      = 0; // 确保初始化
     motor->target_logic_speed  = 0;
     motor->pwm_output    = 0;
 
@@ -99,7 +101,19 @@ void TB6612_Motor_SetSpeed(TB6612_Motor_t *motor, int16_t speed) // Renamed from
     }
     else
     {
-        TB6612_Motor_Stop(motor); // Updated function name
+        // Fix 14A: speed==0时只停PWM，不调用TB6612_Motor_Stop()
+        // 因为Stop()会清零current_ticks等共享状态，破坏Encoder_Task的数据
+        __HAL_TIM_SET_COMPARE(motor->htim, motor->Channel, 0);
+        if (motor->StopMode == TB6612_MOTOR_STOP_COAST)
+        {
+            HAL_GPIO_WritePin(motor->IN1_Port, motor->IN1_Pin, GPIO_PIN_RESET);
+            HAL_GPIO_WritePin(motor->IN2_Port, motor->IN2_Pin, GPIO_PIN_RESET);
+        }
+        else
+        {
+            HAL_GPIO_WritePin(motor->IN1_Port, motor->IN1_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(motor->IN2_Port, motor->IN2_Pin, GPIO_PIN_SET);
+        }
         pwmVal = 0;
     }
 
@@ -129,9 +143,9 @@ void TB6612_Motor_Stop(TB6612_Motor_t *motor) // Renamed from Motor_Stop
         HAL_GPIO_WritePin(motor->IN2_Port, motor->IN2_Pin, GPIO_PIN_SET);
     }
 
-    // 更新状态
-    motor->current_ticks = 0;
-    motor->current_logic_speed = 0; // 确保停止时清零
-    motor->target_logic_speed  = 0;
-    motor->pwm_output    = 0;
+    // Fix 14A: 不在 Stop() 中清零共享状态
+    // current_ticks / measured_speed 由 Encoder_Task 维护，Stop() 不能覆盖
+    // target_logic_speed / pid.setpoint 由 Motor_Task 维护，Stop() 不能覆盖
+    // 只更新 pwm_output 反映实际 PWM 已为 0
+    motor->pwm_output = 0;
 }

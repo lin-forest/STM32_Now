@@ -42,8 +42,15 @@ float PID_Compute(PID_Controller *pid, float current_value)
     // 1. 计算误差
     error = pid->setpoint - current_value;
 
-    // 2. 计算积分项 (带抗积分饱和)
-    pid->integral += error * pid->Ts; // 使用结构体中的 Ts
+    // 2. 计算积分项（带条件积分 Anti-Windup）
+    // 仅当输出未饱和时才积分，防止 output 被钳位期间积分继续累积
+    float pre_output_estimate = pid->Kp * error + pid->Ki * (pid->integral + error * pid->Ts);
+    int output_saturated = (pre_output_estimate > pid->output_limit) ||
+                           (pre_output_estimate < -pid->output_limit);
+    if (!output_saturated)
+    {
+        pid->integral += error * pid->Ts;
+    }
     if (pid->integral > pid->integral_limit)
     {
         pid->integral = pid->integral_limit;

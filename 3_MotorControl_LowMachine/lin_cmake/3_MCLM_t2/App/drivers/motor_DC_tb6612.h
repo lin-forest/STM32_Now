@@ -13,7 +13,7 @@ extern "C" {
  */
 typedef enum {
     TB6612_MOTOR_STOP_COAST = 0,   // 悬空停止（两相低电平）
-    TB6612_MOTOR_STOP_BRAKE        // 快速刹车（两相高电平）
+    TB6612_MOTOR_STOP_BRAKE = 1,   // 快速刹车（两相高电平）
 } TB6612_MotorStopMode_t; // Renamed to TB6612_MotorStopMode_t
 
 /**
@@ -39,7 +39,7 @@ typedef struct {
 
     // --- 状态量 ---
     int16_t current_ticks;   // 实际编码器 tick
-    int16_t current_logic_speed;     // 逻辑速度（-100 ~ +100）⭐ 新增
+    int16_t measured_speed;          // 测量速度（正常模式为逻辑值，校准模式为原始增量）
     int16_t target_logic_speed;    // 目标速度
     int16_t pwm_output;      // 当前 PWM 输出值（新增）
 } TB6612_Motor_t; // Renamed to TB6612_Motor_t

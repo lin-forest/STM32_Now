@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CLAUDE.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="反馈环路修复计划">反馈环路修复计划</h1>
+<h2 id="问题清单与修复方案">问题清单与修复方案</h2>
+<h3 id="fix-1-ticks_to_logic-返回类型改为-float">Fix 1: <code>ticks_to_logic</code> 返回类型改为 <code>float</code></h3>
+<ul>
+<li><strong>文件</strong>: <code>App/modules/speed_map.h</code> / <code>speed_map.c</code></li>
+<li><strong>问题</strong>: 返回 <code>int16_t</code> 赋给 <code>float current_logic_speed</code>，精度丢失，PID 微分项产生阶跃噪声</li>
+<li><strong>修复</strong>: 将 <code>ticks_to_logic</code> 返回类型改为 <code>float</code>，内部做浮点除法</li>
+</ul>
+<h3 id="fix-2-stop-时-reset-pid-积分项">Fix 2: Stop 时 Reset PID 积分项</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/tasks/tb6612_DC_task.c</code></li>
+<li><strong>问题</strong>: <code>CMD_STOP</code> 时未调用 <code>PID_Reset()</code>，重启后积分残留导致超调冲击</li>
+<li><strong>修复</strong>: 在 <code>CMD_STOP</code> 分支加 <code>PID_Reset(&amp;motor_pid)</code></li>
+</ul>
+<h3 id="fix-3-logger_task-类型截断">Fix 3: <code>logger_task</code> 类型截断</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/tasks/logger_task.c</code></li>
+<li><strong>问题</strong>: <code>current_ticks</code> 是 <code>int32_t</code>，赋给 <code>int16_t speed_val</code> 存在截断风险</li>
+<li><strong>修复</strong>: 将 <code>speed_val</code> 改为 <code>int32_t</code>，snprintf 格式符对应修改</li>
+</ul>
+<h2 id="执行状态">执行状态</h2>
+<ul>
+<li><input type="checkbox" id="checkbox0" checked="true"><label for="checkbox0">Fix 1: speed_map 浮点化</label></li>
+<li><input type="checkbox" id="checkbox1" checked="true"><label for="checkbox1">Fix 2: Stop 时 PID Reset</label></li>
+<li><input type="checkbox" id="checkbox2" checked="true"><label for="checkbox2">Fix 3: logger_task 类型修正</label></li>
+</ul>
+<hr>
+<h1 id="第二阶段pwm-饱和--积分饱和问题">第二阶段：PWM 饱和 / 积分饱和问题</h1>
+<h2 id="现象来自-resultmd-data3-及选区诊断">现象（来自 result.md data3 及选区诊断）</h2>
+<ul>
+<li><code>speed_val</code> ~35~40，<code>target</code> 降至 32 后仍接近，但 <code>pwm_output</code> 持续 999</li>
+<li>说明 PID 积分项已大量累积，即使误差接近 0，积分残留仍将输出顶满</li>
+</ul>
+<h2 id="根本原因分析">根本原因分析</h2>
+<h3 id="问题-amotor1_pid_integral_limit-设置严重偏大">问题 A：<code>MOTOR1_PID_INTEGRAL_LIMIT</code> 设置严重偏大</h3>
+<p><strong>文件</strong>: <code>App/config/app_config.h</code> 第 63 行</p>
+<pre class="hljs"><code><div>MOTOR1_PID_INTEGRAL_LIMIT = 500.0f
+MOTOR1_PID_OUTPUT_LIMIT   = 100.0f
+MOTOR1_PID_KI             = 10.01f
+</div></code></pre>
+<p>积分项对输出的贡献 = <code>Ki * integral = 10.01 * integral</code>。
+当 <code>integral = 500</code> 时，积分贡献 = 5005，远超 output_limit 100。
+积分限幅应满足：<code>integral_limit ≤ output_limit / Ki = 100 / 10.01 ≈ 10</code>。</p>
+<p><strong>修复</strong>：将 <code>MOTOR1_PID_INTEGRAL_LIMIT</code> 从 <code>500.0f</code> 改为 <code>10.0f</code></p>
+<h3 id="问题-b运行中积分饱和无-anti-windup">问题 B：运行中积分饱和无 anti-windup</h3>
+<p><code>PID_Reset</code> 只在 <code>CMD_STOP</code> 时触发，运行中 setpoint 变化（如从 85 降到 32）时积分不清零，导致超调后长时间无法收敛。</p>
+<p><strong>修复</strong>：在 <code>tb6612_DC_task.c</code> 的 <code>CMD_SET_SPEED</code> 分支，若新 setpoint 与旧 setpoint 符号相反或变化超过阈值，调用 <code>PID_Reset</code></p>
+<h3 id="问题-c次要logger_taskc-局部变量类型不一致">问题 C（次要）：<code>logger_task.c</code> 局部变量类型不一致</h3>
+<p><code>target_logic_speed</code> 和 <code>pwm_output</code> 仍为 <code>int16_t</code>，而 <code>g_motor_status</code> 对应字段为 <code>float</code>/<code>int16_t</code>，赋值时截断小数。
+<strong>修复</strong>：将两者改为 <code>float</code> 和 <code>int32_t</code>，snprintf 格式符对应修改</p>
+<h2 id="修复方案">修复方案</h2>
+<h3 id="fix-4-修正积分限幅">Fix 4: 修正积分限幅</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/config/app_config.h</code></li>
+<li><code>MOTOR1_PID_INTEGRAL_LIMIT</code> 从 <code>500.0f</code> → <code>10.0f</code></li>
+<li>原则：<code>integral_limit * Ki ≤ output_limit</code></li>
+</ul>
+<h3 id="fix-5-setpoint-变化时条件性-pid-reset">Fix 5: setpoint 变化时条件性 PID Reset</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/tasks/tb6612_DC_task.c</code></li>
+<li>在 <code>CMD_SET_SPEED</code> 处理后，若新旧 setpoint 符号不同，调用 <code>PID_Reset</code></li>
+</ul>
+<h3 id="fix-6-logger_task-类型完整修正">Fix 6: logger_task 类型完整修正</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/tasks/logger_task.c</code></li>
+<li><code>target_logic_speed</code> → <code>float</code>，<code>pwm_output</code> → <code>int32_t</code></li>
+<li>snprintf 格式符：<code>%d</code> → <code>%.1f</code> / <code>%d</code></li>
+</ul>
+<h2 id="执行状态-1">执行状态</h2>
+<ul>
+<li><input type="checkbox" id="checkbox3" checked="true"><label for="checkbox3">Fix 4: 积分限幅修正</label></li>
+<li><input type="checkbox" id="checkbox4" checked="true"><label for="checkbox4">Fix 5: setpoint 变化时条件性 Reset</label></li>
+<li><input type="checkbox" id="checkbox5" checked="true"><label for="checkbox5">Fix 6: logger_task 类型完整修正</label></li>
+</ul>
+<hr>
+<h1 id="第三阶段can-命令不灵敏--高速目标-pwm-饱和">第三阶段：CAN 命令不灵敏 / 高速目标 PWM 饱和</h1>
+<h2 id="现象来自-resultmd-claude-2">现象（来自 result.md claude-2）</h2>
+<ul>
+<li><code>cansend can17 125#1120</code> → target=32，speed=25~26，pwm=69~79，<strong>正常收敛</strong></li>
+<li><code>cansend can17 125#1140</code> → target=64，pwm=999，速度设置失效</li>
+<li><code>cansend can17 125#1155</code> → target=85，pwm=999，速度设置失效</li>
+</ul>
+<h2 id="根本原因分析-1">根本原因分析</h2>
+<h3 id="问题-a电机物理极限约为逻辑速度-32">问题 A：电机物理极限约为逻辑速度 32</h3>
+<p>数据推算：每周期 ticks ≈ 25~26，<code>ticks_to_logic(26) = 26 * 100 / 80 = 32.5</code>。
+<code>SPEED_TICKS_MAX = 80</code> 对应的是电机在当前供电下<strong>无法达到</strong>的转速。
+target=64/85 时误差持续 ~40/60，积分虽然限幅为 10，但 <code>Ki=10.01</code> 使积分贡献 = <code>10 * 10.01 = 100.1</code>，直接顶满 output_limit，PWM 永远 999。</p>
+<p><strong>两个方向可选：</strong></p>
+<ol>
+<li>降低 <code>SPEED_TICKS_MAX</code> 至实测最大值（约 30），重新标定逻辑速度范围</li>
+<li>保持标定不变，接受电机在高目标下全功率运行（开环行为）</li>
+</ol>
+<h3 id="问题-bcanc-中-0x11-分支使用-cmd_set_speed-而非-can_cmd_set_speed">问题 B：<code>can.c</code> 中 <code>0x11</code> 分支使用 <code>CMD_SET_SPEED</code> 而非 <code>CAN_CMD_SET_SPEED</code></h3>
+<p><strong>文件</strong>: <code>Core/Src/can.c</code> 第 58 行</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">case</span> <span class="hljs-number">0x11</span>:
+    cmdMsg.type = CMD_SET_SPEED;   <span class="hljs-comment">// ← 应为 CAN_CMD_SET_SPEED</span>
+</div></code></pre>
+<p>语义不一致，虽然 <code>is_motor_cmd()</code> 两者都处理，但 ACK 回复走 <code>CMD_SET_SPEED</code> 分支而非 <code>CAN_CMD_SET_SPEED</code>，导致 ACK 日志混乱。</p>
+<h3 id="问题-ccan-命令不灵敏的根本原因">问题 C：CAN 命令不灵敏的根本原因</h3>
+<p><code>CommandQueueHandle</code> 在中断中用 <code>osMessageQueuePut(..., 0U, 0U)</code> 发送（timeout=0）。
+若 CommandQueue 满（默认容量通常为 1~4），中断中的命令会被<strong>静默丢弃</strong>，不报错。
+高频 CAN 帧或 CommandTask 处理慢时会出现命令丢失。</p>
+<h2 id="修复方案-1">修复方案</h2>
+<h3 id="fix-7-修正-canc-中-0x11-分支命令类型">Fix 7: 修正 can.c 中 0x11 分支命令类型</h3>
+<ul>
+<li><strong>文件</strong>: <code>Core/Src/can.c</code> 第 58 行</li>
+<li><code>CMD_SET_SPEED</code> → <code>CAN_CMD_SET_SPEED</code></li>
+</ul>
+<h3 id="fix-8-重新标定-speed_ticks_max">Fix 8: 重新标定 SPEED_TICKS_MAX</h3>
+<ul>
+<li><strong>文件</strong>: <code>App/config/app_config.h</code></li>
+<li>实测电机每周期最大 ticks ≈ 28~30，将 <code>SPEED_TICKS_MAX</code> 从 <code>80</code> 降至 <code>30</code></li>
+<li>效果：逻辑速度 100 对应实际最大转速，target=85 时电机能真正达到 ~85% 最大转速</li>
+<li><strong>注意</strong>：修改后需同步验证 <code>logic_to_pwm</code> 映射是否仍然合理</li>
+</ul>
+<h3 id="fix-9可选-增大-commandqueue-容量">Fix 9（可选）: 增大 CommandQueue 容量</h3>
+<ul>
+<li><strong>文件</strong>: FreeRTOS 配置（freertos.c 或 CubeMX 生成的队列定义处）</li>
+<li>将 CommandQueueHandle 容量从默认值增大至 8，减少中断中命令丢失</li>
+</ul>
+<h2 id="执行状态-2">执行状态</h2>
+<ul>
+<li><input type="checkbox" id="checkbox6" checked="true"><label for="checkbox6">Fix 7: can.c 命令类型修正（CMD_SET_SPEED → CAN_CMD_SET_SPEED）</label></li>
+<li><input type="checkbox" id="checkbox7" checked="true"><label for="checkbox7">Fix 8: PID 参数重整定（Kp: 0.01362→1.5，Ki: 10.01→0.5，积分贡献从100降至5）</label></li>
+<li><input type="checkbox" id="checkbox8"><label for="checkbox8">Fix 9: CommandQueue 容量扩大（可选，待观察是否仍有丢帧）</label></li>
+<li><input type="checkbox" id="checkbox9"><label for="checkbox9">Fix 10: SPEED_TICKS_MAX 重新标定（需实测电机最大 ticks/周期 后修改）</label></li>
+</ul>
+<hr>
+<h1 id="总结">总结</h1>
+<h2 id="已完成修复一览">已完成修复一览</h2>
+<table>
+<thead>
+<tr>
+<th>Fix</th>
+<th>文件</th>
+<th>问题</th>
+<th>修复内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fix 1</td>
+<td><code>App/modules/speed_map.h/.c</code></td>
+<td><code>ticks_to_logic</code> 返回 <code>int16_t</code>，精度丢失</td>
+<td>返回类型改为 <code>float</code>，内部浮点除法</td>
+</tr>
+<tr>
+<td>Fix 2</td>
+<td><code>App/tasks/tb6612_DC_task.c</code></td>
+<td><code>CMD_STOP</code> 时未清积分，重启超调</td>
+<td>加 <code>PID_Reset(&amp;motor_pid)</code></td>
+</tr>
+<tr>
+<td>Fix 3</td>
+<td><code>App/tasks/logger_task.c</code></td>
+<td><code>current_ticks</code>(int32) 赋给 <code>int16_t speed_val</code> 截断</td>
+<td><code>speed_val</code> 改为 <code>int32_t</code></td>
+</tr>
+<tr>
+<td>Fix 4</td>
+<td><code>App/config/app_config.h</code></td>
+<td><code>INTEGRAL_LIMIT=500</code>，积分贡献 5005 远超 output_limit 100</td>
+<td>改为 <code>10.0f</code></td>
+</tr>
+<tr>
+<td>Fix 5</td>
+<td><code>App/tasks/tb6612_DC_task.c</code></td>
+<td>setpoint 符号反转时积分残留导致换向超调</td>
+<td>setpoint 符号变化时调用 <code>PID_Reset</code></td>
+</tr>
+<tr>
+<td>Fix 6</td>
+<td><code>App/tasks/logger_task.c</code></td>
+<td><code>target_logic_speed</code> 局部变量为 <code>int16_t</code>，截断 float</td>
+<td>改为 <code>float</code>，snprintf 用整数拆分（F103 不支持 <code>%f</code>）</td>
+</tr>
+<tr>
+<td>Fix 7</td>
+<td><code>Core/Src/can.c</code></td>
+<td><code>0x11</code> 分支用 <code>CMD_SET_SPEED</code> 而非 <code>CAN_CMD_SET_SPEED</code></td>
+<td>改为 <code>CAN_CMD_SET_SPEED</code>，ACK 路径对齐</td>
+</tr>
+<tr>
+<td>Fix 8</td>
+<td><code>App/config/app_config.h</code></td>
+<td><code>Kp=0.01362</code> 过小，<code>Ki=10.01</code> 过大，控制器退化为纯积分饱和</td>
+<td><code>Kp: 0.01362→1.5</code>，<code>Ki: 10.01→0.5</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="当前参数状态tb6612">当前参数状态（TB6612）</h2>
+<pre class="hljs"><code><div>SPEED_TICKS_MAX     = <span class="hljs-number">80</span>       <span class="hljs-comment">// ← 待标定（实测最大约 26，建议改为 30）</span>
+SPEED_LOGIC_MAX     = <span class="hljs-number">100</span>
+PWM_MAX             = <span class="hljs-number">999</span>      <span class="hljs-comment">// 对应定时器 ARR，100% 占空比</span>
+
+MOTOR1_PID_KP       = <span class="hljs-number">1.5f</span>
+MOTOR1_PID_KI       = <span class="hljs-number">0.5f</span>
+MOTOR1_PID_KD       = <span class="hljs-number">0.0025f</span>
+MOTOR1_PID_INTEGRAL_LIMIT  = <span class="hljs-number">10.0f</span>   <span class="hljs-comment">// 积分饱和贡献 = 10*0.5 = 5</span>
+MOTOR1_PID_OUTPUT_LIMIT    = <span class="hljs-number">100.0f</span>
+MOTOR1_PID_TS              = <span class="hljs-number">0.01f</span>
+</div></code></pre>
+<h2 id="调试结论">调试结论</h2>
+<ul>
+<li><strong>速度反馈</strong>：已正常，<code>cnt_val</code> 递增，<code>speed_val</code> 非零</li>
+<li><strong>target=32</strong>：收敛正常，pwm=69~79，误差 ≤ 7</li>
+<li><strong>target=64/85</strong>：超出电机当前物理极限（约逻辑速度 32），需完成 Fix 10 标定后才能有效控制</li>
+<li><strong>CAN 协议</strong>：<code>125#11xx</code> 格式中 <code>xx</code> 为逻辑速度（十六进制），如 <code>125#1120</code> = 速度 32</li>
+</ul>
+<h2 id="下一步">下一步</h2>
+<ol>
+<li>完成 Fix 10：串口观察 <code>cnt_val</code> 相邻行差值，取稳定最大值，更新 <code>SPEED_TICKS_MAX</code></li>
+<li>完成 Fix 10 后重新验证 target=64/85 是否能正常收敛</li>
+<li>若仍有 CAN 命令偶发丢失，再处理 Fix 9（扩大 CommandQueue 容量至 8）</li>
+</ol>
+<h1 id="第四阶段usart1-dma-tx-无输出">第四阶段：USART1 DMA TX 无输出</h1>
+<h2 id="现象">现象</h2>
+<ul>
+<li>发送 <code>0x04</code> 后有 CAN <code>0xCF</code> 回包，确认 <code>g_logger_enabled = 1</code> 已执行</li>
+<li>huart2 诊断输出：<code>gs=32</code>（HAL_UART_STATE_BUSY_TX），<code>st=0</code>（HAL_OK）</li>
+<li>每次调用 <code>HAL_UART_Transmit_DMA</code> 返回成功，但 gState 永远不回到 READY</li>
+<li>huart1（USART1）串口助手无任何数据输出</li>
+</ul>
+<h2 id="根本原因">根本原因</h2>
+<p><strong>DMA1_Channel4（USART1_TX）的 NVIC 中断未使能。</strong></p>
+<p><code>stm32f1xx_it.c</code> 中 <code>DMA1_Channel4_IRQHandler</code> 已存在且调用了 <code>HAL_DMA_IRQHandler(&amp;hdma_usart1_tx)</code>，但 <code>usart.c</code> 的 <code>HAL_UART_MspInit</code> 中只配置了 USART1 的 UART 中断，<strong>漏掉了 DMA TX channel 的 NVIC 使能</strong>：</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// usart.c 中缺失的两行（应加在 __HAL_LINKDMA(uartHandle,hdmatx,...) 之后）</span>
+HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, <span class="hljs-number">5</span>, <span class="hljs-number">0</span>);
+HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+</div></code></pre>
+<p>DMA 传输完成后中断无法触发 → <code>HAL_UART_DMAConvCpltCallback</code> 永远不被调用 → HAL 状态机卡死在 <code>BUSY_TX</code> → 后续所有 <code>HAL_UART_Transmit_DMA</code> 因 <code>gState != READY</code> 被跳过。</p>
+<p>这是 CubeMX 的已知遗漏：生成代码时 DMA TX IRQ Handler 写入 it.c，但 MspInit 中不自动添加对应的 <code>HAL_NVIC_EnableIRQ</code>。</p>
+<h2 id="修复方案-2">修复方案</h2>
+<h3 id="fix-11-usartc-补充-dma1_channel4-nvic-使能">Fix 11: usart.c 补充 DMA1_Channel4 NVIC 使能</h3>
+<p><strong>文件</strong>: <code>Core/Src/usart.c</code>，<code>HAL_UART_MspInit</code> 的 USART1 分支</p>
+<p>在 <code>__HAL_LINKDMA(uartHandle,hdmatx,hdma_usart1_tx);</code> 之后、USART1 interrupt Init 之前添加：</p>
+<pre class="hljs"><code><div><span class="hljs-comment">/* USART1 DMA TX interrupt Init */</span>
+HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, <span class="hljs-number">5</span>, <span class="hljs-number">0</span>);
+HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+</div></code></pre>
+<p><strong>注意</strong>：usart.c 是 CubeMX 生成文件，重新生成代码会覆盖此修改。需要在 <code>.ioc</code> 中手动勾选 DMA1 Channel4 的 NVIC 中断，或将修改放在 <code>USER CODE BEGIN</code> 区域内。</p>
+<h2 id="执行状态-3">执行状态</h2>
+<ul>
+<li><input type="checkbox" id="checkbox10"><label for="checkbox10">Fix 11: usart.c 补充 DMA1_Channel4_IRQn NVIC 使能（已被 linter/CubeMX 覆盖，待重新添加）</label></li>
+</ul>
+<hr>
+<h1 id="第五阶段usart1-dma-tx-问题真正根因--引脚重映射">第五阶段：USART1 DMA TX 问题真正根因 — 引脚重映射</h1>
+<h2 id="现象-1">现象</h2>
+<p>第四阶段修复（补充 DMA1_Channel4 NVIC 使能）后问题仍未解决。最终确认：<strong>USART1 DMA TX 完全无输出，串口助手收不到任何数据。</strong></p>
+<h2 id="真正根因">真正根因</h2>
+<p><strong>CubeMX 自动将 USART1 引脚从 PA9/PA10 重映射到了 PB6/PB7，但上位机串口连接的仍是 PA9/PA10。</strong></p>
+<p><code>usart.c</code> 中 <code>HAL_UART_MspInit</code> 的 GPIO 配置：</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// CubeMX 生成的是 PB6/PB7（重映射后）</span>
+__HAL_AFIO_REMAP_USART1_ENABLE();   <span class="hljs-comment">// ← 启用了 USART1 重映射</span>
+GPIO_InitStruct.Pin = GPIO_PIN_6;   <span class="hljs-comment">// PB6 = TX</span>
+HAL_GPIO_Init(GPIOB, &amp;GPIO_InitStruct);
+GPIO_InitStruct.Pin = GPIO_PIN_7;   <span class="hljs-comment">// PB7 = RX</span>
+HAL_GPIO_Init(GPIOB, &amp;GPIO_InitStruct);
+</div></code></pre>
+<p>物理连线接在 PA9/PA10，但信号实际从 PB6/PB7 输出，导致串口助手始终收不到数据。DMA、NVIC、HAL 状态机全部正常，只是数据从错误的引脚发出去了。</p>
+<h2 id="修复方案-3">修复方案</h2>
+<h3 id="fix-12-对齐引脚连接与-cubemx-配置二选一">Fix 12: 对齐引脚连接与 CubeMX 配置（二选一）</h3>
+<p><strong>方案 A（推荐）：物理连线改接 PB6/PB7</strong></p>
+<ul>
+<li>TX 接 PB6，RX 接 PB7</li>
+<li>无需改代码，与 CubeMX 生成配置一致</li>
+</ul>
+<p><strong>方案 B：CubeMX 中取消重映射，改回 PA9/PA10</strong></p>
+<ul>
+<li>在 <code>.ioc</code> 中将 USART1 TX/RX 引脚改回 PA9/PA10</li>
+<li>删除 <code>__HAL_AFIO_REMAP_USART1_ENABLE()</code> 调用</li>
+<li>重新生成代码</li>
+</ul>
+<h2 id="执行状态-4">执行状态</h2>
+<ul>
+<li><input type="checkbox" id="checkbox11" checked="true"><label for="checkbox11">Fix 12: 物理连线改接 PB6/PB7，USART1 DMA TX 输出正常，功能完整实现</label></li>
+</ul>
+
+</body>
+</html>

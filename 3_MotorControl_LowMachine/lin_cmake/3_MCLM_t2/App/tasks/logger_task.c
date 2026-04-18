@@ -1,5 +1,6 @@
 #include "app_globals.h"
 #include "app_includes.h"
+#include "cmsis_os2.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -13,67 +14,87 @@ void Logger_Task(void *argument)
 
   for(;;)
   {
-    // 阻塞等待来自 TIM3 中断的标志位 (0x01)
-    // osThreadFlagsWait(flags, options, timeout)
+    // 阻塞等待来自 Encoder_Task 的标志位 (0x01)
     osThreadFlagsWait(0x01, osFlagsWaitAny, osWaitForever);
 
     if (!g_logger_enabled)
       continue;
 
-    int32_t speed_val;
-    float   target_logic_speed;
-    int16_t pwm_output;
-    uint32_t cnt_val = __HAL_TIM_GET_COUNTER(&htim2); 
+    /*
+     * 校准模式：直接读取原始编码器计数，不做任何映射。
+     * 字段说明：
+     *   hw_cnt  — 定时器寄存器当前值 (uint16, 0~65535)，实时反映硬件计数器位置
+     *   ticks   — 本周期增量 (int16, 有符号)，10ms 内的脉冲变化量
+     *   enc_abs — 软件累积绝对计数 (int32，可跨溢出，从上电或复位后开始累加)
+     */
+    uint16_t hw_cnt[MOTOR_COUNT];
+    int16_t  ticks[MOTOR_COUNT];
+    int32_t  enc_abs[MOTOR_COUNT];
+    int16_t  mspeed[MOTOR_COUNT];
+    int16_t  logic_speed[MOTOR_COUNT];
+
+
+    /* 先在 Mutex 外读取硬件寄存器（原子读，不影响其他任务） */
+    hw_cnt[0] = (uint16_t)__HAL_TIM_GET_COUNTER(&htim2);
+    hw_cnt[1] = (uint16_t)__HAL_TIM_GET_COUNTER(&htim3);
 
     // --- Lock Mutex ---
     if (osMutexAcquire(motor_mutexHandle, 10) == osOK) // Wait max 10ms
     {
-        speed_val = g_motors[0].current_ticks;
-        target_logic_speed = g_motors[0].target_logic_speed;
-        pwm_output = g_motors[0].pwm_output;
-        
-        // --- Release Mutex ---        
+        for (int i = 0; i < MOTOR_COUNT; i++) {
+            ticks[i]   = g_motors[i].current_ticks;
+            enc_abs[i] = g_motors[i].encoder_count;
+            logic_speed[i] = g_motors[i].target_logic_speed;
+            mspeed[i]  = g_motors[i].measured_speed;
+        }
+
+        // --- Release Mutex ---
         osMutexRelease(motor_mutexHandle);
     }
     else
     {
-        // Failed to acquire mutex, maybe skip this log cycle
+        // Failed to acquire mutex, skip this log cycle
         continue;
     }
-    
-    // int len = snprintf((char *)tx_buf, sizeof(tx_buf),
-    //                "%lu,%lu,%d,%.1f,%d\r\n",
-    //                (unsigned long)HAL_GetTick(),
-    //                (unsigned long)cnt_val,
-    //                (int)speed_val,
-    //                target_logic_speed,
-    //                (int)pwm_output);
 
-    // 无法输出浮点数，当前是f103c8t6，如果需要输出浮点数，可以考虑以下两种方案：
-    // 1. 使用 sprintf 替代 snprintf，并且在编译选项中添加 -u _printf_float 来支持浮点数输出
-    // 2. 手动将浮点数转换为字符串，例如通过乘以10或100来保留一位或两位小数，然后输出整数部分和小数部分
-    // 例如：
-    int32_t target_speed_int = (int32_t)target_logic_speed;
-    // 处理负数小数部分的显示
-    int32_t target_speed_dec = (int32_t)(fabsf(target_logic_speed - (float)target_speed_int) * 10.0f);
-
+    /*
+     * 输出格式 (CSV，便于 Serial Studio / Python / 串口助手解析):
+     *
+     *   SysMs, M1_HW, M1_Target, M1_dTick, M1_Abs, M1_Speed, M2_HW, M2_Target, M2_dTick, M2_Abs, M2_Speed
+     *   │       │       │          │         │        │         │       │          │          │       └─ M2 测量速度
+     *   │       │       │          │         │        │         │       │          │          └───────── M2 累积绝对计数
+     *   │       │       │          │         │        │         │       │          └──────────────────── M2 本周期增量
+     *   │       │       │          │         │        │         │       └─────────────────────────────── M2 目标逻辑速度
+     *   │       │       │          │         │        │         └───────────────────────────────────────  M2 TIM3 寄存器值
+     *   │       │       │          │         │        └─────────────────────────────────────────────── M1 测量速度
+     *   │       │       │          │         └──────────────────────────────────────────────────────── M1 累积绝对计数
+     *   │       │       │          └────────────────────────────────────────────────────────────────── M1 本周期增量
+     *   │       │       └───────────────────────────────────────────────────────────────────────────── M1 目标逻辑速度
+     *   │       └───────────────────────────────────────────────────────────────────────────────────── M1 TIM2 寄存器值
+     *   └───────────────────────────────────────────────────────────────────────────────────────────── FreeRTOS 系统时间 (ms)
+     */
     int len = snprintf((char *)tx_buf, sizeof(tx_buf),
-                   "%lu,%lu,%d,%ld.%ld,%d\r\n",
-                   (unsigned long)HAL_GetTick(),
-                   (unsigned long)cnt_val,
-                   (int)speed_val,
-                   (long int)target_speed_int,
-                   (long int)target_speed_dec,
-                   (int)pwm_output);
+                   "%lu,%u,%d,%d,%ld,%d,%u,%d,%d,%ld,%d\r\n",
+                   (unsigned long)osKernelGetTickCount(),
+                   (unsigned)hw_cnt[0],
+                   (int)logic_speed[0],
+                   (int)ticks[0],
+                   (long)enc_abs[0],
+                   (int)mspeed[0],
+                   (unsigned)hw_cnt[1],
+                   (int)logic_speed[1],
+                   (int)ticks[1],
+                   (long)enc_abs[1],
+                   (int)mspeed[1]);
 
-    // 3. 串口发送，DMA 方式
-    // 修改点：只检查发送状态 (gState)，避免因为 RX 引脚浮空报错导致无法发送
+    // 串口发送，DMA 方式
+    // 只检查发送状态 (gState)，避免因为 RX 引脚浮空报错导致无法发送
     if (huart1.gState == HAL_UART_STATE_READY)
     {
       HAL_UART_Transmit_DMA(&huart1, tx_buf, len);
     }
 
-    // 如果串口出现错误（如溢出），在此处尝试清除标志位，防止死锁
+    // 如果串口出现错误（如溢出），清除标志位防止死锁
     if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_ORE)) {
         __HAL_UART_CLEAR_OREFLAG(&huart1);
     }

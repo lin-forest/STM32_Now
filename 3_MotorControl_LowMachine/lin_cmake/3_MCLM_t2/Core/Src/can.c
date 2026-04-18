@@ -28,6 +28,7 @@
 #include "stdint.h"
 #include "command.h"
 #include "app_config.h"
+#include "stdio.h"
 
 // 使用在 freertos.c 中定义的 CMSIS 句柄
 extern osMessageQueueId_t CommandQueueHandle; 
@@ -38,17 +39,26 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     uint8_t rxData[8];
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
     {
-        // [修改1] 移除 ID 检查，允许接收任意 ID 的消息
-        // 只要数据长度不为0
-        // if (rxHeader.DLC > 0)
-        if(rxHeader.StdId == CAN_MOTOR_CMD_STDID || rxHeader.StdId == CAN_CMD_STOP_STDID ||
-           rxHeader.StdId == CAN_CMD_TURN_STDID || rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+        if(rxHeader.StdId == CAN_MOTOR1_CMD_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STDID ||
+           rxHeader.StdId == CAN_MOTOR1_CMD_STATUS_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STATUS_STDID ||
+           rxHeader.StdId == CAN_CMD_STOP_STDID)
         {
             CommandMsg_t cmdMsg;
             cmdMsg.type = CMD_NONE;
             cmdMsg.value = 0;
+            
+            // 根据 ID 确定电机索引
+            if (rxHeader.StdId == CAN_MOTOR1_CMD_STDID || rxHeader.StdId == CAN_MOTOR1_CMD_STATUS_STDID) {
+                cmdMsg.motor_index = 0; // 转向电机
+            } else if (rxHeader.StdId == CAN_MOTOR2_CMD_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STATUS_STDID) {
+                cmdMsg.motor_index = 1; // 动力电机
+            } else {
+                // 底盘级命令 (0x10x) 默认处理或使用 Data[7]
+                cmdMsg.motor_index = rxData[7]; 
+            }
 
-            // [修改2] 协议解析与映射
+            // 1. 处理差速控制 ID (Power/Turn) — 已移除，不再支持差速控制
+            // 直接进入命令字节解析
             // 根据接收到的第0个字节（命令字）进行判断
             switch (rxData[0])
             {
@@ -66,29 +76,31 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                     break;
 
                 // === 兼容旧协议 ===
-                case CAN_CMD_SET_SPEED:
-                    cmdMsg.type = CAN_CMD_SET_SPEED;
-                    cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
-                    break;
+                // case CAN_CMD_SET_SPEED:
+                //     cmdMsg.type = CAN_CMD_SET_SPEED;
+                //     cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
+                //     break;
                 
                 case CAN_CMD_STOP:
                     cmdMsg.type = CAN_CMD_STOP;
                     break;
 
                 case 0x01: // 查询命令（0x22x帧）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+                    if (rxHeader.StdId == CAN_MOTOR1_CMD_STATUS_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STATUS_STDID)
                         cmdMsg.type = CMD_QUERY_STATUS;
                     // cmdMsg.type = CMD_QUERY_STATUS;
                     break;
 
                 case 0x04: // 开始发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
-                    cmdMsg.type = CMD_LOG_START;
+                    if (rxHeader.StdId == CAN_MOTOR1_CMD_STATUS_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STATUS_STDID) {
+                        cmdMsg.type = CMD_LOG_START;
+                    }
                     break;
 
                 case 0x05: // 停止发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
-                    cmdMsg.type = CMD_LOG_STOP;
+                    if (rxHeader.StdId == CAN_MOTOR1_CMD_STATUS_STDID || rxHeader.StdId == CAN_MOTOR2_CMD_STATUS_STDID) {
+                        cmdMsg.type = CMD_LOG_STOP;
+                    }
                     break;
 
                 default:
