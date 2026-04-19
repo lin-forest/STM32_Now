@@ -65,7 +65,7 @@ Command_Task(void *argument)
     │       → 设置 g_logger_enabled = 1/0
     │
     ├─ cmd.type == CMD_QUERY_STATUS
-    │       → 读 g_motor_status（加 motor_mutexHandle 锁）
+    │       → 读 g_motor_status（加 motor0_mutexHandle 锁）
     │       → HAL_CAN_AddTxMessage(&hcan, txHeader, txData, &txMailbox)
     │         （见 TX 数据流）
     │       → osMessageQueuePut(AckQueueHandle, &ack, ...)

@@ -64,11 +64,11 @@ const osThreadAttr_t Heartbeat_Ta_attributes = {
   .cb_size = sizeof(Heartbeat_TaControlBlock),
   .stack_mem = &Heartbeat_TaBuffer[0],
   .stack_size = sizeof(Heartbeat_TaBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityLow1,
 };
 /* Definitions for MotorControl_Ta */
 osThreadId_t MotorControl_TaHandle;
-uint32_t MotorControl_TaBuffer[ 128 ];
+uint32_t MotorControl_TaBuffer[ 64 ];
 osStaticThreadDef_t MotorControl_TaControlBlock;
 const osThreadAttr_t MotorControl_Ta_attributes = {
   .name = "MotorControl_Ta",
@@ -76,11 +76,11 @@ const osThreadAttr_t MotorControl_Ta_attributes = {
   .cb_size = sizeof(MotorControl_TaControlBlock),
   .stack_mem = &MotorControl_TaBuffer[0],
   .stack_size = sizeof(MotorControl_TaBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityAboveNormal1,
 };
 /* Definitions for Encoder_Ta */
 osThreadId_t Encoder_TaHandle;
-uint32_t Encoder_TaBuffer[ 128 ];
+uint32_t Encoder_TaBuffer[ 64 ];
 osStaticThreadDef_t Encoder_TaControlBlock;
 const osThreadAttr_t Encoder_Ta_attributes = {
   .name = "Encoder_Ta",
@@ -88,11 +88,11 @@ const osThreadAttr_t Encoder_Ta_attributes = {
   .cb_size = sizeof(Encoder_TaControlBlock),
   .stack_mem = &Encoder_TaBuffer[0],
   .stack_size = sizeof(Encoder_TaBuffer),
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityAboveNormal2,
 };
 /* Definitions for Logger_Ta */
 osThreadId_t Logger_TaHandle;
-uint32_t Logger_TaBuffer[ 512 ];
+uint32_t Logger_TaBuffer[ 256 ];
 osStaticThreadDef_t Logger_TaControlBlock;
 const osThreadAttr_t Logger_Ta_attributes = {
   .name = "Logger_Ta",
@@ -124,7 +124,7 @@ const osThreadAttr_t Ack_Ta_attributes = {
   .cb_size = sizeof(Ack_TaControlBlock),
   .stack_mem = &Ack_TaBuffer[0],
   .stack_size = sizeof(Ack_TaBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityLow1,
 };
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
@@ -141,10 +141,15 @@ osMessageQueueId_t AckQueueHandle;
 const osMessageQueueAttr_t AckQueue_attributes = {
   .name = "AckQueue"
 };
-/* Definitions for motor_mutex */
-osMutexId_t motor_mutexHandle;
-const osMutexAttr_t motor_mutex_attributes = {
-  .name = "motor_mutex"
+/* Definitions for motor0_mutex */
+osMutexId_t motor0_mutexHandle;
+const osMutexAttr_t motor0_mutex_attributes = {
+  .name = "motor0_mutex"
+};
+/* Definitions for motor1_mutex */
+osMutexId_t motor1_mutexHandle;
+const osMutexAttr_t motor1_mutex_attributes = {
+  .name = "motor1_mutex"
 };
 /* Definitions for uart_rx_semaphore */
 osSemaphoreId_t uart_rx_semaphoreHandle;
@@ -187,8 +192,11 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE END Init */
   /* Create the mutex(es) */
-  /* creation of motor_mutex */
-  motor_mutexHandle = osMutexNew(&motor_mutex_attributes);
+  /* creation of motor0_mutex */
+  motor0_mutexHandle = osMutexNew(&motor0_mutex_attributes);
+
+  /* creation of motor1_mutex */
+  motor1_mutexHandle = osMutexNew(&motor1_mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */

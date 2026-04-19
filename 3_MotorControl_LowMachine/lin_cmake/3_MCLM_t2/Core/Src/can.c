@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 
+// #include "app_includes.h"
 #include "cmsis_os.h" // 使用 CMSIS-OS API
 #include "stm32f1xx_hal_gpio.h"
 #include "string.h"
@@ -41,8 +42,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         // [修改1] 移除 ID 检查，允许接收任意 ID 的消息
         // 只要数据长度不为0
         // if (rxHeader.DLC > 0)
-        if(rxHeader.StdId == CAN_MOTOR_CMD_STDID || rxHeader.StdId == CAN_CMD_STOP_STDID ||
-           rxHeader.StdId == CAN_CMD_TURN_STDID || rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+        if(rxHeader.StdId == CAN_MOTOR_TURN_CMD_STDID || rxHeader.StdId == CAN_CMD_STOP_STDID ||
+           rxHeader.StdId == CAN_CMD_TURN_STDID || rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
         {
             CommandMsg_t cmdMsg;
             cmdMsg.type = CMD_NONE;
@@ -53,7 +54,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             switch (rxData[0])
             {
                 // === 处理自定义数据帧: 11 22 33 44 55 66 77 00 ===
-                case 0x11:
+                case CAN_CMD_SET_SPEED_T2:
                     // 将外部命令 0x11 映射为内部的 "设置速度" 指令
                     cmdMsg.type = CAN_CMD_SET_SPEED;
 
@@ -75,19 +76,19 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                     cmdMsg.type = CAN_CMD_STOP;
                     break;
 
-                case 0x01: // 查询命令（0x22x帧）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+                case CAN_CMD_QUERY_STATUS: // 查询命令（0x22x帧）
+                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
                         cmdMsg.type = CMD_QUERY_STATUS;
                     // cmdMsg.type = CMD_QUERY_STATUS;
                     break;
 
-                case 0x04: // 开始发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+                case CAN_CMD_LOG_START: // 开始发送实时电机数据（仅响应 0x22x）
+                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
                     cmdMsg.type = CMD_LOG_START;
                     break;
 
-                case 0x05: // 停止发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_CMD_STATUS_STDID)
+                case CAN_CMD_LOG_STOP: // 停止发送实时电机数据（仅响应 0x22x）
+                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
                     cmdMsg.type = CMD_LOG_STOP;
                     break;
 

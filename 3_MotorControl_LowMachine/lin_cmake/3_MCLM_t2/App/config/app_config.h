@@ -26,10 +26,10 @@
  * ================================================================================= */
 
 /* ------------------- 速度与PWM范围定义 (Speed & PWM Normalization) ------------------- */
-#define SPEED_TICKS_MAX     80    // 单个控制周期内编码器的最大计数值 (用于速度计算)
+#define SPEED_TICKS_MAX     90    // 单个控制周期内编码器的最大计数值 (用于速度计算)
 #define ENCODER_FILTER_ALPHA    0.1f  // 编码器IIR滤波系数，越小越平滑，响应越慢
 #define SPEED_LOGIC_MAX     100   // 统一的逻辑速度最大值 (例如 0-100)
-#define PWM_MAX             99    // PWM最大值, 对应定时器的ARR寄存器值 (TIM3 Period=100-1=99), 代表100%占空比
+#define PWM_MAX             7200    // PWM最大值, 对应定时器的ARR寄存器值 (TIM3 Period=100-1=99), 代表100%占空比
 
 /* =================================================================================
  *   3. 电机1: 驱动器特定配置 (Motor 1: Driver-Specific Configuration)
@@ -37,14 +37,14 @@
 
 #if (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612)
     /* --- TB6612 硬件配置 --- */
-    #define MOTOR1_TIM_HANDLE           &htim3
+    #define MOTOR1_TIM_HANDLE           &htim1
     #define MOTOR1_TIM_CHANNEL          TIM_CHANNEL_1 // PWM信号引脚
     #define MOTOR1_IN1_PORT             GPIOB         // 方向控制引脚1
     #define MOTOR1_IN1_PIN              GPIO_PIN_0
     #define MOTOR1_IN2_PORT             GPIOB         // 方向控制引脚2
     #define MOTOR1_IN2_PIN              GPIO_PIN_1
-    #define MOTOR1_EN_PORT              GPIOB         // 使能引脚
-    #define MOTOR1_EN_PIN               GPIO_PIN_10
+    #define MOTOR1_EN_PORT              NULL         // 使能引脚
+    #define MOTOR1_EN_PIN               0
     #define MOTOR1_DEFAULT_STOP_MODE    TB6612_MOTOR_STOP_BRAKE // 默认停止模式
 
     /* ------------------- 电机控制限制 (Motor Control Limits) ------------------- */
@@ -68,6 +68,32 @@
     #define MOTOR1_PID_OUTPUT_LIMIT      100.0f        // PID输出限制 (通常等于SPEED_LOGIC_MAX)
     #define MOTOR1_PID_TS                0.01f         // PID采样时间 (秒), 此处为10ms
     #define MOTOR1_PID_DERIVATIVE_FILTER_ALPHA 0.3f    // 微分项的低通滤波器系数 (0.0 to 1.0)
+
+    /* ── 电机2 (动力电机) TB6612 配置 ── */
+    #define MOTOR2_TIM_HANDLE           &htim1
+    #define MOTOR2_TIM_CHANNEL          TIM_CHANNEL_2   // TIM1_CH2（确认 CubeMX 已使能）
+    #define MOTOR2_IN1_PORT             GPIOA
+    #define MOTOR2_IN1_PIN              GPIO_PIN_0
+    #define MOTOR2_IN2_PORT             GPIOA
+    #define MOTOR2_IN2_PIN              GPIO_PIN_1
+    #define MOTOR2_EN_PORT              NULL            // 无独立使能引脚时填 NULL
+    #define MOTOR2_EN_PIN               0
+    #define MOTOR2_MAX_PWM_OUTPUT       PWM_MAX
+    #define MOTOR2_MAX_SPEED_LOGIC      SPEED_LOGIC_MAX
+    #define MOTOR2_DEAD_ZONE            10
+
+    /* 电机2 PID参数（初始与电机1相同，后续独立整定） */
+    #define MOTOR2_PID_KP               0.4584f
+    #define MOTOR2_PID_KI               17.66f
+    #define MOTOR2_PID_KD               0.0025f
+    #define MOTOR2_PID_INTEGRAL_LIMIT   5.66f
+    #define MOTOR2_PID_OUTPUT_LIMIT     100.0f
+    #define MOTOR2_PID_TS               0.01f
+    #define MOTOR2_PID_DERIVATIVE_FILTER_ALPHA 0.3f
+
+    /* 编码器定时器（CubeMX 需同步配置 TIM3 为 Encoder 模式） */
+    #define MOTOR1_ENCODER_TIM          &htim2
+    #define MOTOR2_ENCODER_TIM          &htim3
 
 
 #elif (ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236)
@@ -127,9 +153,18 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN 协议 */
-#define CAN_MOTOR_CMD_STDID             0x125   // 电机控制指令的CAN ID
-#define CAN_MOTOR_CMD_STATUS_STDID      0x225   // 上层控制电机状态的CAN ID
-#define CAN_MOTOR_STATUS_STDID          0x325   // 电机状态反馈的CAN ID
+#define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
+#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
+#define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
+
+#define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
+#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
+#define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+
+#define CAN_CMD_SET_SPEED_T2            0x11    // 新的设置速度命令 
+#define CAN_CMD_QUERY_STATUS            0x01    // 查询状态命令 (兼容旧协议)
+#define CAN_CMD_LOG_START               0x04    // 开始发送实时电机数据
+#define CAN_CMD_LOG_STOP                0x05    // 停止发送实时电机数据
 
 // 全车停止
 #define CAN_CMD_STOP_STDID              0x101   // 全车停止命令的CAN ID

@@ -26,14 +26,14 @@ void Logger_Task(void *argument)
     uint32_t cnt_val = __HAL_TIM_GET_COUNTER(&htim2); 
 
     // --- Lock Mutex ---
-    if (osMutexAcquire(motor_mutexHandle, 10) == osOK) // Wait max 10ms
+    if (osMutexAcquire(motor0_mutexHandle, 10) == osOK) // Wait max 10ms
     {
         speed_val = g_motors[0].current_ticks;
         target_logic_speed = g_motors[0].target_logic_speed;
         pwm_output = g_motors[0].pwm_output;
         
         // --- Release Mutex ---        
-        osMutexRelease(motor_mutexHandle);
+        osMutexRelease(motor0_mutexHandle);
     }
     else
     {

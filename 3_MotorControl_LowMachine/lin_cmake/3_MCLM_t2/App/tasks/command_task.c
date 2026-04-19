@@ -1,7 +1,7 @@
 #include "app_includes.h"
 // #include "can.h"
 
-extern osMutexId_t motor_mutexHandle;
+extern osMutexId_t motor0_mutexHandle;
 extern CAN_HandleTypeDef hcan;
 
 /* 判断是否为电机控制命令（需要投递到MotorQueue） */
@@ -28,10 +28,10 @@ void Command_Task(void *argument)
         // 读取当前电机状态（所有命令都可能需要）
         // MotorStatus_t status = {0};
         Motor_t status = {0}; // 使用新的结构体类型
-        if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+        if (osMutexAcquire(motor0_mutexHandle, osWaitForever) == osOK)
         {
             status = g_motors[0];
-            osMutexRelease(motor_mutexHandle);
+            osMutexRelease(motor0_mutexHandle);
         }
 
         /* ===== 数据流控制命令 ===== */
@@ -42,7 +42,7 @@ void Command_Task(void *argument)
             // 1. 发送 CAN 反馈（重用 STATUS ID 或定义专用 ID）
             // 让 CAN 总线上的发起者知道日志状态已切换
             CAN_TxHeaderTypeDef txHeader = {
-                .StdId = CAN_MOTOR_STATUS_STDID,
+                .StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID,
                 .DLC   = 8,
                 .IDE   = CAN_ID_STD,
                 .RTR   = CAN_RTR_DATA,
@@ -75,7 +75,7 @@ void Command_Task(void *argument)
             {
                 // CAN回复帧 0x32x：[target(2B), current(2B), pwm(2B), reserved(2B)]
                 CAN_TxHeaderTypeDef txHeader = {
-                    .StdId = CAN_MOTOR_STATUS_STDID,
+                    .StdId = CAN_MOTOR_TURN_STATUS_STDID,
                     .DLC   = 8,
                     .IDE   = CAN_ID_STD,
                     .RTR   = CAN_RTR_DATA,

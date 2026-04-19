@@ -42,7 +42,7 @@ extern osMessageQueueId_t AckQueueHandle;
 extern osMessageQueueId_t MotorQueueHandle;
 
 /* ===================== Mutexes ===================== */
-extern osMutexId_t motor_mutexHandle;
+extern osMutexId_t motor0_mutexHandle;
 
 /* ===================== Global Objects ===================== */
 extern uint8_t tx_buf[64];

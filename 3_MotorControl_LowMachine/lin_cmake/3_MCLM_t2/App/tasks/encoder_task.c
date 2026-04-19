@@ -17,12 +17,12 @@ void Encoder_Task(void *argument)
     int16_t diff = (int16_t)(now - last_cnt);
     last_cnt = now;
 
-    if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+    if (osMutexAcquire(motor0_mutexHandle, osWaitForever) == osOK)
     {
         g_motors[0].current_ticks = diff;
         g_motors[0].current_logic_speed = ticks_to_logic(diff);
         // g_motors[0].current_logic_speed = ticks_to_logic(iir_filter(diff, ENCODER_FILTER_ALPHA));
-        osMutexRelease(motor_mutexHandle);
+        osMutexRelease(motor0_mutexHandle);
 
         // 数据更新成功后才唤醒 LogTask
         if (Logger_TaHandle != NULL)

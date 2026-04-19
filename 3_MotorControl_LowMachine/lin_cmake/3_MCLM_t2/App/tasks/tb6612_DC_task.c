@@ -57,7 +57,7 @@ void TB6612_DC_Task(void *argument)
             }
         }
 
-        if (osMutexAcquire(motor_mutexHandle, osWaitForever) == osOK)
+        if (osMutexAcquire(motor0_mutexHandle, osWaitForever) == osOK)
         {
             motor->target_logic_speed = motor->pid.setpoint;
             if (fabsf(motor->pid.setpoint) > FLT_EPSILON)
@@ -72,7 +72,7 @@ void TB6612_DC_Task(void *argument)
                 TB6612_Motor_Stop(&(motor->hardware));
                 motor->pwm_output = 0;
             }
-            osMutexRelease(motor_mutexHandle);
+            osMutexRelease(motor0_mutexHandle);
         }
 
         osDelay(10);
