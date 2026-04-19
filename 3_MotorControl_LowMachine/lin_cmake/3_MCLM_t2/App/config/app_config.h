@@ -29,7 +29,7 @@
 #define SPEED_TICKS_MAX     80    // 单个控制周期内编码器的最大计数值 (用于速度计算)
 #define ENCODER_FILTER_ALPHA    0.1f  // 编码器IIR滤波系数，越小越平滑，响应越慢
 #define SPEED_LOGIC_MAX     100   // 统一的逻辑速度最大值 (例如 0-100)
-#define PWM_MAX             999   // PWM最大值, 对应定时器的ARR寄存器值, 代表100%占空比
+#define PWM_MAX             99    // PWM最大值, 对应定时器的ARR寄存器值 (TIM3 Period=100-1=99), 代表100%占空比
 
 /* =================================================================================
  *   3. 电机1: 驱动器特定配置 (Motor 1: Driver-Specific Configuration)
@@ -54,15 +54,17 @@
     #define MOTOR1_DEAD_ZONE            10             // PWM死区, 低于此值的PWM输出将被忽略, 防止电机在零速时抖动
 
     /* ------------------- PID控制器参数 (PID Controller Constants) ------------------- */
-    // #define MOTOR1_PID_KP                0.4584f
+    #define MOTOR1_PID_KP                0.4584f
     // #define MOTOR1_PID_KP                0.01362f   // 过小，Kp贡献不足
-    #define MOTOR1_PID_KP                1.5f          // 提高比例项，让Kp主导动态响应
-    // #define MOTOR1_PID_KI                17.66f
+    // #define MOTOR1_PID_KP                2.5f          // 提高比例项，让Kp主导动态响应
+    #define MOTOR1_PID_KI                17.66f
     // #define MOTOR1_PID_KI                10.01f      // 过大，积分快速饱和
-    #define MOTOR1_PID_KI                0.5f          // 降低积分，仅用于消除稳态误差
+    // #define MOTOR1_PID_KI                0.5f          // 降低积分，仅用于消除稳态误差
     // #define MOTOR1_PID_KD                0.002976f
     #define MOTOR1_PID_KD                0.0025f
-    #define MOTOR1_PID_INTEGRAL_LIMIT    10.0f         // integral_limit * Ki = 10*0.5 = 5, 远小于output_limit
+    // integral_limit 的含义: 积分累积量上限（单位与误差×时间相同）
+    // 积分项最大贡献 = Ki * integral_limit = 17.66 * 5.66 ≈ 100 = OUTPUT_LIMIT, 防止 windup 同时保留稳态消差能力
+    #define MOTOR1_PID_INTEGRAL_LIMIT    5.66f         // Ki * INTEGRAL_LIMIT ≈ OUTPUT_LIMIT (100/17.66)
     #define MOTOR1_PID_OUTPUT_LIMIT      100.0f        // PID输出限制 (通常等于SPEED_LOGIC_MAX)
     #define MOTOR1_PID_TS                0.01f         // PID采样时间 (秒), 此处为10ms
     #define MOTOR1_PID_DERIVATIVE_FILTER_ALPHA 0.3f    // 微分项的低通滤波器系数 (0.0 to 1.0)

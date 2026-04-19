@@ -42,15 +42,21 @@ float PID_Compute(PID_Controller *pid, float current_value)
     // 1. 计算误差
     error = pid->setpoint - current_value;
 
-    // 2. 计算积分项 (带抗积分饱和)
-    pid->integral += error * pid->Ts; // 使用结构体中的 Ts
-    if (pid->integral > pid->integral_limit)
+    // 2. 计算积分项 (带条件积分 Anti-windup: 输出饱和时停止积分)
+    // 评估当前 P+I 输出是否已饱和，方向与误差相同则锁定积分（防止深度 windup）
+    float p_term = pid->Kp * error;
+    float pre_output = p_term + pid->Ki * pid->integral;
+    uint8_t saturated_pos = (pre_output >= pid->output_limit);
+    uint8_t saturated_neg = (pre_output <= -pid->output_limit);
+    uint8_t anti_windup_hold = (saturated_pos && error > 0.0f) || (saturated_neg && error < 0.0f);
+
+    if (!anti_windup_hold)
     {
-        pid->integral = pid->integral_limit;
-    }
-    else if (pid->integral < -pid->integral_limit)
-    {
-        pid->integral = -pid->integral_limit;
+        pid->integral += error * pid->Ts;
+        if (pid->integral > pid->integral_limit)
+            pid->integral = pid->integral_limit;
+        else if (pid->integral < -pid->integral_limit)
+            pid->integral = -pid->integral_limit;
     }
 
     // 3. 计算微分项 (基于误差变化，并进行滤波)

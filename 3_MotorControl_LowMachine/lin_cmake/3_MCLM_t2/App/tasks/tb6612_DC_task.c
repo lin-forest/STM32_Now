@@ -20,12 +20,14 @@ void TB6612_DC_Task(void *argument)
     // uint8_t feedbackCounter = 0;
 
     // main.c迁移
+    // 参数顺序: MaxPWM, MaxSpeed, DeadZone, Polarity(1=反转,由硬件接线决定), StopMode
+    // 注意: 此电机硬件接线需要极性反转(Polarity=1)，使编码器正方向与指令正方向一致
     TB6612_Motor_Init(&(motor->hardware), MOTOR1_TIM_HANDLE, MOTOR1_TIM_CHANNEL,\
                 MOTOR1_IN1_PORT, MOTOR1_IN1_PIN,\
                 MOTOR1_IN2_PORT, MOTOR1_IN2_PIN,\
-                MOTOR1_EN_PORT, MOTOR1_EN_PIN, /* EN (如果没有独立的使能引脚，则为 NULL, 0) */\
-                MOTOR1_MAX_PWM_OUTPUT, MOTOR1_MAX_SPEED_LOGIC, MOTOR1_MIN_PWM_OUTPUT,\
-                MOTOR1_DEAD_ZONE, TB6612_MOTOR_STOP_BRAKE); // Changed Motor_Init and MOTOR_STOP_MODE
+                MOTOR1_EN_PORT, MOTOR1_EN_PIN,\
+                MOTOR1_MAX_PWM_OUTPUT, MOTOR1_MAX_SPEED_LOGIC, MOTOR1_DEAD_ZONE,\
+                1, TB6612_MOTOR_STOP_BRAKE);
 
     /* Infinite loop */
     for(;;)
