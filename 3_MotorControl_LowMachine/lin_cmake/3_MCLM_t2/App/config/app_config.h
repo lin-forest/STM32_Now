@@ -153,22 +153,22 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN 协议 */
-// #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
-// #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
-// #define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
+#define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
+#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
+#define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
 
-// #define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
-// #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
-// #define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+#define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
+#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
+#define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
 
 // 第二组
-#define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID (第二组)
-#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID (第二组)
-#define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID (第二组)
+// #define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID (第二组)
+// #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID (第二组)
+// #define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID (第二组)
 
-#define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID (第二组)
-#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID (第二组)
-#define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID (第二组)
+// #define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID (第二组)
+// #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID (第二组)
+// #define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID (第二组)
 
 #define CAN_CMD_SET_SPEED_T2            0x11    // 新的设置速度命令 
 #define CAN_CMD_QUERY_STATUS            0x01    // 查询状态命令 (兼容旧协议)

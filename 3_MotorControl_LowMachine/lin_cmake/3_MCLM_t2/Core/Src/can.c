@@ -54,11 +54,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         cmdMsg.value    = 0;
 
         // 根据 CAN ID 决定目标电机
-        if (id == CAN_MOTOR_TURN_CMD_STDID || id == CAN_MOTOR_TURN_CMD_STATUS_STDID)
+        if (id == CAN_MOTOR_TURN_CMD_STDID || id == CAN_MOTOR_TURN_CMD_STATUS_STDID || id == CAN_CMD_TURN_STDID)
         {
             cmdMsg.motor_id = 0;          // 转向电机（电机0）
         }
-        else if (id == CAN_MOTOR_POWER_CMD_STDID || id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
+        else if (id == CAN_MOTOR_POWER_CMD_STDID || id == CAN_MOTOR_POWER_CMD_STATUS_STDID || id == CAN_CMD_POWER_STDID)
         {
             cmdMsg.motor_id = 1;          // 动力电机（电机1）
         }
