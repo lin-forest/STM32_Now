@@ -27,9 +27,9 @@
 /* USER CODE BEGIN Includes */
 
 #include "app_task.h"
+#include "app_globals.h"
 #include "command.h"
 #include "app_config.h"
-
 
 /* USER CODE END Includes */
 
@@ -126,6 +126,30 @@ const osThreadAttr_t Ack_Ta_attributes = {
   .stack_size = sizeof(Ack_TaBuffer),
   .priority = (osPriority_t) osPriorityLow1,
 };
+/* Definitions for MotorControl1_T */
+osThreadId_t MotorControl1_THandle;
+uint32_t MotorControl1_TBuffer[ 64 ];
+osStaticThreadDef_t MotorControl1_TControlBlock;
+const osThreadAttr_t MotorControl1_T_attributes = {
+  .name = "MotorControl1_T",
+  .cb_mem = &MotorControl1_TControlBlock,
+  .cb_size = sizeof(MotorControl1_TControlBlock),
+  .stack_mem = &MotorControl1_TBuffer[0],
+  .stack_size = sizeof(MotorControl1_TBuffer),
+  .priority = (osPriority_t) osPriorityAboveNormal1,
+};
+/* Definitions for Encoder1_T */
+osThreadId_t Encoder1_THandle;
+uint32_t Encoder1_TBuffer[ 64 ];
+osStaticThreadDef_t Encoder1_TControlBlock;
+const osThreadAttr_t Encoder1_T_attributes = {
+  .name = "Encoder1_T",
+  .cb_mem = &Encoder1_TControlBlock,
+  .cb_size = sizeof(Encoder1_TControlBlock),
+  .stack_mem = &Encoder1_TBuffer[0],
+  .stack_size = sizeof(Encoder1_TBuffer),
+  .priority = (osPriority_t) osPriorityAboveNormal2,
+};
 /* Definitions for CommandQueue */
 osMessageQueueId_t CommandQueueHandle;
 const osMessageQueueAttr_t CommandQueue_attributes = {
@@ -140,6 +164,11 @@ const osMessageQueueAttr_t MotorQueue_attributes = {
 osMessageQueueId_t AckQueueHandle;
 const osMessageQueueAttr_t AckQueue_attributes = {
   .name = "AckQueue"
+};
+/* Definitions for MotorQueue1 */
+osMessageQueueId_t MotorQueue1Handle;
+const osMessageQueueAttr_t MotorQueue1_attributes = {
+  .name = "MotorQueue1"
 };
 /* Definitions for motor0_mutex */
 osMutexId_t motor0_mutexHandle;
@@ -179,6 +208,8 @@ void Start_Encoder(void *argument);
 void Start_Logger(void *argument);
 void Start_Command(void *argument);
 void Start_Ack(void *argument);
+void Start_MotorControl1_T(void *argument);
+void Start_Encoder1_T(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -227,6 +258,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of AckQueue */
   AckQueueHandle = osMessageQueueNew (64, sizeof(AckMsg_t), &AckQueue_attributes);
 
+  /* creation of MotorQueue1 */
+  MotorQueue1Handle = osMessageQueueNew (72, sizeof(CommandMsg_t), &MotorQueue1_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -249,6 +283,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Ack_Ta */
   Ack_TaHandle = osThreadNew(Start_Ack, NULL, &Ack_Ta_attributes);
+
+  /* creation of MotorControl1_T */
+  MotorControl1_THandle = osThreadNew(Start_MotorControl1_T, (void*) &g_motors[1], &MotorControl1_T_attributes);
+
+  /* creation of Encoder1_T */
+  Encoder1_THandle = osThreadNew(Start_Encoder1_T, (void*) &g_motors[1], &Encoder1_T_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -393,6 +433,40 @@ void Start_Ack(void *argument)
   //   osDelay(1);
   // }
   /* USER CODE END Start_Ack */
+}
+
+/* USER CODE BEGIN Header_Start_MotorControl1_T */
+/**
+* @brief Function implementing the MotorControl1_T thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_MotorControl1_T */
+void Start_MotorControl1_T(void *argument)
+{
+  /* USER CODE BEGIN Start_MotorControl1_T */
+  #if ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612
+  TB6612_DC_Task(argument);
+  #elif ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236
+  AT8236_DC_Task(argument);
+  #else
+  #error "No valid motor driver selected! Please check ACTIVE_MOTOR_DRIVER in app_config.h"
+  #endif
+  /* USER CODE END Start_MotorControl1_T */
+}
+
+/* USER CODE BEGIN Header_Start_Encoder1_T */
+/**
+* @brief Function implementing the Encoder1_T thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_Encoder1_T */
+void Start_Encoder1_T(void *argument)
+{
+  /* USER CODE BEGIN Start_Encoder1_T */
+  Encoder_Task(argument);
+  /* USER CODE END Start_Encoder1_T */
 }
 
 /* Private application code --------------------------------------------------*/

@@ -24,25 +24,33 @@ typedef struct {
 } Motor_t;
 
 // 支持多电机实例
-#define MOTOR_COUNT 1 
+#define MOTOR_COUNT 2
 extern Motor_t g_motors[MOTOR_COUNT];
 extern volatile uint8_t g_logger_enabled;  // 0=停止发送, 1=发送实时数据
 
 /* ===================== Task Handles ===================== */
-extern osThreadId_t MotorControl_TaHandle;
-extern osThreadId_t Encoder_TaHandle;
+extern osThreadId_t MotorControl_TaHandle;   // 电机0（转向）控制任务
+extern osThreadId_t Encoder_TaHandle;         // 电机0 编码器任务
 extern osThreadId_t Logger_TaHandle;
 extern osThreadId_t Command_TaHandle;
 extern osThreadId_t Heartbeat_TaHandle;
 extern osThreadId_t Ack_TaHandle;
+extern osThreadId_t MotorControl1_THandle;   // 电机1（动力）控制任务
+extern osThreadId_t Encoder1_THandle;         // 电机1 编码器任务
 
 /* ===================== Queues ===================== */
 extern osMessageQueueId_t CommandQueueHandle;
 extern osMessageQueueId_t AckQueueHandle;
-extern osMessageQueueId_t MotorQueueHandle;
+extern osMessageQueueId_t MotorQueueHandle;   // 电机0 专属队列（原 MotorQueue）
+extern osMessageQueueId_t MotorQueue1Handle;  // 电机1 专属队列
 
 /* ===================== Mutexes ===================== */
-extern osMutexId_t motor0_mutexHandle;
+extern osMutexId_t motor0_mutexHandle;        // 保护 g_motors[0]
+extern osMutexId_t motor1_mutexHandle;        // 保护 g_motors[1]
+
+/* ===================== Semaphores ===================== */
+extern osSemaphoreId_t uart_rx_semaphoreHandle;
+extern osSemaphoreId_t can_rx_semaphoreHandle;
 
 /* ===================== Global Objects ===================== */
 extern uint8_t tx_buf[64];

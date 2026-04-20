@@ -72,10 +72,10 @@
     /* ── 电机2 (动力电机) TB6612 配置 ── */
     #define MOTOR2_TIM_HANDLE           &htim1
     #define MOTOR2_TIM_CHANNEL          TIM_CHANNEL_2   // TIM1_CH2（确认 CubeMX 已使能）
-    #define MOTOR2_IN1_PORT             GPIOA
-    #define MOTOR2_IN1_PIN              GPIO_PIN_0
-    #define MOTOR2_IN2_PORT             GPIOA
-    #define MOTOR2_IN2_PIN              GPIO_PIN_1
+    #define MOTOR2_IN1_PORT             GPIOB
+    #define MOTOR2_IN1_PIN              GPIO_PIN_12
+    #define MOTOR2_IN2_PORT             GPIOB
+    #define MOTOR2_IN2_PIN              GPIO_PIN_13
     #define MOTOR2_EN_PORT              NULL            // 无独立使能引脚时填 NULL
     #define MOTOR2_EN_PIN               0
     #define MOTOR2_MAX_PWM_OUTPUT       PWM_MAX
@@ -153,13 +153,22 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN 协议 */
-#define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
-#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
-#define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
+// #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
+// #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
+// #define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
 
-#define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
-#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
-#define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+// #define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
+// #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
+// #define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+
+// 第二组
+#define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID (第二组)
+#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID (第二组)
+#define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID (第二组)
+
+#define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID (第二组)
+#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID (第二组)
+#define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID (第二组)
 
 #define CAN_CMD_SET_SPEED_T2            0x11    // 新的设置速度命令 
 #define CAN_CMD_QUERY_STATUS            0x01    // 查询状态命令 (兼容旧协议)

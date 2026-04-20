@@ -39,70 +39,76 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     uint8_t rxData[8];
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
     {
-        // [修改1] 移除 ID 检查，允许接收任意 ID 的消息
-        // 只要数据长度不为0
-        // if (rxHeader.DLC > 0)
-        if(rxHeader.StdId == CAN_MOTOR_TURN_CMD_STDID || rxHeader.StdId == CAN_CMD_STOP_STDID ||
-           rxHeader.StdId == CAN_CMD_TURN_STDID || rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
+        uint32_t id = rxHeader.StdId;
+
+        // 只处理已知 ID，其余丢弃
+        if (id != CAN_MOTOR_TURN_CMD_STDID  && id != CAN_MOTOR_TURN_CMD_STATUS_STDID  &&
+            id != CAN_MOTOR_POWER_CMD_STDID && id != CAN_MOTOR_POWER_CMD_STATUS_STDID &&
+            id != CAN_CMD_STOP_STDID && id != CAN_CMD_TURN_STDID && id != CAN_CMD_POWER_STDID)
         {
-            CommandMsg_t cmdMsg;
-            cmdMsg.type = CMD_NONE;
-            cmdMsg.value = 0;
+            return;
+        }
 
-            // [修改2] 协议解析与映射
-            // 根据接收到的第0个字节（命令字）进行判断
-            switch (rxData[0])
-            {
-                // === 处理自定义数据帧: 11 22 33 44 55 66 77 00 ===
-                case CAN_CMD_SET_SPEED_T2:
-                    // 将外部命令 0x11 映射为内部的 "设置速度" 指令
-                    cmdMsg.type = CAN_CMD_SET_SPEED;
+        CommandMsg_t cmdMsg;
+        cmdMsg.type     = CMD_NONE;
+        cmdMsg.value    = 0;
 
-                    // 提取参数：假设第1个字节 (0x22) 是速度值
-                    // 注意：0x22 = 34 (逻辑速度)
-                    cmdMsg.value = (int16_t)rxData[1];
+        // 根据 CAN ID 决定目标电机
+        if (id == CAN_MOTOR_TURN_CMD_STDID || id == CAN_MOTOR_TURN_CMD_STATUS_STDID)
+        {
+            cmdMsg.motor_id = 0;          // 转向电机（电机0）
+        }
+        else if (id == CAN_MOTOR_POWER_CMD_STDID || id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
+        {
+            cmdMsg.motor_id = 1;          // 动力电机（电机1）
+        }
+        else  // CAN_CMD_STOP_STDID / CAN_CMD_TURN_STDID / CAN_CMD_POWER_STDID
+        {
+            cmdMsg.motor_id = 0xFF;       // 广播：两个电机都执行
+        }
 
-                    // 如果您的速度值是16位的 (例如由 22 33 组成)，可以使用:
-                    // cmdMsg.value = (int16_t)(rxData[1] | (rxData[2] << 8));
-                    break;
+        // 协议解析
+        switch (rxData[0])
+        {
+            case CAN_CMD_SET_SPEED_T2:
+                cmdMsg.type  = CAN_CMD_SET_SPEED;
+                cmdMsg.value = (int16_t)rxData[1];
+                break;
 
-                // === 兼容旧协议 ===
-                case CAN_CMD_SET_SPEED:
-                    cmdMsg.type = CAN_CMD_SET_SPEED;
-                    cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
-                    break;
-                
-                case CAN_CMD_STOP:
-                    cmdMsg.type = CAN_CMD_STOP;
-                    break;
+            case CAN_CMD_SET_SPEED:
+                cmdMsg.type  = CAN_CMD_SET_SPEED;
+                cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
+                break;
 
-                case CAN_CMD_QUERY_STATUS: // 查询命令（0x22x帧）
-                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
-                        cmdMsg.type = CMD_QUERY_STATUS;
-                    // cmdMsg.type = CMD_QUERY_STATUS;
-                    break;
+            case CAN_CMD_STOP:
+                cmdMsg.type = CAN_CMD_STOP;
+                break;
 
-                case CAN_CMD_LOG_START: // 开始发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
+            case CAN_CMD_QUERY_STATUS:
+                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
+                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
+                    cmdMsg.type = CMD_QUERY_STATUS;
+                break;
+
+            case CAN_CMD_LOG_START:
+                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
+                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
                     cmdMsg.type = CMD_LOG_START;
-                    break;
+                break;
 
-                case CAN_CMD_LOG_STOP: // 停止发送实时电机数据（仅响应 0x22x）
-                    if (rxHeader.StdId == CAN_MOTOR_TURN_CMD_STATUS_STDID)
+            case CAN_CMD_LOG_STOP:
+                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
+                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
                     cmdMsg.type = CMD_LOG_STOP;
-                    break;
+                break;
 
-                default:
-                    // 未知命令，直接返回，不发送到队列
-                    return; 
-            }
+            default:
+                return;
+        }
 
-            // 3. 将解析后的命令发送到 CommandQueue
-            // 保持原有的传递路径：CAN中断 -> CommandQueue -> CommandTask -> MotorTask
-            if (cmdMsg.type != CMD_NONE)
-            {
-                osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
-            }
+        if (cmdMsg.type != CMD_NONE)
+        {
+            osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
         }
     }
 }

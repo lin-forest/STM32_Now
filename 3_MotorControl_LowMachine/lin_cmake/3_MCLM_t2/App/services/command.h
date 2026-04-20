@@ -33,6 +33,7 @@ typedef enum {
 typedef struct {
     CommandType_t type;    // 命令类型
     int16_t value;         // 参数（如速度值），对无参数命令无效
+    uint8_t motor_id;      // 目标电机：0=电机0(转向), 1=电机1(动力), 0xFF=广播
 } CommandMsg_t;
 
 

@@ -1,7 +1,5 @@
 #include "app_includes.h"
-// #include "can.h"
 
-extern osMutexId_t motor0_mutexHandle;
 extern CAN_HandleTypeDef hcan;
 
 /* 判断是否为电机控制命令（需要投递到MotorQueue） */
@@ -25,13 +23,15 @@ void Command_Task(void *argument)
         if (cmd.type == CMD_NONE)
             continue;
 
-        // 读取当前电机状态（所有命令都可能需要）
-        // MotorStatus_t status = {0};
-        Motor_t status = {0}; // 使用新的结构体类型
-        if (osMutexAcquire(motor0_mutexHandle, osWaitForever) == osOK)
+        // 读取目标电机状态
+        uint8_t mid = (cmd.motor_id < MOTOR_COUNT) ? cmd.motor_id : 0;
+        osMutexId_t myMutex = (mid == 0) ? motor0_mutexHandle : motor1_mutexHandle;
+
+        Motor_t status = {0};
+        if (osMutexAcquire(myMutex, osWaitForever) == osOK)
         {
-            status = g_motors[0];
-            osMutexRelease(motor0_mutexHandle);
+            status = g_motors[mid];
+            osMutexRelease(myMutex);
         }
 
         /* ===== 数据流控制命令 ===== */
@@ -39,8 +39,6 @@ void Command_Task(void *argument)
         {
             g_logger_enabled = (cmd.type == CMD_LOG_START);
 
-            // 1. 发送 CAN 反馈（重用 STATUS ID 或定义专用 ID）
-            // 让 CAN 总线上的发起者知道日志状态已切换
             CAN_TxHeaderTypeDef txHeader = {
                 .StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID,
                 .DLC   = 8,
@@ -48,14 +46,13 @@ void Command_Task(void *argument)
                 .RTR   = CAN_RTR_DATA,
             };
             uint8_t txData[8] = {0};
-            txData[0] = 0xCF; // Command Feedback 标识码
+            txData[0] = 0xCF;
             txData[1] = (uint8_t)cmd.type;
             txData[2] = (uint8_t)g_logger_enabled;
-            
+
             uint32_t txMailbox;
             HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox);
 
-            // 2. 生成 UART ACK 消息，让 Ack_Task 进行打印反馈
             AckMsg_t ack = {
                 .type  = cmd.type,
                 .value = g_logger_enabled,
@@ -64,18 +61,19 @@ void Command_Task(void *argument)
                 .pwm_output          = (int16_t)status.pwm_output,
             };
             osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
-            
-            continue; 
+            continue;
         }
 
-        /* ===== 查询命令：直接处理，不进电机队列 ===== */
+        /* ===== 查询命令 ===== */
         if (cmd.type == CMD_LIST_STATUS || cmd.type == CMD_QUERY_STATUS)
         {
             if (cmd.type == CMD_QUERY_STATUS)
             {
-                // CAN回复帧 0x32x：[target(2B), current(2B), pwm(2B), reserved(2B)]
+                // 按 motor_id 选回复 CAN ID
+                uint32_t replyId = (mid == 0) ? CAN_MOTOR_TURN_STATUS_STDID
+                                              : CAN_MOTOR_POWER_STATUS_STDID;
                 CAN_TxHeaderTypeDef txHeader = {
-                    .StdId = CAN_MOTOR_TURN_STATUS_STDID,
+                    .StdId = replyId,
                     .DLC   = 8,
                     .IDE   = CAN_ID_STD,
                     .RTR   = CAN_RTR_DATA,
@@ -91,7 +89,6 @@ void Command_Task(void *argument)
                 HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox);
             }
 
-            // CMD_LIST_STATUS 的UART输出由Ack_Task处理，正常生成ACK即可
             AckMsg_t ack = {
                 .type = cmd.type, .value = 0, .ok = 1,
                 .current_logic_speed = status.current_logic_speed,
@@ -101,7 +98,7 @@ void Command_Task(void *argument)
             continue;
         }
 
-        /* ===== 控制命令：生成ACK + 投递电机队列 ===== */
+        /* ===== 控制命令：生成ACK + 按 motor_id 路由到专属队列 ===== */
         AckMsg_t ack = {
             .type  = cmd.type,
             .value = is_motor_cmd(cmd.type) ? cmd.value : 0,
@@ -112,6 +109,18 @@ void Command_Task(void *argument)
         osMessageQueuePut(AckQueueHandle, &ack, 0, 0);
 
         if (is_motor_cmd(cmd.type))
-            osMessageQueuePut(MotorQueueHandle, &cmd, 0, 0);
+        {
+            if (cmd.motor_id == 0xFF)
+            {
+                // 广播：同时投递两个队列
+                osMessageQueuePut(MotorQueueHandle,  &cmd, 0, 0);
+                osMessageQueuePut(MotorQueue1Handle, &cmd, 0, 0);
+            }
+            else
+            {
+                osMessageQueueId_t q = (cmd.motor_id == 1) ? MotorQueue1Handle : MotorQueueHandle;
+                osMessageQueuePut(q, &cmd, 0, 0);
+            }
+        }
     }
 }
