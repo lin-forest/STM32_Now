@@ -47,6 +47,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     App/Src/imu_process.c
     App/Src/mpu6050.c
+    App/Src/ak09911.c
 )
 
 # Add include paths

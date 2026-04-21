@@ -54,14 +54,14 @@
 osThreadId_t Heartbeat_TAHandle;
 const osThreadAttr_t Heartbeat_TA_attributes = {
   .name = "Heartbeat_TA",
-  .stack_size = 128 * 4,
+  .stack_size = 64 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for Imu_TA */
 osThreadId_t Imu_TAHandle;
 const osThreadAttr_t Imu_TA_attributes = {
   .name = "Imu_TA",
-  .stack_size = 256 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -182,20 +182,23 @@ void Start_Imu_TA(void *argument)
     //        (long)(imu_data.Roll * 10),
     //        (long)(imu_data.Yaw * 10));
 
-    printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
-            (long)(imu_output.orientation[0] * 100),
-            (long)(imu_output.orientation[1] * 100),
-            (long)(imu_output.orientation[2] * 100),
-            (long)(imu_output.orientation[3] * 100),
-+           (long)(imu_output.linear_acceleration[0] * 100),
-+           (long)(imu_output.linear_acceleration[1] * 100),
-+           (long)(imu_output.linear_acceleration[2] * 100),
-+           (long)(imu_output.angular_velocity[0] * 100),
-+           (long)(imu_output.angular_velocity[1] * 100),
-+           (long)(imu_output.angular_velocity[2] * 100),
-+           (long)(imu_data.Pitch * 10), // Pitch, Roll, Yaw 仍使用度, 方便观察
-+           (long)(imu_data.Roll * 10),
-+           (long)(imu_data.Yaw * 10));
+    printf("%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld\r\n",
+            (long)(imu_output.orientation[0]         * 100),   // w
+            (long)(imu_output.orientation[1]         * 100),   // x
+            (long)(imu_output.orientation[2]         * 100),   // y
+            (long)(imu_output.orientation[3]         * 100),   // z
+            (long)(imu_output.linear_acceleration[0] * 100),   // ax m/s²
+            (long)(imu_output.linear_acceleration[1] * 100),   // ay
+            (long)(imu_output.linear_acceleration[2] * 100),   // az
+            (long)(imu_output.angular_velocity[0]    * 100),   // gx rad/s
+            (long)(imu_output.angular_velocity[1]    * 100),   // gy
+            (long)(imu_output.angular_velocity[2]    * 100),   // gz
+            (long)(imu_data.Pitch * 10),                        // Pitch °
+            (long)(imu_data.Roll  * 10),                        // Roll  °
+            (long)(imu_data.Yaw   * 10),                        // Yaw   °
+            (long)(imu_output.magnetic_field[0] * 10),          // mx μT
+            (long)(imu_output.magnetic_field[1] * 10),          // my μT
+            (long)(imu_output.magnetic_field[2] * 10));         // mz μT
 
     osDelay(10);
   }
@@ -206,3 +209,4 @@ void Start_Imu_TA(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
+

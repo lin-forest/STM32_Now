@@ -3,6 +3,7 @@
 
 #include "i2c.h"
 #include "mpu6050.h"
+#include "ak09911.h"
 
 // 定义灵敏度（根据 mpu6050.c 中的配置）
 // 加速度计量程: ±2g -> 16384 LSB/g
@@ -20,6 +21,7 @@
 typedef struct {
     float Accel[3]; // x, y, z 加速度 (g)
     float Gyro[3];  // x, y, z 角速度 (dps)
+    float mag[3];   // x, y, z 磁场 (μT)，已坐标对齐，未校准
 
     // 主输出: 四元数
     float q[4];     // w, x, y, z
@@ -42,6 +44,7 @@ typedef struct
     float angular_velocity[3];      // rad/s
     float orientation[4];           // 四元数 (w, x, y, z)
     float attitude[3];              // 调试用欧拉角: 俯仰, 横滚, 航向 (rad)
+    float magnetic_field[3];        // 磁场 (μT)，ROS sensor_msgs/MagneticField 兼容
 
     uint32_t timestamp;             // 时间戳 (ms)
 } IMU_Output_t;

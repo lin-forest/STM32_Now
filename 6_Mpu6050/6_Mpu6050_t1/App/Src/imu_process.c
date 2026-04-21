@@ -5,8 +5,8 @@
 #define CALIB_SAMPLES 500
 
 // Mahony AHRS 算法参数
-#define twoKpDef (2.0f * 0.5f) // 2 * 比例增益
-#define twoKiDef (2.0f * 0.0f) // 2 * 积分增益
+#define twoKpDef (2.0f * 0.5f)  // 2 * 比例增益
+#define twoKiDef (2.0f * 0.01f) // 2 * 积分增益 (9轴版本开启，消除静态误差)
 
 // Mahony 算法全局变量
 static volatile float twoKp = twoKpDef;
@@ -16,8 +16,11 @@ static volatile float integralFBx = 0.0f, integralFBy = 0.0f, integralFBz = 0.0f
 static float gyro_bias[3] = {0.0f, 0.0f, 0.0f};
 static float accel_bias[3] = {0.0f, 0.0f, 0.0f};
 
-// --- Mahony AHRS 核心更新函数 ---
-void Mahony_Update(float gx, float gy, float gz, float ax, float ay, float az, float dt, volatile float* q) {
+// --- Mahony AHRS 核心更新函数（9轴 MARG 版本）---
+void Mahony_Update(float gx, float gy, float gz,
+                   float ax, float ay, float az,
+                   float mx, float my, float mz,
+                   float dt, volatile float* q) {
     float recipNorm;
     float halfvx, halfvy, halfvz;
     float halfex, halfey, halfez;
@@ -37,10 +40,48 @@ void Mahony_Update(float gx, float gy, float gz, float ax, float ay, float az, f
         halfvy = q[0] * q[1] + q[2] * q[3];
         halfvz = q[0] * q[0] - 0.5f + q[3] * q[3];
 
-        // 计算误差
+        // 重力误差（叉积）
         halfex = (ay * halfvz - az * halfvy);
         halfey = (az * halfvx - ax * halfvz);
         halfez = (ax * halfvy - ay * halfvx);
+
+        // --- 磁场参考方向误差（仅在磁力计数据有效时执行）---
+        if (!((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))) {
+
+            // 标准化磁力计数据
+            recipNorm = 1.0f / sqrtf(mx * mx + my * my + mz * mz);
+            mx *= recipNorm;
+            my *= recipNorm;
+            mz *= recipNorm;
+
+            // 用当前四元数将磁场从机体系旋转到地理系（earth frame）
+            float hx = 2.0f * (mx * (0.5f - q[2]*q[2] - q[3]*q[3])
+                             + my * (q[1]*q[2] - q[0]*q[3])
+                             + mz * (q[1]*q[3] + q[0]*q[2]));
+            float hy = 2.0f * (mx * (q[1]*q[2] + q[0]*q[3])
+                             + my * (0.5f - q[1]*q[1] - q[3]*q[3])
+                             + mz * (q[2]*q[3] - q[0]*q[1]));
+            float hz = 2.0f * (mx * (q[1]*q[3] - q[0]*q[2])
+                             + my * (q[2]*q[3] + q[0]*q[1])
+                             + mz * (0.5f - q[1]*q[1] - q[2]*q[2]));
+
+            // 水平投影（消除倾斜误差）：bx = sqrt(hx²+hy²), bz = hz
+            float bx = sqrtf(hx*hx + hy*hy);
+            float bz = hz;
+
+            // 根据 bx, bz 和当前四元数，估算机体系中的磁场期望值
+            float halfwx = bx * (0.5f - q[2]*q[2] - q[3]*q[3])
+                         + bz * (q[1]*q[3] - q[0]*q[2]);
+            float halfwy = bx * (q[1]*q[2] - q[0]*q[3])
+                         + bz * (q[0]*q[1] + q[2]*q[3]);
+            float halfwz = bx * (q[0]*q[2] + q[1]*q[3])
+                         + bz * (0.5f - q[1]*q[1] - q[2]*q[2]);
+
+            // 磁场误差累加到重力误差（叉积）
+            halfex += (my * halfwz - mz * halfwy);
+            halfey += (mz * halfwx - mx * halfwz);
+            halfez += (mx * halfwy - my * halfwx);
+        }
 
         // 积分误差
         if(twoKi > 0.0f) {
@@ -116,6 +157,10 @@ void IMU_Process_Init(I2C_HandleTypeDef *hi2c, IMU_Data_t *data)
     data->q[1] = 0.0f;
     data->q[2] = 0.0f;
     data->q[3] = 0.0f;
+
+    // 初始化磁力计
+    data->mag[0] = data->mag[1] = data->mag[2] = 0.0f;
+    AK09911_Init(hi2c);
 }
 
 void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t *output, float dt)
@@ -135,15 +180,38 @@ void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t 
     gyro_dps[1] = (gyro_raw[1] - gyro_bias[1]) / GYRO_SENSITIVITY;
     gyro_dps[2] = (gyro_raw[2] - gyro_bias[2]) / GYRO_SENSITIVITY;
 
-    // 3. 姿态解算 (Mahony AHRS)
+    // 3. 姿态解算 (Mahony AHRS 9轴 MARG)
     // 将单位从 °/s 转换为 rad/s
     float gyro_rad[3];
     gyro_rad[0] = gyro_dps[0] * DEG_TO_RAD;
     gyro_rad[1] = gyro_dps[1] * DEG_TO_RAD;
     gyro_rad[2] = gyro_dps[2] * DEG_TO_RAD;
 
+    // --- 读取磁力计 ---
+    float mag_raw[3] = {0.0f, 0.0f, 0.0f};
+    AK09911_Read(hi2c, mag_raw);
+
+    // 坐标系对齐（AK09911 → MPU6050 坐标系）
+    // 典型 MPU6050+AK09911 组合（以 MPU9250 内部配置为参考）：
+    //   AK X → MPU Y, AK Y → MPU X, AK Z → -MPU Z
+    // ⚠️ 实测后根据实际轴向调整符号和顺序
+    float mx =  mag_raw[1];   // AK Y → MPU X
+    float my =  mag_raw[0];   // AK X → MPU Y
+    float mz = -mag_raw[2];   // AK Z → -MPU Z
+
+    // 硬铁补偿（校准后填入，初始为 0）
+    mx -= 0.0f;  // offset_x（待校准后填入）
+    my -= 0.0f;  // offset_y
+    mz -= 0.0f;  // offset_z
+
+    // 保存到内部状态
+    data->mag[0] = mx;
+    data->mag[1] = my;
+    data->mag[2] = mz;
+
     Mahony_Update(gyro_rad[0], gyro_rad[1], gyro_rad[2],
-                  accel_g[0], accel_g[1], accel_g[2],
+                  accel_g[0],  accel_g[1],  accel_g[2],
+                  mx, my, mz,
                   dt, data->q);
 
     // 4. 将四元数转换为欧拉角 (用于调试)
@@ -205,6 +273,10 @@ void IMU_Process_Update(I2C_HandleTypeDef *hi2c, IMU_Data_t *data, IMU_Output_t 
         output->attitude[0] = final_pitch * DEG_TO_RAD;
         output->attitude[1] = final_roll * DEG_TO_RAD;
         output->attitude[2] = final_yaw * DEG_TO_RAD;
+
+        output->magnetic_field[0] = data->mag[0];
+        output->magnetic_field[1] = data->mag[1];
+        output->magnetic_field[2] = data->mag[2];
 
         output->timestamp = HAL_GetTick();
     }
