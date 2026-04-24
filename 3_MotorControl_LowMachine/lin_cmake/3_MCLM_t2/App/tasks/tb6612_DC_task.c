@@ -59,6 +59,20 @@ void TB6612_DC_Task(void *argument)
                 }
                 motor->pid.setpoint = new_setpoint;
             }
+            else if (cmdMsg.type == CMD_FORWARD)
+            {
+                /* CMD_FORWARD: 以固定正向速度运行（50% 额定），重置积分防止反向残留 */
+                if (motor->pid.setpoint < 0.0f)
+                    PID_Reset(&(motor->pid));
+                motor->pid.setpoint = MOTOR_CMD_DEFAULT_SPEED;
+            }
+            else if (cmdMsg.type == CMD_REVERSE)
+            {
+                /* CMD_REVERSE: 以固定负向速度运行（50% 额定），重置积分防止正向残留 */
+                if (motor->pid.setpoint > 0.0f)
+                    PID_Reset(&(motor->pid));
+                motor->pid.setpoint = -MOTOR_CMD_DEFAULT_SPEED;
+            }
             else if (cmdMsg.type == CMD_STOP || cmdMsg.type == CAN_CMD_STOP)
             {
                 motor->pid.setpoint = 0.0f;

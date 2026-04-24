@@ -72,7 +72,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
         {
             case CAN_CMD_SET_SPEED_T2:
                 cmdMsg.type  = CAN_CMD_SET_SPEED;
-                cmdMsg.value = (int16_t)rxData[1];
+                cmdMsg.value = (int8_t)rxData[1];   /* Fix: 先转 int8_t 保留符号位，再隐式扩展为 int16_t */
                 break;
 
             case CAN_CMD_SET_SPEED:
@@ -100,6 +100,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
                 if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
                     id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
                     cmdMsg.type = CMD_LOG_STOP;
+                break;
+
+            case CAN_CMD_REVERSE_BYTE:
+                /* 独立倒转命令：设 type=CMD_REVERSE，value=0（速度由任务侧决定） */
+                cmdMsg.type  = CMD_REVERSE;
+                cmdMsg.value = 0;
                 break;
 
             default:

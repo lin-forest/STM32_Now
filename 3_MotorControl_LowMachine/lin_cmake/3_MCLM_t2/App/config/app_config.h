@@ -29,6 +29,7 @@
 #define SPEED_TICKS_MAX     90    // 单个控制周期内编码器的最大计数值 (用于速度计算)
 #define ENCODER_FILTER_ALPHA    0.1f  // 编码器IIR滤波系数，越小越平滑，响应越慢
 #define SPEED_LOGIC_MAX     100   // 统一的逻辑速度最大值 (例如 0-100)
+#define MOTOR_CMD_DEFAULT_SPEED  50.0f  // CMD_FORWARD / CMD_REVERSE 的默认逻辑速度 (占满量程 50%)
 #define PWM_MAX             7200    // PWM最大值, 对应定时器的ARR寄存器值 (TIM3 Period=100-1=99), 代表100%占空比
 
 /* =================================================================================
@@ -153,24 +154,25 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN 协议 */
-#define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
-#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
-#define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
+// #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
+// #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
+// #define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
 
-#define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
-#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
-#define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+// #define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
+// #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
+// #define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
 
 // 第二组
-// #define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID (第二组)
-// #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID (第二组)
-// #define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID (第二组)
+#define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID (第二组)
+#define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID (第二组)
+#define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID (第二组)
 
-// #define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID (第二组)
-// #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID (第二组)
-// #define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID (第二组)
+#define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID (第二组)
+#define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID (第二组)
+#define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID (第二组)
 
 #define CAN_CMD_SET_SPEED_T2            0x11    // 新的设置速度命令 
+#define CAN_CMD_REVERSE_BYTE            0x02    // 独立倒转命令字节（宏，避免与枚举 CMD_REVERSE=2 在 switch 中混用）
 #define CAN_CMD_QUERY_STATUS            0x01    // 查询状态命令 (兼容旧协议)
 #define CAN_CMD_LOG_START               0x04    // 开始发送实时电机数据
 #define CAN_CMD_LOG_STOP                0x05    // 停止发送实时电机数据
