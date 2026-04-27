@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_MT6701_test.elf
+r
+q
