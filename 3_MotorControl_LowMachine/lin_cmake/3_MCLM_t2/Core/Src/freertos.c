@@ -92,7 +92,7 @@ const osThreadAttr_t Encoder_Ta_attributes = {
 };
 /* Definitions for Logger_Ta */
 osThreadId_t Logger_TaHandle;
-uint32_t Logger_TaBuffer[ 256 ];
+uint32_t Logger_TaBuffer[ 512 ];
 osStaticThreadDef_t Logger_TaControlBlock;
 const osThreadAttr_t Logger_Ta_attributes = {
   .name = "Logger_Ta",
@@ -170,6 +170,11 @@ osMessageQueueId_t MotorQueue1Handle;
 const osMessageQueueAttr_t MotorQueue1_attributes = {
   .name = "MotorQueue1"
 };
+/* Definitions for LogQueue */
+osMessageQueueId_t LogQueueHandle;
+const osMessageQueueAttr_t LogQueue_attributes = {
+  .name = "LogQueue"
+};
 /* Definitions for motor0_mutex */
 osMutexId_t motor0_mutexHandle;
 const osMutexAttr_t motor0_mutex_attributes = {
@@ -195,6 +200,11 @@ const osSemaphoreAttr_t can_rx_semaphore_attributes = {
   .name = "can_rx_semaphore",
   .cb_mem = &can_rx_semaphoreControlBlock,
   .cb_size = sizeof(can_rx_semaphoreControlBlock),
+};
+/* Definitions for uart1_dma_sem */
+osSemaphoreId_t uart1_dma_semHandle;
+const osSemaphoreAttr_t uart1_dma_sem_attributes = {
+  .name = "uart1_dma_sem"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -284,6 +294,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of can_rx_semaphore */
   can_rx_semaphoreHandle = osSemaphoreNew(1, 1, &can_rx_semaphore_attributes);
 
+  /* creation of uart1_dma_sem */
+  uart1_dma_semHandle = osSemaphoreNew(1, 1, &uart1_dma_sem_attributes);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -304,6 +317,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of MotorQueue1 */
   MotorQueue1Handle = osMessageQueueNew (72, sizeof(CommandMsg_t), &MotorQueue1_attributes);
+
+  /* creation of LogQueue */
+  LogQueueHandle = osMessageQueueNew (4, sizeof(LogMotorData_t), &LogQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */

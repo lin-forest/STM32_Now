@@ -8,6 +8,7 @@ extern "C" {
 #include "cmsis_os2.h"
 #include "pid.h"
 #include "motor_DC_tb6612.h"
+#include "logger.h"
 
 /* ===================== Global Motor Status ===================== */
 // A generic structure to hold the state of the active motor.
@@ -43,6 +44,7 @@ extern osMessageQueueId_t CommandQueueHandle;
 extern osMessageQueueId_t AckQueueHandle;
 extern osMessageQueueId_t MotorQueueHandle;   // 电机0 专属队列（原 MotorQueue）
 extern osMessageQueueId_t MotorQueue1Handle;  // 电机1 专属队列
+extern osMessageQueueId_t LogQueueHandle;      // 日志队列
 
 /* ===================== Mutexes ===================== */
 extern osMutexId_t motor0_mutexHandle;        // 保护 g_motors[0]
@@ -51,6 +53,7 @@ extern osMutexId_t motor1_mutexHandle;        // 保护 g_motors[1]
 /* ===================== Semaphores ===================== */
 extern osSemaphoreId_t uart_rx_semaphoreHandle;
 extern osSemaphoreId_t can_rx_semaphoreHandle;
+extern osSemaphoreId_t uart1_dma_semHandle;   // 用于 Logger UART1 DMA 发送完成的信号量
 
 /* ===================== Global Objects ===================== */
 extern uint8_t tx_buf[64];

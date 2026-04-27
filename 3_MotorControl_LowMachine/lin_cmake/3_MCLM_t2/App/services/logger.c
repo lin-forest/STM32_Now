@@ -123,6 +123,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  * =========================================================== */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
+    // USART1 DMA 发送完成 → 释放信号量，Logger_Task 可发下一帧
+    if (huart->Instance == USART1) {
+        osSemaphoreRelease(uart1_dma_semHandle);
+        return;
+    }
+
     if (huart->Instance == USART2)
         uart2_tx_busy = 0;   // 恢复 TX 可用
 }

@@ -29,9 +29,15 @@ void Encoder_Task(void *argument)
             motor->current_logic_speed = ticks_to_logic(diff);
             osMutexRelease(myMutex);
 
-            // 只让电机0的编码器唤醒 Logger，避免双重唤醒
-            if (idx == 0 && Logger_TaHandle != NULL)
-                osThreadFlagsSet(Logger_TaHandle, 0x01);
+            // 方案C：两路电机各自封包投递到 LogQueue，Logger 统一消费
+            LogMotorData_t log_data = {
+                .motor_id           = idx,
+                .current_ticks      = diff,
+                .target_logic_speed = motor->target_logic_speed,
+                .pwm_output         = motor->pwm_output,
+                .timestamp_ms       = HAL_GetTick(),
+            };
+            osMessageQueuePut(LogQueueHandle, &log_data, 0, 0);
         }
 
         osDelay(10);
