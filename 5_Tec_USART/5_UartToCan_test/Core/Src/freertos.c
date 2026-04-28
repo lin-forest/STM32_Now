@@ -33,6 +33,7 @@
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
 typedef StaticSemaphore_t osStaticMutexDef_t;
+typedef StaticSemaphore_t osStaticSemaphoreDef_t;
 typedef StaticEventGroup_t osStaticEventGroupDef_t;
 /* USER CODE BEGIN PTD */
 
@@ -118,6 +119,14 @@ const osMutexAttr_t uart1_tx_mutex_attributes = {
   .cb_mem = &uart1_tx_mutexControlBlock,
   .cb_size = sizeof(uart1_tx_mutexControlBlock),
 };
+/* Definitions for uart1_tx_sem */
+osSemaphoreId_t uart1_tx_semHandle;
+osStaticSemaphoreDef_t uart1_tx_semControlBlock;
+const osSemaphoreAttr_t uart1_tx_sem_attributes = {
+  .name = "uart1_tx_sem",
+  .cb_mem = &uart1_tx_semControlBlock,
+  .cb_size = sizeof(uart1_tx_semControlBlock),
+};
 /* Definitions for uart1_rx_event */
 osEventFlagsId_t uart1_rx_eventHandle;
 osStaticEventGroupDef_t uart1_rx_eventControlBlock;
@@ -182,6 +191,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of uart1_tx_sem */
+  uart1_tx_semHandle = osSemaphoreNew(1, 0, &uart1_tx_sem_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */

@@ -2,6 +2,7 @@
 
 #include "app_includes.h"
 #include "usart.h"
+#include <string.h>
 
 /**
  * @brief 引用在usart.c中定义的环形缓冲区
@@ -9,12 +10,37 @@
 extern RingBuffer_t uart1_rx_buffer;
 
 /**
- * @brief 带互斥锁的 UART1 发送封装，防止多任务并发导致输出乱码
+ * @brief UART1 DMA 发送静态缓冲区
+ *
+ * HAL_UART_Transmit_DMA 要求缓冲区在 DMA 传输期间持续有效（不能是栈变量），
+ * 因此使用静态数组持有数据。互斥锁保证同一时刻只有一路发送在进行，
+ * 信号量由 HAL_UART_TxCpltCallback 在传输结束后释放，解除任务等待。
+ */
+#define UART1_TX_DMA_BUF_SIZE  128u
+static uint8_t uart1_tx_dma_buf[UART1_TX_DMA_BUF_SIZE];
+
+/**
+ * @brief 带互斥锁的 UART1 DMA 发送封装
+ *
+ * 流程：
+ *   1. Mutex Acquire  —— 独占发送通道
+ *   2. 拷贝数据到静态缓冲区
+ *   3. HAL_UART_Transmit_DMA —— 启动传输，立即返回
+ *   4. Semaphore Acquire  —— 挂起等待 TxCplt 回调
+ *   5. Mutex Release  —— 释放通道
  */
 static void uart1_send(const char *buf, uint16_t len)
 {
+    if (len == 0 || len > UART1_TX_DMA_BUF_SIZE) { return; }
+
     osMutexAcquire(uart1_tx_mutexHandle, osWaitForever);
-    HAL_UART_Transmit(&huart1, (const uint8_t *)buf, len, 0xFFFF);
+
+    memcpy(uart1_tx_dma_buf, buf, len);
+    HAL_UART_Transmit_DMA(&huart1, uart1_tx_dma_buf, len);
+
+    /* 等待 HAL_UART_TxCpltCallback 释放信号量 */
+    osSemaphoreAcquire(uart1_tx_semHandle, osWaitForever);
+
     osMutexRelease(uart1_tx_mutexHandle);
 }
 
