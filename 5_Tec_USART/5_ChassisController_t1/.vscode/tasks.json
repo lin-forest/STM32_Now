@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flash STM32 via J-Link",
+      "type": "process",
+      "command": "/opt/SEGGER/JLink/JLinkExe",
+      "args": [
+        "-Device", "STM32F103C8",
+        "-If", "SWD",
+        "-Speed", "4000",
+        "-CommanderScript", "${workspaceFolder}/flash.jlink"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}
+
