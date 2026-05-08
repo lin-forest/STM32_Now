@@ -30,13 +30,18 @@ typedef enum {
  * @brief 串口消息结构体 (用于uartToCanQueue)
  * @note  这是从串口接收并解析后的结构化数据
  * @note  字段按对齐顺序排列: uint32_t优先, 避免3字节填充, sizeof=16字节
- * @note  cmd 字段透传至 CAN 总线，由接收端根据 Command_ID_t 解释执行
+ * @note  cmd 字段是 UART 帧指令（Command_ID_t），仅用于网关内部路由/日志。
+ *        CAN 命令字节请放入 data[0]（参考 CAN_CMD_* 宏定义），两者值不同。
+ *        历史备注：早期注释写"cmd 透传至 CAN 总线"，但实际验证发现
+ *        UART cmd 值与 CAN 命令码不兼容，强行透传会导致协议解析错误，
+ *        因此保持 data[] 直通 CAN 的设计。
  */
 typedef struct {
     uint32_t id;      // CAN ID (最大29位扩展帧)
-    uint8_t  cmd;     // 指令, 来自 Command_ID_t，透传至 CAN data[0]
+    uint8_t  cmd;     // UART 帧指令 (Command_ID_t)，仅网关内部路由，不发送到 CAN
+                      // CAN 命令码请用 CAN_CMD_* 宏填写到 data[0]
     uint8_t  len;     // 数据长度
-    uint8_t  data[8]; // 数据负载 (最多8字节, 对齐CAN)
+    uint8_t  data[8]; // 数据负载 (最多8字节, 对齐CAN); data[0] 为 CAN 命令字节
 } App_UART_Message_t;
 
 

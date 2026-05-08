@@ -58,6 +58,9 @@
   * @param  hcan: CAN句柄指针
   * @retval None
   */
+/** @brief canRxQueue 丢帧计数器（ISR 中递增，volatile 防止编译器优化） */
+static volatile uint32_t canRxQueue_drop_cnt = 0;
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CAN_RxHeaderTypeDef rx_header;
@@ -75,7 +78,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 
         // 3. 将消息发送到FreeRTOS队列 (canRxQueueHandle)
         // 注意: 在中断服务程序中, osMessageQueuePut的最后一个参数(timeout)必须为0
-        osMessageQueuePut(canRxQueueHandle, &can_msg, 0, 0);
+        if (osMessageQueuePut(canRxQueueHandle, &can_msg, 0, 0) != osOK) {
+            canRxQueue_drop_cnt++;
+        }
     }
 }
 

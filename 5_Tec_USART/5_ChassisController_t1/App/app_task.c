@@ -20,14 +20,32 @@ extern RingBuffer_t uart1_rx_buffer;
 static uint8_t uart1_tx_dma_buf[UART1_TX_DMA_BUF_SIZE];
 
 /**
+ * @brief uartToCanQueue 丢帧计数器
+ *
+ * osMessageQueuePut 返回非 osOK（队列满）时递增。
+ * 可接日志/诊断接口查询，辅助排查上位机发送频率是否过快。
+ */
+static uint32_t uartToCanQueue_drop_cnt = 0;
+
+/**
+ * @brief UART1 DMA 发送信号量超时 (毫秒)
+ *
+ * 防止 DMA 启动失败或中断丢失导致 osSemaphoreAcquire 永久阻塞。
+ * 1000ms 远大于 UART 115200bps 下 128 字节的传输时间 (~11ms)。
+ */
+#define UART1_TX_SEM_TIMEOUT_MS  1000u
+
+/**
  * @brief 带互斥锁的 UART1 DMA 发送封装
  *
  * 流程：
  *   1. Mutex Acquire  —— 独占发送通道
  *   2. 拷贝数据到静态缓冲区
  *   3. HAL_UART_Transmit_DMA —— 启动传输，立即返回
- *   4. Semaphore Acquire  —— 挂起等待 TxCplt 回调
+ *   4. Semaphore Acquire  —— 挂起等待 TxCplt 回调（带超时防死锁）
  *   5. Mutex Release  —— 释放通道
+ *
+ * @note  DMA 启动失败或信号量超时时自动释放 mutex，避免死锁。
  */
 static void uart1_send(const char *buf, uint16_t len)
 {
@@ -36,10 +54,20 @@ static void uart1_send(const char *buf, uint16_t len)
     osMutexAcquire(uart1_tx_mutexHandle, osWaitForever);
 
     memcpy(uart1_tx_dma_buf, buf, len);
-    HAL_UART_Transmit_DMA(&huart1, uart1_tx_dma_buf, len);
 
-    /* 等待 HAL_UART_TxCpltCallback 释放信号量 */
-    osSemaphoreAcquire(uart1_tx_semHandle, osWaitForever);
+    /* DMA 启动失败 → 不会触发 TxCpltCallback → 直接释放 mutex 返回 */
+    if (HAL_UART_Transmit_DMA(&huart1, uart1_tx_dma_buf, len) != HAL_OK)
+    {
+        osMutexRelease(uart1_tx_mutexHandle);
+        return;
+    }
+
+    /* 等待 TxCplt 信号量，超时说明中断丢失，释放 mutex 防止死锁 */
+    if (osSemaphoreAcquire(uart1_tx_semHandle, UART1_TX_SEM_TIMEOUT_MS) != osOK)
+    {
+        osMutexRelease(uart1_tx_mutexHandle);
+        return;
+    }
 
     osMutexRelease(uart1_tx_mutexHandle);
 }
@@ -229,7 +257,9 @@ void ProtocolParser_Task_Run(void *argument)
                             state = STATE_WAIT_DATA;
                         } else {
                             // 如果数据长度为0, 报文接收完成
-                            osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0);
+                            if (osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0) != osOK) {
+                                uartToCanQueue_drop_cnt++;
+                            }
                             state = STATE_WAIT_SOF;
                         }
                     } else {
@@ -248,7 +278,9 @@ void ProtocolParser_Task_Run(void *argument)
                         current_msg.data[data_idx++] = byte_received;
                         if (data_idx >= current_msg.len) {
                             // 所有数据字节接收完毕, 报文接收完成
-                            osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0);
+                            if (osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0) != osOK) {
+                                uartToCanQueue_drop_cnt++;
+                            }
                             state = STATE_WAIT_SOF;
                         }
                     }

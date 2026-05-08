@@ -10,16 +10,18 @@
 
 `ProtocolParser_Task_Run` 运行在 `osPriorityNormal1`（最高），`UartToCan` 在 `Normal`。ProtocolParser 填充 `uartToCanQueue` 后，由于自身优先级更高，会继续运行直到缓冲区空。低优先级的 UartToCan 只有等 ProtocolParser 主动阻塞才能获得 CPU。在 UART 连续数据流场景下，队列会被快速填满。
 
-关键问题：`osMessageQueuePut` 使用 **timeout = 0**（非阻塞），队列满时直接返回 `osErrorResource`——**且返回值未被检查**。这意味着持续高优先级的数据输入会导致帧静默丢弃。
+关键问题：`osMessageQueuePut` 使用 **timeout = 0**（非阻塞），队列满时直接返回 `osErrorResource`——**原版返回值未被检查**。这意味着持续高优先级的数据输入会导致帧静默丢弃。
 
 ```c
-// app_task.c:233 — 返回值未检查
-osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0);
+// app_task.c — 已修复：失败时递增 uartToCanQueue_drop_cnt
+if (osMessageQueuePut(uartToCanQueueHandle, &current_msg, 0, 0) != osOK) {
+    uartToCanQueue_drop_cnt++;
+}
 ```
 
 - **影响**：瞬时 UART 数据量超过队列深度（16）时，帧静默丢失。
-- **风险等级**：中
-- **建议**：至少检查返回值做错误统计；或改用 `osWaitForever`（但需考虑优先级反转）；或考虑 ProtocolParser 与 UartToCan 优先级对调。
+- **风险等级**：中（已增加丢帧计数，可诊断）
+- **修复状态**：`osMessageQueuePut` 返回值已检查 ✅；丢帧可追溯 ✅；但优先级反转和队列满丢帧本身未解决，需架构层面优化
 
 ### 1.2 事件标志与环形缓冲区的 TOCTOU 竞态
 
@@ -54,20 +56,31 @@ if (ring_buffer_get(&uart1_rx_buffer, &byte_received)) {
 
 ## 二、功能性缺陷
 
-### 2.1 `cmd` 字段未透传到 CAN 总线（设计-实现不一致）
+### 2.1 ~~`cmd` 字段未透传到 CAN 总线~~ ⚠️ 误报：不是 bug，是注释错误
+
+> **回溯结论**：经 [A1_dp_t1.md](A1_dp_t1.md) 完整数据流分析，数据通路正确——CAN data[0] 通过 UART 帧的 DATA 段携带命令字节（`CAN_CMD_*` 宏），`cmd` 字段（`Command_ID_t`）是另一套编码，强行透传会破坏 CAN 协议解析。**这不是功能性 bug，而是 `app_config.h` 注释用语不准确。**
+
+#### 当时的分析依据
 
 `app_config.h:38` 注释说明 `cmd` 字段"透传至 CAN 总线"，但 `UartToCan_Task_Run` 仅发送 `uart_msg.data`：
 
 ```c
-// app_task.c:87
+// app_task.c
 HAL_CAN_AddTxMessage(&hcan, &tx_header, uart_msg.data, &tx_mailbox);
 ```
 
-`cmd` 字节从未被放入 CAN data payload。CAN 接收端收到的只有 UART 帧的 DATA 段，缺少指令类型信息。例如 `CMD_SET_SPEED (0x01)` 和 `CMD_GET_STATE (0x02)` 的 CAN 帧 payload 无法区分。
+`cmd` 字节从未被放入 CAN data payload，审查者据此判定为设计-实现不一致。
 
-- **影响**：CAN 接收端无法确定该帧是哪条指令，上层协议层实际不可用。
-- **风险等级**：**高**（功能性 bug）
-- **修复方案**：将 `cmd` 填入 `data[0]`，后续数据从 `data[1]` 开始，DLC 在发送时 +1；或在 CAN ID 中编码指令信息。
+#### 实际数据流验证
+
+1. 上位机 UART 帧中，`data[0]` 已经是 CAN 命令字节（如 `0x11` = `CAN_CMD_SET_SPEED_T2`）
+2. 网关只需透传 `data[]`，CAN 侧按 `data[0]` 解析指令类型
+3. `cmd` 字段（`0x01` = `CMD_SET_SPEED`）是 UART 帧自身协议，与 CAN 命令码完全不同
+4. 强行将 `cmd` 填入 `data[0]` 会使 CAN 侧将设速指令误识别为查状态指令
+
+- **原风险等级**：~~高~~
+- **实际影响**：无（代码正确，注释有误）
+- **修复**：注释已修正（`fix_base` / `49bb8dc`），明确说明 cmd 仅用于网关内部路由，CAN 命令码请填入 `data[0]`
 
 ### 2.2 CAN 回传帧（下行）为纯文本格式
 
@@ -87,20 +100,18 @@ CAN RX | ID: 0x123 | DLC: 8 | Data: 01 02 03 04 05 06 07 08
 
 ### 3.1 关键 API 返回值未检查
 
-| 调用位置 | API | 问题 |
-|---------|-----|------|
-| `app_task.c:233/251` | `osMessageQueuePut` | 队列满时消息静默丢弃 |
-| `app_task.c:38` | `osMutexAcquire` | 理论上 `osWaitForever` 不会失败，但未防御性检查 |
-| `app_task.c:42` | `osSemaphoreAcquire` | 信号量超时会导致互斥锁死锁（见 3.2） |
+| 调用位置 | API | 问题 | 修复状态 |
+|---------|-----|------|:-------:|
+| `app_task.c` | `osMessageQueuePut` | 队列满时消息静默丢弃 | ✅ 已修复（丢帧计数） |
+| `app_task.c` | `osMutexAcquire` | 理论上 `osWaitForever` 不会失败，但未防御性检查 | — 维持原样 |
+| `app_task.c` | `osSemaphoreAcquire` | 信号量超时会导致互斥锁死锁 | ✅ 已修复（1000ms 超时 + 失败释放 mutex） |
 
-### 3.2 DMA 发送过程中任务挂起带来的连锁阻塞
+### 3.2 DMA 发送过程中任务挂起带来的连锁阻塞（已修复）
 
-`uart1_send()` 的流程：**Mutex → memcpy → DMA → Semaphore 等待 → Mutex 释放**
-
-如果 `osSemaphoreAcquire` 因某种原因（DMA 回调未触发、信号量被意外消耗）超时或返回错误，该任务将永久持有 `uart1_tx_mutexHandle`，所有其他需要 UART TX 的任务全部死锁。
+`uart1_send()` 原版流程：**Mutex → memcpy → DMA → Semaphore 等待 → Mutex 释放**
 
 ```c
-// app_task.c:36-44
+// app_task.c — 修复前（基线 commit 19c25f4）
 osMutexAcquire(uart1_tx_mutexHandle, osWaitForever);
 memcpy(uart1_tx_dma_buf, buf, len);
 HAL_UART_Transmit_DMA(&huart1, uart1_tx_dma_buf, len);
@@ -108,9 +119,32 @@ osSemaphoreAcquire(uart1_tx_semHandle, osWaitForever);  // ← 潜在的死锁�
 osMutexRelease(uart1_tx_mutexHandle);
 ```
 
-- **影响**：信号量异常时整个 UART TX 子系统死锁，心跳继续但通信停止。
-- **风险等级**：中
-- **建议**：`osSemaphoreAcquire` 使用有限超时（如 100ms），失败时仍释放 Mutex 并上报错误。
+DMA 回调未触发或信号量被意外消耗时，`osSemaphoreAcquire` 永久阻塞，该任务持有 `uart1_tx_mutexHandle` 不释放，所有其他需要 UART TX 的任务全部死锁。
+
+**修复后（`fix_base` / `49bb8dc`）：**
+
+```c
+// app_task.c — 修复后
+osMutexAcquire(uart1_tx_mutexHandle, osWaitForever);
+memcpy(uart1_tx_dma_buf, buf, len);
+
+if (HAL_UART_Transmit_DMA(&huart1, uart1_tx_dma_buf, len) != HAL_OK)
+{
+    osMutexRelease(uart1_tx_mutexHandle);  // DMA 启动失败 → 释放 mutex
+    return;
+}
+
+if (osSemaphoreAcquire(uart1_tx_semHandle, UART1_TX_SEM_TIMEOUT_MS) != osOK)
+{
+    osMutexRelease(uart1_tx_mutexHandle);  // 超时 → 释放 mutex
+    return;
+}
+osMutexRelease(uart1_tx_mutexHandle);
+```
+
+- **影响**：DMA 启动失败或信号量超时都会释放 mutex，不再死锁。
+- **风险等级**：中 → ✅ 已修复
+- **超时值**：`UART1_TX_SEM_TIMEOUT_MS = 1000ms`（远大于 115200bps 下 128 字节约 11ms 的传输时间）
 
 ---
 
@@ -163,13 +197,14 @@ osMutexRelease(uart1_tx_mutexHandle);
 | OTA / 参数持久化 | 无 | 无 Flash 存储管理层 |
 | 诊断（UDS / bootloader） | 无 | 无独立诊断任务 |
 
-### 关键阻塞项（必须优先解决）：
+### 关键阻塞项（修复状态更新）
 
-1. **cmd 字段未透传**（2.1）——CAN 协议层无法区分指令类型，上层功能无法构建。
-2. **队列满 + 无背压机制**（1.1/3.1）——不可靠的帧传输。
-3. **App 层与 CubeMX 的耦合**（4.1）——每次 HAL 重新生成都有破坏风险。
+1. ~~**cmd 字段未透传**（2.1）~~ → ✅ **已关闭：非 bug，注释已修正**。CAN 协议层实际可正常工作。
+2. **队列满 + 无背压机制**（1.1/3.1）→ ⚠️ **部分修复**：丢帧可检测（增加计数器），但队列满丢弃本身和优先级反转未解决。
+3. **App 层与 CubeMX 的耦合**（4.1）→ ❌ 未处理，仍需架构重构。
 
 ---
 
 *分析日期：2026-05-07*
 *基线版本：commit `19c25f4`*
+*审查后修复见 `fix_base` 分支（commit `49bb8dc`）。修复详情对比：[A1_dp_t1.md](A1_dp_t1.md)*

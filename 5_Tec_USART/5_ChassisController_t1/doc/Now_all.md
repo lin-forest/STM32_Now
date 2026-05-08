@@ -115,16 +115,18 @@ buffer[0..255]:  [ ... data bytes ... ]
 
 ### 3.5 `app_task.c` — 核心任务实现
 
-#### 静态辅助函数：`uart1_send(buf, len)` — DMA 发送封装
+#### 静态辅助函数：`uart1_send(buf, len)` — DMA 发送封装（带超时保护）
 
 ```
 调用方
-  │  osMutexAcquire(uart1_tx_mutexHandle)    ← 独占 TX 通道
-  │  memcpy → uart1_tx_dma_buf[128]           ← 拷贝到静态缓冲（DMA 需持续有效）
-  │  HAL_UART_Transmit_DMA()                  ← 启动 DMA，立即返回
-  │  osSemaphoreAcquire(uart1_tx_semHandle)   ← 挂起，等待 TxCplt 回调
-  ↓                                              ↑ ISR 中 osSemaphoreRelease()
-  osMutexRelease(uart1_tx_mutexHandle)        ← 释放通道
+  │  osMutexAcquire(uart1_tx_mutexHandle)     ← 独占 TX 通道
+  │  memcpy → uart1_tx_dma_buf[128]            ← 拷贝到静态缓冲
+  │  HAL_UART_Transmit_DMA()                   ← 启动 DMA
+  │  └─ 失败 → osMutexRelease → return         ← 防永久阻塞
+  │  osSemaphoreAcquire(timeout=1000ms)        ← 等待 TxCplt 回调
+  │  └─ 超时 → osMutexRelease → return         ← 防中断丢失死锁
+  ↓
+  osMutexRelease(uart1_tx_mutexHandle)         ← 释放通道
 ```
 
 关键变量：
@@ -133,6 +135,10 @@ buffer[0..255]:  [ ... data bytes ... ]
 |---|---|
 | `uart1_tx_dma_buf[128]` | `static` 静态数组，生命周期贯穿整个 DMA 传输 |
 | `UART1_TX_DMA_BUF_SIZE 128` | 最大单次发送长度限制 |
+| `uartToCanQueue_drop_cnt` | `static uint32_t`，`osMessageQueuePut` 返回非 `osOK` 时递增，记录丢帧总数 |
+| `UART1_TX_SEM_TIMEOUT_MS 1000` | 宏，`osSemaphoreAcquire` 超时值（远大于 115200bps 下 128 字节 ~11ms 的传输时间） |
+
+> **错误保护**：`HAL_UART_Transmit_DMA` 失败时立即释放 mutex 返回，避免永不触发 TxCplt 导致的死锁。`osSemaphoreAcquire` 带 1000ms 超时，超时后释放 mutex，防止中断丢失引发的永久阻塞。
 
 ---
 
@@ -155,7 +161,7 @@ STATE_WAIT_SOF  → 检测 0xAA          → STATE_WAIT_CMD
 STATE_WAIT_CMD  → 存 cmd             → STATE_WAIT_ID
 STATE_WAIT_ID   → 小端拼接 4 字节 id  → STATE_WAIT_LEN
 STATE_WAIT_LEN  → 检查 len ≤ 8       → STATE_WAIT_DATA（len==0 直接入队）
-STATE_WAIT_DATA → 填 data[]          → 满足 len 后 osMessageQueuePut → STATE_WAIT_SOF
+STATE_WAIT_DATA → 填 data[]          → 满足 len 后 osMessageQueuePut（失败时递增 uartToCanQueue_drop_cnt）→ STATE_WAIT_SOF
 
 任意状态收到 0xAA → 视为新帧开始，重置并跳回 STATE_WAIT_CMD（容错）
 ```
@@ -244,7 +250,7 @@ uartToCanQueue [容量 16 × App_UART_Message_t]
     │
     ▼  USB_LP_CAN1_RX0_IRQHandler（ISR 上下文）
     │  封装 App_CAN_Message_t（id / len / data）
-    │  osMessageQueuePut(canRxQueueHandle, &msg)
+    │  osMessageQueuePut(canRxQueueHandle, &msg)（失败时递增 canRxQueue_drop_cnt）
     ▼
 canRxQueue [容量 16 × App_CAN_Message_t]
     │
