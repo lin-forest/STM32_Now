@@ -13,14 +13,18 @@ App/
 └── app_task.h/c      ── 四个 FreeRTOS 任务的全部实现
 
 doc/
-├── trae.md             ── 架构与数据流文档（主设计文档）
-├── claude.md           ── 代码审查优化归档（P0/P1/P2 问题记录）
-├── fix1_UartToDma.md   ── UART TX 阻塞→DMA 改造专题记录
-├── result.md           ── 项目目标完成状态
-├── goal.md             ── 演进规划与验证要点
-├── goal2_ToMaster.md   ── 网关→下位主控架构演进设计讨论
-├── plan2_ToMaster.md   ── 演进实施规划
-└── Now_all.md          ── 当前状态汇总（本文件）
+├── trae.md                  ── 架构与数据流文档（主设计文档）
+├── claude.md                ── 代码审查优化归档（P0/P1/P2 问题记录）
+├── fix1_UartToDma.md        ── UART TX 阻塞→DMA 改造专题记录
+├── result.md                ── 项目目标完成状态
+├── goal.md                  ── 演进规划与验证要点
+├── goal2_ToMaster.md        ── 网关→下位主控架构演进设计讨论
+├── plan2_ToMaster.md        ── 演进实施规划
+├── Now_all.md               ── 当前状态汇总（本文件）
+└── DesignComparison_2/      ── 反馈设计审查与修复
+    ├── Q2_comparison_t1.md  ── 反馈问题分析
+    ├── D2fix1_plan.md       ── 修复计划
+    └── D2result1.md         ── 修复结果与教训
 ```
 
 ---
@@ -73,6 +77,7 @@ doc/
 | `uart1_tx_semHandle` | `osSemaphoreId_t` | DMA 传输完成信号量（ISR 释放，任务等待） |
 | `uart1_rx_eventHandle` | `osEventFlagsId_t` | ISR 通知 ProtocolParser 有新数据到来 |
 | `UART1_RX_FLAG 0x01U` | 宏 | 事件标志位掩码 |
+| `can_tx_done_cnt` | `volatile uint32_t` | CAN TX 完成计数器（ISR 递增，Task 读取），用于 CAN_TX OK 反馈 |
 
 ---
 
@@ -188,6 +193,15 @@ else                        // 标准帧 11-bit
     tx_header.IDE = CAN_ID_STD;  tx_header.StdId = uart_msg.id;
 ```
 
+CAN 发送后通过 UART 反馈结果：
+
+```
+CAN_TX OK   | ID=0x102 DLC=2 Done=15    // 发送成功，Done 为历史累计完成数
+CAN_TX FAIL | ID=0x102 DLC=2 Status=3   // 发送失败（邮箱满等）
+```
+
+`Done` 由 `stm32f1xx_it.c` 中的 `HAL_CAN_TxMailboxNCompleteCallback` 在 ISR 中递增，记录已从总线成功发出的帧数。CAN 外设 TMEIE 中断由 `can.c` 的 `MX_CAN_Init` 中 `__HAL_CAN_ENABLE_IT(&hcan, CAN_IT_TX_MAILBOX_EMPTY)` 开启。
+
 ---
 
 #### 任务③：`CanRxProcess_Task_Run()` — CAN→UART 透明输出
@@ -239,8 +253,17 @@ uartToCanQueue [容量 16 × App_UART_Message_t]
     │  osMessageQueueGet() 阻塞等待
     │  判断帧类型（> 0x7FF → 扩展帧），填充 tx_header
     │  HAL_CAN_AddTxMessage(&hcan, &tx_header, data, &tx_mailbox)
+    │  └─ 成功 → sprintf("CAN_TX OK | ID=... Done=%lu", can_tx_done_cnt)
+    │  └─ 失败 → sprintf("CAN_TX FAIL | ID=... Status=%d", tx_status)
+    │  uart1_send() 打印到 PC
     ▼
 [CAN 总线]
+    │
+    ▼  CAN TX 完成 → TSR.RQCPx=1, TXOKx=1 → 硬件中断
+    │  USB_HP_CAN1_TX_IRQHandler → HAL_CAN_IRQHandler
+    │  └─ HAL_CAN_TxMailboxNCompleteCallback → can_tx_done_cnt++
+    ▼
+ (Done 计数器递增，供下次 CAN_TX OK 打印)
 ```
 
 ### 4.2 下行：CAN → UART
@@ -280,3 +303,4 @@ USART1 TX → [PC 串口工具]
 | `canRxQueue`（Queue×16） | ISR→Task | CAN RxISR | CanRxProcess | CAN 报文缓冲，ISR 快速返回 |
 | `uart1_tx_mutexHandle`（Mutex） | 多→单 | — | `uart1_send()` | 防两个任务同时操作 UART1 TX |
 | `uart1_tx_semHandle`（Semaphore） | ISR→Task | TxCplt 回调 | `uart1_send()` | DMA 完成通知，任务让出 CPU |
+| `can_tx_done_cnt`（`volatile uint32_t`） | ISR→Task | CAN TX ISR | UartToCan_Task | CAN 总线发送完成确认，`Cortex-M3 读 uint32_t 天然原子` |
