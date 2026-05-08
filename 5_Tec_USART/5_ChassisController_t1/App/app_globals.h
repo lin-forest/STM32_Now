@@ -23,4 +23,7 @@ extern osEventFlagsId_t   uart1_rx_eventHandle;  // ISR 通知 ProtocolParser �
 
 #define UART1_RX_FLAG  0x01U  // uart1_rx_eventHandle 使用的标志位
 
+// ISR 中递增的 CAN TX 完成计数器 (volatile: ISR 写，Task 读)
+extern volatile uint32_t can_tx_done_cnt;
+
 #endif /* APP_GLOBALS_H */

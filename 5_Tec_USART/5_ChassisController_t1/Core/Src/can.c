@@ -54,7 +54,7 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-
+  __HAL_CAN_ENABLE_IT(&hcan, CAN_IT_TX_MAILBOX_EMPTY);
   /* USER CODE END CAN_Init 2 */
 
 }

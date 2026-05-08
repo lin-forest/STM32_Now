@@ -58,6 +58,9 @@
   * @param  hcan: CAN句柄指针
   * @retval None
   */
+/** @brief CAN TX 完成计数器（ISR 递增，Task 读取，volatile 防优化） */
+volatile uint32_t can_tx_done_cnt = 0;
+
 /** @brief canRxQueue 丢帧计数器（ISR 中递增，volatile 防止编译器优化） */
 static volatile uint32_t canRxQueue_drop_cnt = 0;
 
@@ -82,6 +85,21 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             canRxQueue_drop_cnt++;
         }
     }
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+    can_tx_done_cnt++;
+}
+
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+    can_tx_done_cnt++;
+}
+
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+    can_tx_done_cnt++;
 }
 
 /**

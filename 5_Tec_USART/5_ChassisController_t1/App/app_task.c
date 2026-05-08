@@ -94,13 +94,7 @@ void UartToCan_Task_Run(void *argument)
     // 1. 从uartToCanQueue队列中等待并接收数据
     if (osMessageQueueGet(uartToCanQueueHandle, &uart_msg, NULL, osWaitForever) == osOK)
     {
-      // 2. [诊断探针#1] 打印收到的消息，确认协议解析任务工作正常 (暂时禁用以排查死机问题)
-    //   /*
-      int offset = sprintf(dbg_buffer, "UART->CAN | RX_MSG | ID: 0x%lX, DLC: %d. Sending...\r\n", uart_msg.id, uart_msg.len);
-      uart1_send(dbg_buffer, offset);
-    //   */
-
-      // 3. [增强逻辑] 根据ID大小，自动判断是标准帧还是扩展帧
+      // 2. 根据ID大小，自动判断是标准帧还是扩展帧
       if (uart_msg.id > 0x7FF) { // CAN ID大于11位，为扩展帧
           tx_header.IDE = CAN_ID_EXT;
           tx_header.ExtId = uart_msg.id;
@@ -108,20 +102,22 @@ void UartToCan_Task_Run(void *argument)
           tx_header.IDE = CAN_ID_STD;
           tx_header.StdId = uart_msg.id;
       }
-      
+
       tx_header.DLC = uart_msg.len;   // 设置数据长度
-      
-      // 4. 调用CAN发送函数，并检查其返回值
+
+      // 3. 调用CAN发送函数，统一在结果处打印反馈
       HAL_StatusTypeDef tx_status = HAL_CAN_AddTxMessage(&hcan, &tx_header, uart_msg.data, &tx_mailbox);
 
-      // 5. [诊断探针#2] 如果CAN发送失败，打印出错误状态 (暂时禁用以排查死机问题)
-      if (tx_status != HAL_OK)
+      int offset;
+      if (tx_status == HAL_OK)
       {
-        //   /*
-          offset = sprintf(dbg_buffer, "UART->CAN | TX_FAIL | Status: %d\r\n", tx_status);
-          uart1_send(dbg_buffer, offset);
-        //   */
+          offset = sprintf(dbg_buffer, "CAN_TX OK | ID=0x%lX DLC=%d Done=%lu\r\n", uart_msg.id, uart_msg.len, can_tx_done_cnt);
       }
+      else
+      {
+          offset = sprintf(dbg_buffer, "CAN_TX FAIL | ID=0x%lX DLC=%d Status=%d\r\n", uart_msg.id, uart_msg.len, tx_status);
+      }
+      uart1_send(dbg_buffer, offset);
     }
   }
   /* USER CODE END UartToCan_Task_Run */
