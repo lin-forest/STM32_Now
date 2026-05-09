@@ -304,3 +304,74 @@ USART1 TX → [PC 串口工具]
 | `uart1_tx_mutexHandle`（Mutex） | 多→单 | — | `uart1_send()` | 防两个任务同时操作 UART1 TX |
 | `uart1_tx_semHandle`（Semaphore） | ISR→Task | TxCplt 回调 | `uart1_send()` | DMA 完成通知，任务让出 CPU |
 | `can_tx_done_cnt`（`volatile uint32_t`） | ISR→Task | CAN TX ISR | UartToCan_Task | CAN 总线发送完成确认，`Cortex-M3 读 uint32_t 天然原子` |
+
+---
+
+## 六、CAN 命令层分析：网关透传 vs. 命令解释
+
+### 6.1 核心结论
+
+**本项目是 UART→CAN 透明网关，不解释 CAN 命令字节。** UART 收到的帧被原封不动转发到 CAN 总线，canRxQueue 收到的 CAN 帧被原封不动格式化输出到 UART。命令的解析和执行由下游电机控制器完成。
+
+### 6.2 当前代码中实际存在的命令
+
+| 符号 | 值 | 所在文件 | 用途 | 是否被使用 |
+|------|-----|---------|------|-----------|
+| `CMD_SET_SPEED` | `0x01` | `app_config.h:23` | UART 帧命令枚举 | ✅ 状态机中作为 cmd 字段存储 |
+| `CMD_GET_STATE` | `0x02` | `app_config.h:24` | UART 帧命令枚举 | ✅ 状态机中作为 cmd 字段存储 |
+| `CMD_SET_MODE` | `0x03` | `app_config.h:25` | UART 帧命令枚举 | ✅ 状态机中作为 cmd 字段存储 |
+| `CMD_ESTOP` | `0x04` | `app_config.h:26` | UART 帧命令枚举 | ❌ 仅定义，从未在任务代码中引用 |
+
+> `CMD_ESTOP` 在枚举中存在但无任何任务逻辑调用它。网关的行为是：若 UART 收到 `CMD_ESTOP` 帧，会将其**透传**到 CAN 总线，由下游电机控制器执行停止，本网关不做任何处理。
+
+### 6.3 文档中存在但代码中未实现的 CAN 命令
+
+以下符号仅在 `doc/DesignComparison/` 的参考文档中定义，**当前源代码中不存在**：
+
+| 符号 | 值 | 文档来源 | 说明 |
+|------|-----|---------|------|
+| `CAN_CMD_SET_SPEED` | `0x07` | `A1_dp_t1.md:130` | **旧版**调速命令，已被 `0x11` 替代 |
+| `CAN_CMD_SET_SPEED_T2` | `0x11` | `A1_dp_t1.md:129` | 新版调速命令 |
+| `CAN_CMD_STOP` | `0x08` | `A1_dp_t1.md:131` | 停止命令 |
+| `CAN_CMD_STOP_STDID` | `0x101` | `Q1_dp_t1_comparsion.md:664` | 全车停止 CAN ID |
+
+### 6.4 全车停止指令帧分析
+
+用户查询的帧序列 `AA 01 01 01 00 00 02 11 00`，按协议拆解：
+
+```
+位置:    [0]   [1]   [2] [3] [4] [5]   [6]   [7]   [8]
+值:     0xAA  0x01  0x01 0x01 0x00 0x00  0x02  0x11  0x00
+字段:    SOF   cmd   ──── CAN ID (LE) ────  DLC   ── data ──
+解析:          0x01  0x00000101          0x02  0x11  0x00
+              (SET_SPEED)  (CAN ID)      (长度) (调速) (速度=0)
+```
+
+| 字段 | 值 | 含义 |
+|------|-----|------|
+| SOF | `0xAA` | 帧头 |
+| cmd | `0x01` | `CMD_SET_SPEED` |
+| CAN ID | `0x00000101` | 目标 CAN 标准帧 ID（注意：文档中全车停止 ID 为 `0x101`，与此一致） |
+| DLC | `0x02` | 2 字节数据 |
+| data[0] | `0x11` | CAN 命令字节 `CAN_CMD_SET_SPEED_T2`（调速） |
+| data[1] | `0x00` | 速度值 = 0（停止） |
+
+> **语义**：通过调速命令将速度设为 0，实现停止。这不是专用的 `CAN_CMD_STOP (0x08)`，而是用 `SET_SPEED + 0` 等效实现停止。该帧经网关**直接透传**到 CAN 总线，CAN ID=`0x101` 的电机控制器收到后执行速度为 0。
+
+### 6.5 透传逻辑关键代码
+
+`UartToCan_Task_Run`（[app_task.c:80-124](App/app_task.c#L80)）中的帧转发：
+
+```c
+// uart_msg.data[] 原样映射为 CAN 数据字节，不做任何解析
+if (uart_msg.id > 0x7FF)
+    tx_header.IDE = CAN_ID_EXT;   // 扩展帧 29-bit
+else
+    tx_header.IDE = CAN_ID_STD;   // 标准帧 11-bit
+HAL_CAN_AddTxMessage(&hcan, &tx_header, uart_msg.data, &tx_mailbox);
+```
+
+- **不检查** `uart_msg.cmd` 的值，`cmd` 字段在解析后被丢弃
+- **不检查** `uart_msg.data[0]` 的 CAN 命令字节含义
+- **仅判断** `uart_msg.id` 的范围来决定标准帧/扩展帧
+- 数据字节（包括 `data[0]` 即 CAN 命令字节）**原样拷贝**到 CAN 帧

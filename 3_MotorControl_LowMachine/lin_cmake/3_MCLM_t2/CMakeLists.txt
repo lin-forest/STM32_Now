@@ -79,6 +79,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # ===== Services =====
     App/services/command.c
     App/services/logger.c
+    App/services/can_filter.c
     # App/services/can_service.c # Add this line
 )
 

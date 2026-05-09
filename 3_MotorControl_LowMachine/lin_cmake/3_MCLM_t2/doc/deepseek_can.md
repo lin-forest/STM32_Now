@@ -2,11 +2,12 @@
 
 ## 架构说明
 
-**现状：** `can.c` 的中断回调内联协议解析逻辑，职责分离通过文件目录体现：
+**现状：** 软件过滤从 `can.c` 回调中抽取为独立模块，职责分离通过文件目录体现：
 
 | 层 | 文件 | 职责 |
 |---|---|---|
-| HAL 层 | `Core/Src/can.c` | 收帧、内联解析、推队列 |
+| HAL 层 | `Core/Src/can.c` | 收帧、调过滤模块、推队列 |
+| 服务层 | `App/services/can_filter.h/.c` | 表格驱动 ID 白名单 + 命令字节校验 + 映射 |
 | 服务层 | `App/services/command.h` | 定义 `CommandMsg_t`/`AckMsg_t` 结构体 |
 | 任务层 | `App/tasks/command_task.c` | 命令路由、CAN TX 响应 |
 
@@ -51,10 +52,12 @@ CAN 总线
 [Core/Src/can.c]
 HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     │  调用 HAL_CAN_GetRxMessage() → rxHeader, rxData[8]
-    │  ID 白名单过滤（7 个已知 ID，其余丢弃）
-    │  switch(rxData[0]) 协议解析 → CommandMsg_t cmd
-    │  若 cmd.type == CMD_NONE → 丢弃返回
-    │  否则 osMessageQueuePut(CommandQueueHandle, &cmd, 0, 0)
+    │  CAN_Filter_Accept(id, rxData[0]) 查白名单表 ← can_filter.c
+    │     └─ REJECT → return（丢弃）
+    │  CAN_Filter_GetMotorId(id)        查表 → motor_id
+    │  CAN_Filter_CmdByteToType(id, rxData[0]) → CommandType_t
+    │  CAN_Filter_GetValue(id, rxData[0], rxData) → 速度值
+    │  若 cmdMsg.type != CMD_NONE → osMessageQueuePut(CommandQueueHandle, &cmd, 0, 0)
     ▼
 [FreeRTOS Queue]
 CommandQueueHandle  (CommandMsg_t)
@@ -83,46 +86,53 @@ Command_Task(void *argument)
 
 ---
 
-## 协议解析：内联于 `can.c`
+## 协议解析：`can_filter.c` 表格驱动
 
-文件：`Core/Src/can.c`（中断回调函数 `HAL_CAN_RxFifo0MsgPendingCallback`）
+文件：`App/services/can_filter.c`
 
-**输入：**
-- `rxHeader->StdId`：CAN 帧 ID
-- `rxData[0]`：命令字节（CMD byte）
-- `rxData[1]`：参数字节（速度值等）
+输入：
+- `stdId`：CAN 帧 ID
+- `cmdByte`：命令字节（`rxData[0]`）
+- `rxData`：完整数据帧（提取速度值时用到）
 
-**ID 白名单（代码中最外层 if 过滤）：**
+### 白名单表
 
-| StdId | 用途 |
-|---|---|
-| `0x123` / `0x124` | 电机控制 |
-| `0x223` / `0x224` | 状态查询 / 日志控制 |
-| `0x101` | 全车停止 |
-| `0x102` | 全车转向 |
-| `0x103` | 全车动力 |
+以表格形式（而非 if-else）定义 7 个 ID 的合法命令字节组合：
 
-通过白名单后，按 ID 决定 `motor_id`：
-- `0x123` / `0x223` / `0x102` → `motor_id = 0`（转向）
-- `0x124` / `0x224` / `0x103` → `motor_id = 1`（动力）
-- `0x101` → `motor_id = 0xFF`（广播）
-
-**命令字节映射：**
-
-| rxData[0] | 输出 type | 输出 value |
+| StdId | motor_id | 允许的命令字节 |
 |---|---|---|
-| `CAN_CMD_SET_SPEED_T2` (`0x11`) | `CAN_CMD_SET_SPEED` | **`(int8_t)rxData[1]`**（先转 int8_t 保留符号，再隐式扩展为 int16_t） |
-| `CAN_CMD_SET_SPEED` (`0x07`) | `CAN_CMD_SET_SPEED` | `(int8_t)rxData[CAN_DATA_INDEX_SPEED]` |
-| `CAN_CMD_STOP` (`0x08`) | `CAN_CMD_STOP` | 0 |
-| `CAN_CMD_REVERSE_BYTE` (`0x02`) | **`CMD_REVERSE`** | 0（任务侧用 `-MOTOR_CMD_DEFAULT_SPEED`） |
-| `CAN_CMD_QUERY_STATUS` (`0x01`) | `CMD_QUERY_STATUS` | 0（仅当 StdId == `0x223` 或 `0x224`） |
-| `CAN_CMD_LOG_START` (`0x04`) | `CMD_LOG_START` | 0（仅当 StdId == `0x223` 或 `0x224`） |
-| `CAN_CMD_LOG_STOP` (`0x05`) | `CMD_LOG_STOP` | 0（仅当 StdId == `0x223` 或 `0x224`） |
-| 其他 | `CMD_NONE`（丢弃） | — |
+| `CAN_MOTOR_TURN_CMD_STDID` | 0 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_POWER_CMD_STDID` | 1 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | 0 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | 1 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_CMD_STOP_STDID` (`0x101`) | 广播 | `0x08` 停止, `0x11` 调速 |
+| `CAN_CMD_TURN_STDID` (`0x102`) | 0 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
+| `CAN_CMD_POWER_STDID` (`0x103`) | 1 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
 
-> 注意：`CAN_CMD_REVERSE_BYTE` 在 switch 中 **不检查 ID**，只要通过最外层白名单即生效（即 0x123/0x124/0x223/0x224/0x101/0x102/0x103 均可触发）。`CAN_CMD_SET_SPEED`/`CAN_CMD_STOP` 同理。
->
-> `CAN_CMD_SET_SPEED_T2` (`0x11`) 是旧版上位机使用的命令字节，解析后映射为与 `0x07` 相同的 `CAN_CMD_SET_SPEED` 类型。
+### 命令字节 → CommandType_t 映射
+
+| rxData[0] | 输出 type | 输出 value | 约束 |
+|---|---|---|---|
+| `0x11` | `CAN_CMD_SET_SPEED` | `(int8_t)rxData[1]` | — |
+| `0x07` | `CAN_CMD_SET_SPEED` | `(int8_t)rxData[1]` | — |
+| `0x08` | `CAN_CMD_STOP` | 0 | — |
+| `0x02` | `CMD_REVERSE` | 0（任务侧用 `-MOTOR_CMD_DEFAULT_SPEED`） | — |
+| `0x01` | `CMD_QUERY_STATUS` | 0 | 仅当 StdId == STATUS ID |
+| `0x04` | `CMD_LOG_START` | 0 | 仅当 StdId == STATUS ID |
+| `0x05` | `CMD_LOG_STOP` | 0 | 仅当 StdId == STATUS ID |
+
+> 注意：相比原内联代码，新过滤表对 ID 与命令字节的合法组合做了明确约束。原代码中 `0x11`/`0x07`/`0x08`/`0x02` 在 switch 中不检查 ID，任意白名单 ID 上发送这些字节都会被接受。新过滤表按 ID 限制了允许的命令字节（例如 STATUS ID 不再接受调速命令）。
+
+### 公共 API
+
+函数定义于 `App/services/can_filter.h`：
+
+```c
+CAN_FilterResult_t CAN_Filter_Accept(uint32_t stdId, uint8_t cmdByte);
+uint8_t           CAN_Filter_GetMotorId(uint32_t stdId);
+CommandType_t     CAN_Filter_CmdByteToType(uint32_t stdId, uint8_t cmdByte);
+int16_t           CAN_Filter_GetValue(uint32_t stdId, uint8_t cmdByte, const uint8_t rxData[8]);
+```
 
 ---
 

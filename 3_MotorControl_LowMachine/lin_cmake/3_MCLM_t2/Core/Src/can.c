@@ -29,6 +29,7 @@
 #include "stdint.h"
 #include "command.h"
 #include "app_config.h"
+#include "can_filter.h"
 
 // 使用在 freertos.c 中定义的 CMSIS 句柄
 extern osMessageQueueId_t CommandQueueHandle; 
@@ -37,85 +38,22 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CAN_RxHeaderTypeDef rxHeader;
     uint8_t rxData[8];
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) == HAL_OK)
+
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK)
+        return;
+
+    /* 软件过滤：ID + 命令字节组合校验 */
+    if (CAN_Filter_Accept(rxHeader.StdId, rxData[0]) == CAN_FILTER_REJECT)
+        return;
+
+    CommandMsg_t cmdMsg;
+    cmdMsg.motor_id = CAN_Filter_GetMotorId(rxHeader.StdId);
+    cmdMsg.type     = CAN_Filter_CmdByteToType(rxHeader.StdId, rxData[0]);
+    cmdMsg.value    = CAN_Filter_GetValue(rxHeader.StdId, rxData[0], rxData);
+
+    if (cmdMsg.type != CMD_NONE)
     {
-        uint32_t id = rxHeader.StdId;
-
-        // 只处理已知 ID，其余丢弃
-        if (id != CAN_MOTOR_TURN_CMD_STDID  && id != CAN_MOTOR_TURN_CMD_STATUS_STDID  &&
-            id != CAN_MOTOR_POWER_CMD_STDID && id != CAN_MOTOR_POWER_CMD_STATUS_STDID &&
-            id != CAN_CMD_STOP_STDID && id != CAN_CMD_TURN_STDID && id != CAN_CMD_POWER_STDID)
-        {
-            return;
-        }
-
-        CommandMsg_t cmdMsg;
-        cmdMsg.type     = CMD_NONE;
-        cmdMsg.value    = 0;
-
-        // 根据 CAN ID 决定目标电机
-        if (id == CAN_MOTOR_TURN_CMD_STDID || id == CAN_MOTOR_TURN_CMD_STATUS_STDID || id == CAN_CMD_TURN_STDID)
-        {
-            cmdMsg.motor_id = 0;          // 转向电机（电机0）
-        }
-        else if (id == CAN_MOTOR_POWER_CMD_STDID || id == CAN_MOTOR_POWER_CMD_STATUS_STDID || id == CAN_CMD_POWER_STDID)
-        {
-            cmdMsg.motor_id = 1;          // 动力电机（电机1）
-        }
-        else  // CAN_CMD_STOP_STDID / CAN_CMD_TURN_STDID / CAN_CMD_POWER_STDID
-        {
-            cmdMsg.motor_id = 0xFF;       // 广播：两个电机都执行
-        }
-
-        // 协议解析
-        switch (rxData[0])
-        {
-            case CAN_CMD_SET_SPEED_T2:
-                cmdMsg.type  = CAN_CMD_SET_SPEED;
-                cmdMsg.value = (int8_t)rxData[1];   /* Fix: 先转 int8_t 保留符号位，再隐式扩展为 int16_t */
-                break;
-
-            case CAN_CMD_SET_SPEED:
-                cmdMsg.type  = CAN_CMD_SET_SPEED;
-                cmdMsg.value = (int8_t)rxData[CAN_DATA_INDEX_SPEED];
-                break;
-
-            case CAN_CMD_STOP:
-                cmdMsg.type = CAN_CMD_STOP;
-                break;
-
-            case CAN_CMD_QUERY_STATUS:
-                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
-                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
-                    cmdMsg.type = CMD_QUERY_STATUS;
-                break;
-
-            case CAN_CMD_LOG_START:
-                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
-                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
-                    cmdMsg.type = CMD_LOG_START;
-                break;
-
-            case CAN_CMD_LOG_STOP:
-                if (id == CAN_MOTOR_TURN_CMD_STATUS_STDID ||
-                    id == CAN_MOTOR_POWER_CMD_STATUS_STDID)
-                    cmdMsg.type = CMD_LOG_STOP;
-                break;
-
-            case CAN_CMD_REVERSE_BYTE:
-                /* 独立倒转命令：设 type=CMD_REVERSE，value=0（速度由任务侧决定） */
-                cmdMsg.type  = CMD_REVERSE;
-                cmdMsg.value = 0;
-                break;
-
-            default:
-                return;
-        }
-
-        if (cmdMsg.type != CMD_NONE)
-        {
-            osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
-        }
+        osMessageQueuePut(CommandQueueHandle, &cmdMsg, 0U, 0U);
     }
 }
 
@@ -152,7 +90,7 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-    // 配置CAN过滤器，放行所有消息，由软件中断回调根据 ID 列表进行过滤
+    // 配置CAN过滤器，放行所有消息，由 can_filter.c 软件模块做精确过滤
     sFilterConfig.FilterBank = CAN_FILTER_BANK;
     sFilterConfig.FilterMode = CAN_FILTER_MODE;
     sFilterConfig.FilterScale = CAN_FILTER_SCALE;
