@@ -259,3 +259,5 @@ typedef struct {
 | `MotorQueue1Handle` | `CommandMsg_t` | `command_task.c` | 动力电机控制任务（电机 1） |
 | `AckQueueHandle` | `AckMsg_t` | `command_task.c` | `Ack_task.c` |
 | `LogQueueHandle` | `LogMotorData_t` | logger 模块 | UART 发送任务 |
+
+260511更新git用测试语句
