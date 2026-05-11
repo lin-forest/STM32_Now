@@ -375,3 +375,6 @@ HAL_CAN_AddTxMessage(&hcan, &tx_header, uart_msg.data, &tx_mailbox);
 - **不检查** `uart_msg.data[0]` 的 CAN 命令字节含义
 - **仅判断** `uart_msg.id` 的范围来决定标准帧/扩展帧
 - 数据字节（包括 `data[0]` 即 CAN 命令字节）**原样拷贝**到 CAN 帧
+
+
+260511更新git用测试语句
