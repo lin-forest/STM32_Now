@@ -21,7 +21,8 @@ typedef enum {
 // 既使用web-gpt,web-gemini,codex,gemini-assist,trae-gemini2.5pro,claude等等，开始独立修改代码，进行个人补足与重构_20260427-11:11
 typedef struct {
     uint8_t motor_id;           // 电机ID（0或1）
-    int32_t current_ticks;
+    int32_t current_ticks;      // 编码器原始计数值（每周期差值）
+    int32_t accumulated_ticks;  // 编码器累计计数值（绝对位置）
     float   target_logic_speed;
     int16_t pwm_output;
     uint32_t timestamp_ms;

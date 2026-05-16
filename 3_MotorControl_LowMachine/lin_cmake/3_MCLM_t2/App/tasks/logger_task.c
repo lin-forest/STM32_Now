@@ -11,7 +11,7 @@ void Logger_Task(void *argument)
   // main.c迁移过来的，对main.c进行解耦合
   Logger_Init();
 
-  static uint8_t local_tx_buf[64];
+  static uint8_t local_tx_buf[128];
 
   for(;;)
   {
@@ -40,10 +40,12 @@ void Logger_Task(void *argument)
       int32_t s1d = (int32_t)(fabsf(d1.target_logic_speed - (float)s1i) * 10.0f);
 
       len = snprintf((char *)local_tx_buf, sizeof(local_tx_buf),
-                 "%lu,%d,%ld.%ld,%d,%d,%ld.%ld,%d\r\n",
+                 "%lu,%d,%d,%ld.%ld,%d,%d,%d,%ld.%ld,%d\r\n",
                  (unsigned long)d0.timestamp_ms,
-                 (int)d0.current_ticks, (long)s0i, (long)s0d, (int)d0.pwm_output,
-                 (int)d1.current_ticks, (long)s1i, (long)s1d, (int)d1.pwm_output);
+                 (int)d0.current_ticks, (int)d0.accumulated_ticks,
+                 (long)s0i, (long)s0d, (int)d0.pwm_output,
+                 (int)d1.current_ticks, (int)d1.accumulated_ticks,
+                 (long)s1i, (long)s1d, (int)d1.pwm_output);
     } else {
       int32_t si = (int32_t)d0.target_logic_speed;
       int32_t sd = (int32_t)(fabsf(d0.target_logic_speed - (float)si) * 10.0f);

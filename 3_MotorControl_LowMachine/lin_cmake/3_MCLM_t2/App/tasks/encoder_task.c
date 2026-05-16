@@ -26,6 +26,7 @@ void Encoder_Task(void *argument)
         if (osMutexAcquire(myMutex, osWaitForever) == osOK)
         {
             motor->current_ticks       = diff;
+            motor->accumulated_ticks  += diff;   // 累计编码器位置
             motor->current_logic_speed = ticks_to_logic(diff);
             osMutexRelease(myMutex);
 
@@ -33,6 +34,7 @@ void Encoder_Task(void *argument)
             LogMotorData_t log_data = {
                 .motor_id           = idx,
                 .current_ticks      = diff,
+                .accumulated_ticks  = motor->accumulated_ticks,
                 .target_logic_speed = motor->target_logic_speed,
                 .pwm_output         = motor->pwm_output,
                 .timestamp_ms       = HAL_GetTick(),

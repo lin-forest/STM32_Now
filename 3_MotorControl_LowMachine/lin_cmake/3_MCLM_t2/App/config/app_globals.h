@@ -20,7 +20,8 @@ typedef struct {
     // 统一的状态反馈与控制量
     float    target_logic_speed;    // 目标逻辑速度 (-100 to 100)
     float    current_logic_speed;   // 实际测量速度
-    int32_t  current_ticks;         // 编码器原始计数值
+    int32_t  current_ticks;         // 编码器原始计数值（每周期差值）
+    int32_t  accumulated_ticks;     // 编码器累计计数值（绝对位置）
     int16_t  pwm_output;            // 当前输出的 PWM 值
 } Motor_t;
 

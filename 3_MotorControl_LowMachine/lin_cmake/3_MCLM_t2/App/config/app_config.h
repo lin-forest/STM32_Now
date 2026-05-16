@@ -26,7 +26,7 @@
  * ================================================================================= */
 
 /* ------------------- 速度与PWM范围定义 (Speed & PWM Normalization) ------------------- */
-#define SPEED_TICKS_MAX     90    // 单个控制周期内编码器的最大计数值 (用于速度计算)
+#define SPEED_TICKS_MAX     72    // 单个控制周期内编码器的最大计数值 (用于速度计算)
 #define ENCODER_FILTER_ALPHA    0.1f  // 编码器IIR滤波系数，越小越平滑，响应越慢
 #define SPEED_LOGIC_MAX     100   // 统一的逻辑速度最大值 (例如 0-100)
 #define MOTOR_CMD_DEFAULT_SPEED  50.0f  // CMD_FORWARD / CMD_REVERSE 的默认逻辑速度 (占满量程 50%)
@@ -157,7 +157,7 @@
  *   1 = 0x125/0x126 系列
  *   2 = 0x123/0x124 系列
  */
-#define CAN_ID_GROUP  1
+#define CAN_ID_GROUP  2
 
 #if CAN_ID_GROUP == 1
     #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
