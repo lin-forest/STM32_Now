@@ -86,14 +86,43 @@ void TB6612_DC_Task(void *argument)
             if (fabsf(motor->pid.setpoint) > FLT_EPSILON)
             {
                 float current_speed = motor->current_logic_speed;
+
+                /* --- Stall Detection --- */
+                if (fabsf(current_speed) < 1.0f)
+                {
+                    if (motor->stall_counter < 255)
+                        motor->stall_counter++;
+                    if (motor->stall_counter > 5)  /* stalled for > 50ms */
+                        motor->flags |= MOTOR_FLAG_STALL;
+                }
+                else
+                {
+                    motor->stall_counter = 0;
+                    motor->flags &= ~MOTOR_FLAG_STALL;
+                }
+
                 float output = PID_Compute(&(motor->pid), current_speed);
                 TB6612_Motor_SetSpeed(&(motor->hardware), (int16_t)output);
                 motor->pwm_output = motor->hardware.pwm_output;
+
+                /* --- Saturation Detection --- */
+                if (motor->pwm_output >= (PWM_MAX - 10) &&
+                    fabsf(current_speed - motor->pid.setpoint) > 10.0f)
+                {
+                    motor->flags |= MOTOR_FLAG_SATURATED;
+                }
+                else
+                {
+                    motor->flags &= ~MOTOR_FLAG_SATURATED;
+                }
             }
             else
             {
                 TB6612_Motor_Stop(&(motor->hardware));
                 motor->pwm_output = 0;
+                /* Reset flags when stopped */
+                motor->stall_counter = 0;
+                motor->flags = 0;
             }
             osMutexRelease(myMutex);
         }

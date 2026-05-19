@@ -63,7 +63,7 @@ const osThreadAttr_t UartToCan_Ta_attributes = {
   .cb_size = sizeof(uartToCanTaskControlBlock),
   .stack_mem = &uartToCanTaskBuffer[0],
   .stack_size = sizeof(uartToCanTaskBuffer),
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityNormal1,
 };
 /* Definitions for CanRxProcess_Ta */
 osThreadId_t CanRxProcess_TaHandle;
@@ -99,7 +99,7 @@ const osThreadAttr_t ProtocolParser__attributes = {
   .cb_size = sizeof(ProtocolParser_ControlBlock),
   .stack_mem = &ProtocolParser_Buffer[0],
   .stack_size = sizeof(ProtocolParser_Buffer),
-  .priority = (osPriority_t) osPriorityNormal1,
+  .priority = (osPriority_t) osPriorityNormal2,
 };
 /* Definitions for canRxQueue */
 osMessageQueueId_t canRxQueueHandle;

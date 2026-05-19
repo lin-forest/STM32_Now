@@ -66,34 +66,31 @@ void UartToCan_Task_Run(void *argument)
     // 1. 从uartToCanQueue队列中等待并接收数据
     if (osMessageQueueGet(uartToCanQueueHandle, &uart_msg, NULL, osWaitForever) == osOK)
     {
-      // 2. [诊断探针#1] 打印收到的消息，确认协议解析任务工作正常 (暂时禁用以排查死机问题)
-    //   /*
-      int offset = sprintf(dbg_buffer, "UART->CAN | RX_MSG | ID: 0x%lX, DLC: %d. Sending...\r\n", uart_msg.id, uart_msg.len);
-      uart1_send(dbg_buffer, offset);
-    //   */
-
-      // 3. [增强逻辑] 根据ID大小，自动判断是标准帧还是扩展帧
-      if (uart_msg.id > 0x7FF) { // CAN ID大于11位，为扩展帧
+      // 2. 根据ID大小，自动判断是标准帧还是扩展帧
+      if (uart_msg.id > 0x7FF) {
           tx_header.IDE = CAN_ID_EXT;
           tx_header.ExtId = uart_msg.id;
-      } else { // 标准帧
+      } else {
           tx_header.IDE = CAN_ID_STD;
           tx_header.StdId = uart_msg.id;
       }
-      
-      tx_header.DLC = uart_msg.len;   // 设置数据长度
-      
-      // 4. 调用CAN发送函数，并检查其返回值
+
+      tx_header.DLC = uart_msg.len;
+
+      // 3. 先发CAN，避免被UART TX诊断输出阻塞关键路径
       HAL_StatusTypeDef tx_status = HAL_CAN_AddTxMessage(&hcan, &tx_header, uart_msg.data, &tx_mailbox);
 
-      // 5. [诊断探针#2] 如果CAN发送失败，打印出错误状态 (暂时禁用以排查死机问题)
-      if (tx_status != HAL_OK)
+      // 4. CAN发送完成后，再打印诊断（不阻塞CAN发送）
+      int offset;
+      if (tx_status == HAL_OK)
       {
-        //   /*
-          offset = sprintf(dbg_buffer, "UART->CAN | TX_FAIL | Status: %d\r\n", tx_status);
-          uart1_send(dbg_buffer, offset);
-        //   */
+          offset = sprintf(dbg_buffer, "UART->CAN | OK | ID: 0x%lX\r\n", uart_msg.id);
       }
+      else
+      {
+          offset = sprintf(dbg_buffer, "UART->CAN | FAIL | ID: 0x%lX Status: %d\r\n", uart_msg.id, tx_status);
+      }
+      uart1_send(dbg_buffer, offset);
     }
   }
   /* USER CODE END UartToCan_Task_Run */
@@ -108,28 +105,32 @@ void CanRxProcess_Task_Run(void *argument)
 {
   /* USER CODE BEGIN CanRxProcess_Task_Run */
   App_CAN_Message_t rx_can_msg;
-  char tx_buffer[128]; // 用于构建发送字符串的缓冲区
+  char tx_buffer[128];
+
+  /* 已知的电机状态帧 ID (0x323~0x326)，正常运行时不打印到 UART */
+  #define IS_STATUS_ID(id)  ((id) >= 0x323 && (id) <= 0x326)
 
   /* Infinite loop */
   for(;;)
   {
-    // 1. 从canRxQueue队列中等待并接收数据
     if (osMessageQueueGet(canRxQueueHandle, &rx_can_msg, NULL, osWaitForever) == osOK)
     {
-      // 2. 成功接收到数据，将其格式化为可读字符串 (暂时禁用以排查死机问题)
-    //   /*
+      // 跳过电机状态帧，避免占死 UART TX
+      if (IS_STATUS_ID(rx_can_msg.id)) {
+          continue;
+      }
+
+      // 非状态帧，格式化为可读字符串后输出
       int offset = sprintf(tx_buffer, "CAN RX | ID: 0x%03lX | DLC: %d | Data: ", rx_can_msg.id, rx_can_msg.len);
-      
+
       for (int i = 0; i < rx_can_msg.len; i++)
       {
         offset += sprintf(tx_buffer + offset, "%02X ", rx_can_msg.data[i]);
       }
-      
+
       offset += sprintf(tx_buffer + offset, "\r\n");
 
-      // 3. 调用UART发送函数，将格式化后的字符串发送出去
       uart1_send(tx_buffer, offset);
-    //   */
     }
   }
   /* USER CODE END CanRxProcess_Task_Run */
@@ -163,6 +164,9 @@ void Heartbeat_Task_Run(void *argument)
  */
 void ProtocolParser_Task_Run(void *argument)
 {
+
+    // uart1_send("PARSER STARTED\r\n", 16);
+
     ParserState_t state = STATE_WAIT_SOF;
     App_UART_Message_t current_msg;
     uint8_t byte_received;
@@ -174,6 +178,14 @@ void ProtocolParser_Task_Run(void *argument)
         // 1. 尝试从环形缓冲区获取一个字节
         if (ring_buffer_get(&uart1_rx_buffer, &byte_received))
         {
+            // /* 诊断：打印每个接收到的字节 */
+            // {
+            //     static uint32_t dbg_bcnt = 0;
+            //     char dbg_b[32];
+            //     int dbg_n = sprintf(dbg_b, "B: %02X [%lu]\r\n", byte_received, (unsigned long)++dbg_bcnt);
+            //     uart1_send(dbg_b, dbg_n);
+            // }
+
             // 2. 根据当前状态处理接收到的字节 (状态机)
             switch (state)
             {

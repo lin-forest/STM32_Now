@@ -10,19 +10,27 @@ extern "C" {
 #include "motor_DC_tb6612.h"
 #include "logger.h"
 
+/* ===================== Motor Status Flags ===================== */
+#define MOTOR_FLAG_STALL      0x01U   // 堵转：setpoint != 0 但 speed ≈ 0
+#define MOTOR_FLAG_SATURATED  0x02U   // 饱和：PWM 已达上限但无法达到目标速度
+
 /* ===================== Global Motor Status ===================== */
 // A generic structure to hold the state of the active motor.
 // This decouples the encoder and other tasks from specific motor drivers.
 typedef struct {
     TB6612_Motor_t hardware;       // 硬件驱动句柄（包含引脚、定时器等）
     PID_Controller pid;            // PID 控制器实例
-    
+
     // 统一的状态反馈与控制量
     float    target_logic_speed;    // 目标逻辑速度 (-100 to 100)
     float    current_logic_speed;   // 实际测量速度
     int32_t  current_ticks;         // 编码器原始计数值（每周期差值）
     int32_t  accumulated_ticks;     // 编码器累计计数值（绝对位置）
     int16_t  pwm_output;            // 当前输出的 PWM 值
+
+    // 状态检测
+    uint8_t  flags;                // 电机状态标志 (MOTOR_FLAG_*)
+    uint8_t  stall_counter;        // 连续堵转周期计数
 } Motor_t;
 
 // 支持多电机实例

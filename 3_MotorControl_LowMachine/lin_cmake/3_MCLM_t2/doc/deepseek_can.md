@@ -15,19 +15,21 @@
 
 ## CAN ID 定义
 
-定义于 `App/config/app_config.h`：
+定义于 `App/config/app_config.h`（当前 `CAN_ID_GROUP=1`）：
 
-| 宏定义 | ID | 方向 | 用途 |
-|---|---|---|---|
-| `CAN_MOTOR_TURN_CMD_STDID` | **`0x123`** | RX | **转向**电机控制指令 |
-| `CAN_MOTOR_POWER_CMD_STDID` | **`0x124`** | RX | **动力**电机控制指令 |
-| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | **`0x223`** | RX | **转向**电机状态查询 / 日志控制 |
-| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | **`0x224`** | RX | **动力**电机状态查询 / 日志控制 |
-| `CAN_MOTOR_TURN_STATUS_STDID` | **`0x323`** | TX | **转向**电机状态反馈 |
-| `CAN_MOTOR_POWER_STATUS_STDID` | **`0x324`** | TX | **动力**电机状态反馈 |
-| `CAN_CMD_STOP_STDID` | `0x101` | RX | 全车停止 |
-| `CAN_CMD_TURN_STDID` | `0x102` | RX | 全车转向命令 |
-| `CAN_CMD_POWER_STDID` | `0x103` | RX | 全车动力命令 |
+| 宏定义 | ID (Group 1) | ID (Group 2) | 方向 | 用途 |
+|---|---|---|---|---|
+| `CAN_MOTOR_TURN_CMD_STDID` | **`0x125`** | `0x123` | RX | **转向**电机控制指令 |
+| `CAN_MOTOR_POWER_CMD_STDID` | **`0x126`** | `0x124` | RX | **动力**电机控制指令 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | **`0x225`** | `0x223` | RX | **转向**电机状态查询 / 日志控制 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | **`0x226`** | `0x224` | RX | **动力**电机状态查询 / 日志控制 |
+| `CAN_MOTOR_TURN_STATUS_STDID` | **`0x325`** | `0x323` | TX | **转向**电机状态反馈 |
+| `CAN_MOTOR_POWER_STATUS_STDID` | **`0x326`** | `0x324` | TX | **动力**电机状态反馈 |
+| `CAN_CMD_STOP_STDID` | `0x101` | `0x101` | RX | 全车停止 |
+| `CAN_CMD_TURN_STDID` | `0x102` | `0x102` | RX | 全车转向命令 |
+| `CAN_CMD_POWER_STDID` | `0x103` | `0x103` | RX | 全车动力命令 |
+
+> 切换 Group：修改 `app_config.h:160` 的 `CAN_ID_GROUP` 值。Group 1（0x125/0x126 系列）为当前默认，Group 2（0x123/0x124 系列）为备选。
 
 ---
 
@@ -64,7 +66,7 @@ CommandQueueHandle  (CommandMsg_t)
     ▼
 [App/tasks/command_task.c]
 Command_Task(void *argument)
-    │  osMessageQueueGet(CommandQueueHandle, &cmd, NULL, osWaitForever)
+    │  osMessageQueueGet(CommandQueueHandle, &cmd, NULL, 50)  // 50ms 超时实现主动上报
     │
     ├─ cmd.type == CMD_LOG_START/STOP
     │       → 设置 g_logger_enabled = 1/0
@@ -101,10 +103,10 @@ Command_Task(void *argument)
 
 | StdId | motor_id | 允许的命令字节 |
 |---|---|---|
-| `CAN_MOTOR_TURN_CMD_STDID` | 0 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
-| `CAN_MOTOR_POWER_CMD_STDID` | 1 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
-| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | 0 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
-| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | 1 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_MOTOR_TURN_CMD_STDID` (0x125) | 0 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_POWER_CMD_STDID` (0x126) | 1 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` (0x225) | 0 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` (0x226) | 1 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
 | `CAN_CMD_STOP_STDID` (`0x101`) | 广播 | `0x08` 停止, `0x11` 调速 |
 | `CAN_CMD_TURN_STDID` (`0x102`) | 0 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
 | `CAN_CMD_POWER_STDID` (`0x103`) | 1 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
@@ -141,7 +143,7 @@ int16_t           CAN_Filter_GetValue(uint32_t stdId, uint8_t cmdByte, const uin
 当 `command_task.c` 处理 `CMD_LOG_START` 或 `CMD_LOG_STOP` 时，除了设置 `g_logger_enabled`，还会发送一帧 CAN 消息作为确认：
 
 ```
-txHeader.StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID (0x223)
+txHeader.StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID (0x225)
 txData[0] = 0xCF           // 标识魔术字
 txData[1] = cmd.type       // 4=LOG_START, 5=LOG_STOP
 txData[2] = g_logger_enabled  // 1=开启, 0=关闭
@@ -152,27 +154,59 @@ txData[3..7] = 0x00        // 保留
 
 ## TX 数据流（发送路径）
 
-触发条件：`command_task.c` 收到 `CMD_QUERY_STATUS`
+触发条件：每 50ms 主动上报，或 `command_task.c` 收到 `CMD_QUERY_STATUS`
+
+`send_motor_status()` 函数定义于 `App/tasks/command_task.c`，发送新格式状态帧：
 
 ```
 [App/tasks/command_task.c]
 Command_Task
+    │  定时触发: last_status_tick 每 50ms 到期
+    │  或命令触发: 收到 CMD_QUERY_STATUS
+    │
+    │  调用 send_motor_status(mid)
     │  读 g_motors[mid]（mutex 保护）
     │  构造 CAN_TxHeaderTypeDef txHeader:
-    │      .StdId = (mid == 0) ? CAN_MOTOR_TURN_STATUS_STDID (0x323)
-    │                           : CAN_MOTOR_POWER_STATUS_STDID (0x324)
+    │      .StdId = (mid == 0) ? CAN_MOTOR_TURN_STATUS_STDID (0x325)
+    │                           : CAN_MOTOR_POWER_STATUS_STDID (0x326)
     │      .DLC   = 8
     │      .IDE   = CAN_ID_STD
     │      .RTR   = CAN_RTR_DATA
     │  构造 txData[8]:
-    │      [0..1] = target_logic_speed  (int16_t, little-endian)
-    │      [2..3] = current_logic_speed (int16_t, little-endian)
-    │      [4..5] = pwm_output          (int16_t, little-endian)
-    │      [6..7] = 0x0000 (reserved)
+    │      [0..1] = current_logic_speed    (int16_t, little-endian) ← 实际速度
+    │      [2..3] = accumulated_ticks      (uint16_t, little-endian) ← 里程计低16位
+    │      [4..5] = pwm_output             (int16_t, little-endian)
+    │      [6]    = target_logic_speed     (int8_t,  -100..100)
+    │      [7]    = flags                  (uint8_t) → MOTOR_FLAG_*
     │  HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox)
     ▼
-CAN 总线  →  上位机 / 主控
+CAN 总线  →  主控
+
+注：主控若超过 100ms 未收到任何状态帧，可判定节点离线。
 ```
+
+### 状态帧格式验证
+
+经 `doc/Can_MainControl_t1.csv`（23974 帧总线录制）验证确认：
+
+| 验证项 | 结果 | 说明 |
+|--------|------|------|
+| 上报周期 | ✅ 50ms±2ms | 20Hz 稳定，连续 5 分钟无丢帧 |
+| 字节序 | ✅ Little-Endian | `(D2<<8)\|D1` = current, `(D4<<8)\|D3` = ticks |
+| `accumulated_ticks` 方向 | ✅ 正转递增，反转递减 | 与编码器实际运动一致 |
+| `flags` 堵转检测 | ✅ 真实堵转上报 `0x03` | STALL\|SATURATED，正常运行时 `0x00` |
+| `target` (int8) 范围 | ✅ -50~80 | int8 (-128~127) 完全够用 |
+
+详见 [`ai_session/can_data_analyze.md`](ai_session/can_data_analyze.md)。
+
+### 状态帧 flags 定义
+
+定义于 `App/config/app_globals.h`：
+
+| bit | 宏 | 含义 |
+|---|---|---|
+| 0 | `MOTOR_FLAG_STALL` | 堵转：有目标速度但电机不转 |
+| 1 | `MOTOR_FLAG_SATURATED` | PWM 饱和：已满功率输出但仍未达到目标 |
 
 ---
 

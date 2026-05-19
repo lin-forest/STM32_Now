@@ -1,3 +1,5 @@
+这是被can指令传递到的电机控制器 (3_MCLM_t2) 改动，检查本机文件 @5_UartToCan_test 是否合理
+
 # 电机参数清单
 
 > 核心配置：`App/config/app_config.h`

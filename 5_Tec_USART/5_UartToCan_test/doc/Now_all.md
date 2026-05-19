@@ -2,6 +2,31 @@
 
 ---
 
+## 硬件资源
+
+| 外设 | 引脚 | 速率 | 用途 |
+|------|------|------|------|
+| USART1 | PA9(TX), PA10(RX) | 115200 8N1 | 与 PC 通信（协议+调试） |
+| USART2 | PA2(TX), PA3(RX) | 115200 8N1 | 已初始化，应用层未使用 |
+| CAN1 | PA11(RX), PA12(TX) | 500kbps | 与电机控制器通信 |
+| PC13 | 板载 LED | - | 心跳指示 (300ms 翻转) |
+
+> CAN 波特率计算：APB1=36MHz, Prescaler=4, BS1=13TQ, BS2=4TQ → `36MHz / 4 / (1+13+4) = 500kbps`
+
+## 系统概述
+
+`5_UartToCan_test` 是一个 **UART ↔ CAN 双向桥接器**，运行于 STM32F103C8T6，连接 PC 与两组电机控制器 (每组含转向+动力两台电机)。
+
+```
+PC (串口终端)
+    ↕ UART1 (PA9 TX, PA10 RX, 115200 8N1)
+5_UartToCan_test (桥接器)
+    ↕ CAN1 (PA11 RX, PA12 TX, 500kbps)
+3_MCLM_t2 (电机控制器 Group1 / Group2)
+```
+
+---
+
 ## 一、工程文件职能总览
 
 ```
@@ -56,6 +81,58 @@ doc/
 
 > `App_UART_Message_t` 中 `uint32_t id` 优先排列，结构体大小 16 字节，无填充浪费。
 
+#### 3.1.1 自定义 UART 协议帧格式
+
+桥接器与 PC 间使用以下帧格式通信：
+
+| 字段 | 大小 | 说明 |
+|------|------|------|
+| SOF | 1B | 固定 `0xAA` |
+| CMD | 1B | 指令 (Command_ID_t) |
+| ID | 4B LE | CAN ID (小端，支持 29 位扩展帧) |
+| LEN | 1B | Data 长度 (0~8) |
+| DATA | LEN B | CAN 数据负载 |
+
+#### 3.1.2 CAN ID 定义
+
+桥接器同时管理两组电机控制器，CAN ID 编码规律：
+- `0x1xx` = 控制指令（桥接器 RX）
+- `0x2xx` = 状态查询（桥接器 RX）
+- `0x3xx` = 状态反馈（桥接器 TX）
+- `x23/x24` = Group 2（转向/动力）
+- `x25/x26` = Group 1（转向/动力）
+
+| 宏 | ID | 方向 | 组 | 用途 |
+|---|----|------|-----|------|
+| `CAN_MOTOR_TURN_CMD_STDID_G2` | **0x123** | RX | G2 | 转向电机控制指令 |
+| `CAN_MOTOR_POWER_CMD_STDID_G2` | **0x124** | RX | G2 | 动力电机控制指令 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID_G2` | **0x223** | RX | G2 | 转向电机状态查询 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID_G2` | **0x224** | RX | G2 | 动力电机状态查询 |
+| `CAN_MOTOR_TURN_STATUS_STDID_G2` | **0x323** | TX | G2 | 转向电机状态反馈 |
+| `CAN_MOTOR_POWER_STATUS_STDID_G2` | **0x324** | TX | G2 | 动力电机状态反馈 |
+| `CAN_MOTOR_TURN_CMD_STDID_G1` | **0x125** | RX | G1 | 转向电机控制指令 |
+| `CAN_MOTOR_POWER_CMD_STDID_G1` | **0x126** | RX | G1 | 动力电机控制指令 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID_G1` | **0x225** | RX | G1 | 转向电机状态查询 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID_G1` | **0x226** | RX | G1 | 动力电机状态查询 |
+| `CAN_MOTOR_TURN_STATUS_STDID_G1` | **0x325** | TX | G1 | 转向电机状态反馈 |
+| `CAN_MOTOR_POWER_STATUS_STDID_G1` | **0x326** | TX | G1 | 动力电机状态反馈 |
+
+#### 3.1.3 CAN 状态帧格式（8 字节）
+
+目标机上报的电机状态帧解码格式（0x323/0x324/0x325/0x326）：
+
+| 偏移 | 类型 | 字段 | 对应 Motor_t 字段 |
+|------|------|------|-------------------|
+| [0-1] | `int16` LE | `current_logic_speed` | Motor_t.current_logic_speed |
+| [2-3] | `uint16` LE | `accumulated_ticks` | Motor_t.accumulated_ticks (低16位) |
+| [4-5] | `int16` LE | `pwm_output` | Motor_t.pwm_output |
+| [6] | `int8` | `target_logic_speed` | Motor_t.target_logic_speed |
+| [7] | `uint8` | `flags` | Motor_t.flags |
+
+**flags 位定义：** `0x01`=堵转(STALL), `0x02`=PID饱和(SATURATED)
+
+> 目标机 `Motor_t` 结构体定义于 `3_MCLM_t2/App/config/app_globals.h`，桥接器仅做解码转发，不持有结构体实例。
+
 ---
 
 ### 3.2 `app_globals.h` — 全局句柄声明
@@ -102,12 +179,12 @@ buffer[0..255]:  [ ... data bytes ... ]
 
 纯声明四个任务函数，供 `freertos.c`（CubeMX 生成）在创建任务时注册：
 
-| 函数 | 绑定任务 |
-|---|---|
-| `ProtocolParser_Task_Run()` | `ProtocolParser_Ta`（High 优先级） |
-| `UartToCan_Task_Run()` | `UartToCan_Ta`（Normal 优先级） |
-| `CanRxProcess_Task_Run()` | `CanRxProcess_Ta`（Normal 优先级） |
-| `Heartbeat_Task_Run()` | `Heartbeat_Ta`（Low 优先级） |
+| 函数 | 绑定任务 | CMSIS 优先级 | 栈大小 |
+|---|---|---|---|
+| `ProtocolParser_Task_Run()` | `ProtocolParser_Ta` | osPriorityNormal1 (53) | 1024 B |
+| `UartToCan_Task_Run()` | `UartToCan_Ta` | osPriorityNormal (52) | 2048 B |
+| `CanRxProcess_Task_Run()` | `CanRxProcess_Ta` | osPriorityNormal (52) | 2048 B |
+| `Heartbeat_Task_Run()` | `Heartbeat_Ta` | osPriorityLow (8) | 256 B |
 
 ---
 
@@ -182,14 +259,37 @@ else                        // 标准帧 11-bit
 
 ---
 
-#### 任务③：`CanRxProcess_Task_Run()` — CAN→UART 透明输出
+#### 任务③：`CanRxProcess_Task_Run()` — CAN→UART 解码转发
 
 | 局部变量 | 作用 |
 |---|---|
 | `rx_can_msg`（`App_CAN_Message_t`） | 从 `canRxQueueHandle` 取出的 CAN 报文 |
 | `tx_buffer[128]` | 格式化输出字符串缓冲区 |
 
-格式化输出：`"CAN RX | ID: 0x%03lX | DLC: %d | Data: XX XX ...\r\n"`，通过 `uart1_send()` 加锁发送。
+**两条输出路径：**
+
+**① 电机状态帧**（ID 匹配 0x323/0x324/0x325/0x326）— 按新格式解码：
+
+```c
+int16_t  current_speed = data[0..1];   // int16 LE
+uint16_t accum_ticks   = data[2..3];   // uint16 LE
+int16_t  pwm           = data[4..5];   // int16 LE
+int8_t   target_speed  = data[6];      // int8
+uint8_t  flags         = data[7];      // flags
+```
+
+输出示例：
+```
+CAN RX | TURN(G2) STATUS | curr=123 accum=456 pwm=789 target=50 flags=0x00
+CAN RX | POWER(G1) STATUS | curr=-50 accum=1234 pwm=-200 target=-30 flags=0x01 STALL
+```
+
+**② 非状态帧** — 原始 hex dump：
+```
+CAN RX | ID: 0x123 | DLC: 8 | Data: AA 01 00 00 00 08 64 00
+```
+
+两种路径均通过 `uart1_send()` 加锁发送。
 
 ---
 
@@ -262,7 +362,74 @@ USART1 TX → [PC 串口工具]
 
 ---
 
-## 五、关键同步机制汇总
+### 4.3 数据流总图
+
+```
+┌──────────────┐
+│   PC 串口    │
+│  (串口终端)   │
+└──┬───────┬───┘
+   │ UART  │ UART
+   │  RX   │  TX
+   ▼       ▲
+┌──────────────┐
+│ ring_buffer  │ uart1_send()
+│ uart1_rx_buf │ (DMA TX)
+└──────┬───────┘
+       │ osEventFlags
+       ▼
+┌──────────────────┐
+│ ProtocolParser_  │  UART 协议状态机 (SOF→CMD→ID→LEN→DATA)
+│ (Task, pri=53)   │
+└──────┬───────────┘
+       │ osMessageQueuePut
+       ▼
+┌──────────────────┐
+│ uartToCanQueue   │  (16 槽 × 16 B)
+└──────┬───────────┘
+       │ osMessageQueueGet
+       ▼
+┌──────────────────┐
+│ UartToCan_Task   │  CAN TX
+│ (Task, pri=52)   │
+└──────┬───────────┘
+       │ HAL_CAN_AddTxMessage
+       ▼
+   ┌────────┐
+   │ CAN 总线│  (500kbps)
+   └──┬─────┘
+      │ CAN RX ISR
+      ▼
+┌──────────────────┐
+│ canRxQueue       │  (16 槽 × 16 B)
+└──────┬───────────┘
+       │ osMessageQueueGet
+       ▼
+┌──────────────────┐
+│ CanRxProcess_Ta  │  CAN→UART 解码转发
+│ (Task, pri=52)   │
+└──────┬───────────┘
+       │ uart1_send() (DMA)
+       ▼
+┌──────────────┐
+│   PC 串口    │
+└──────────────┘
+```
+
+## 五、IPC 对象一览
+
+| 对象 | 类型 | 容量 | 元素大小 | 生产者 | 消费者 | 用途 |
+|------|------|------|---------|--------|--------|------|
+| `uart1_rx_buffer` | RingBuffer | 256 B | 1 B | UART RxISR | ProtocolParser | 字节级接收缓冲，无锁 SPSC |
+| `uart1_rx_eventHandle` | EventFlags | 32-bit | - | UART RxISR | ProtocolParser | 新数据到达通知 |
+| `uartToCanQueue` | MessageQueue | 16 | `App_UART_Message_t` (16 B) | ProtocolParser | UartToCan | 帧解析→CAN 发送解耦 |
+| `canRxQueue` | MessageQueue | 16 | `App_CAN_Message_t` (16 B) | CAN RxISR | CanRxProcess | CAN 接收缓冲，ISR 快速返回 |
+| `uart1_tx_mutexHandle` | Mutex | 1 | - | - | `uart1_send()` | 防多任务并发操作 UART1 TX |
+| `uart1_tx_semHandle` | Semaphore | 1 | - | TxCplt 回调 ISR | `uart1_send()` | DMA 传输完成通知 |
+
+> `App_UART_Message_t` 与 `App_CAN_Message_t` 均为 16 字节（含对齐填充），队列内部按值拷贝传递。
+
+## 六、关键同步机制汇总
 
 | 同步对象 | 方向 | 生产者 | 消费者 | 解决问题 |
 |---|---|---|---|---|
@@ -272,3 +439,32 @@ USART1 TX → [PC 串口工具]
 | `canRxQueue`（Queue×16） | ISR→Task | CAN RxISR | CanRxProcess | CAN 报文缓冲，ISR 快速返回 |
 | `uart1_tx_mutexHandle`（Mutex） | 多→单 | — | `uart1_send()` | 防两个任务同时操作 UART1 TX |
 | `uart1_tx_semHandle`（Semaphore） | ISR→Task | TxCplt 回调 | `uart1_send()` | DMA 完成通知，任务让出 CPU |
+
+---
+
+## 七、初始化顺序
+
+系统启动入口 `main()` 的执行序列：
+
+```
+main()
+  │ 1. HAL_Init()                          HAL 库初始化（Systick 等）
+  │ 2. SystemClock_Config()                72MHz: HSE(8MHz) → PLL(x9) → SYSCLK
+  │ 3. MX_GPIO_Init()                      GPIO 初始化
+  │ 4. MX_DMA_Init()                       DMA1: Ch4(USART1_TX) Ch5(USART1_RX)
+  │                                         Ch6(USART2_RX) Ch7(USART2_TX)
+  │ 5. MX_CAN_Init()                       CAN1: 500kbps, Normal Mode, 自动重发
+  │ 6. MX_USART1_UART_Init()               USART1: 115200 8N1, DMA+IT
+  │ 7. MX_USART2_UART_Init()               USART2: 115200 8N1 (保留)
+  │ 8. CAN_Filter_Config()                 过滤器: ID=0x0000, Mask=0x0000 (全通)
+  │ 9. HAL_CAN_Start()                     启动 CAN 外设
+  │10. HAL_CAN_ActivateNotification()      使能 RX FIFO0 中断
+  │11. UART_Receive_Start()                初始化 ring_buffer + 启动 IT RX
+  │
+  │12. osKernelInitialize()                初始化 FreeRTOS 内核
+  │13. MX_FREERTOS_Init()                  创建所有队列/互斥锁/信号量/事件/任务
+  │14. osKernelStart()                     启动调度器 (不再返回)
+  │
+  ▼
+while(1)  // 永不执行 — 控制权已交给 FreeRTOS
+```
