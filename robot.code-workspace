@@ -1,0 +1,60 @@
+{
+  "folders": [
+    {
+      "name": "Workspace",
+      "path": "0_Workspace"
+    },
+    {
+      "name": "3_MCLM_t2",
+      "path": "3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2"
+    },
+    {
+      "name": "ChassisController_t1",
+      "path": "5_Tec_USART/5_ChassisController_t1"
+    },
+    {
+      "name": "MPU6050",
+      "path": "6_Mpu6050"
+    },
+    {
+      "name": "BMP280",
+      "path": "6_BMP280"
+    },
+    {
+      "name": "AK09911C",
+      "path": "6_AK09911C"
+    },
+    {
+      "name": "VL53L0",
+      "path": "6_VL53L0"
+    },
+    {
+      "name": "MT6701",
+      "path": "6_MT6701"
+    },
+    {
+      "name": "LED",
+      "path": "6_LED_PC13_"
+    },
+    {
+      "name": "项目文档",
+      "path": "doc"
+    },
+    {
+      "path": "vofa"
+    }
+  ],
+  "settings": {
+    "editor.fontSize": 14,
+    "files.associations": {
+      "*.ioc": "xml"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/arm-none-eabi-gcc",
+    "stm32cube-ide-clangd.path": "cube",
+    "stm32cube-ide-clangd.arguments": [
+      "starm-clangd",
+      "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc*",
+      "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-g++*"
+    ]
+  }
+}

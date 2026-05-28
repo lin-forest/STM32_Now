@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: 3_MCLM_t2",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: ChassisController",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: 3_MCLM_t2",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash",
+      "group": { "kind": "build", "isDefault": true },
+      "dependsOn": ["Build: 3_MCLM_t2"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: ChassisController",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: ChassisController"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: All Nodes",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash && cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: 3_MCLM_t2", "Build: ChassisController"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
