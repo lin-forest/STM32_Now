@@ -33,9 +33,8 @@ extern "C" {
 // #include "can_service.h" // Deprecated, CAN logic is in Core/Src/can.c
 
 #include "motor_DC_tb6612.h"
+#include "motor_DC_IBT4.h"
 // #include "motor_BLDC.h"
-// #include "motor_DC_ibt4.h"
-#include "motor_DC_at8236.h"
 
 
 /* ===================== C STD ===================== */

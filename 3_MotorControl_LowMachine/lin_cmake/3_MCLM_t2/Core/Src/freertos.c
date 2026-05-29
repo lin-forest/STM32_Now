@@ -393,14 +393,11 @@ void Start_MotorControl(void *argument)
   /* USER CODE BEGIN Start_MotorControl */
   /* Infinite loop */
   
-  #if ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612
+  #if MOTOR1_DRIVER == MOTOR_DRIVER_TB6612
   TB6612_DC_Task(argument);
-  #elif ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236
-  AT8236_DC_Task(argument);
-
   #else
 
-  #error "No valid motor driver selected! Please check ACTIVE_MOTOR_DRIVER in app_config.h"
+  #error "No valid driver selected for motor1! Check MOTOR1_DRIVER"
 
   #endif
   
@@ -505,12 +502,12 @@ void Start_Ack(void *argument)
 void Start_MotorControl1_T(void *argument)
 {
   /* USER CODE BEGIN Start_MotorControl1_T */
-  #if ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_TB6612
+  #if (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)
+  IBT4_DC_Task(argument);
+  #elif (MOTOR2_DRIVER == MOTOR_DRIVER_TB6612)
   TB6612_DC_Task(argument);
-  #elif ACTIVE_MOTOR_DRIVER == MOTOR_DRIVER_AT8236
-  AT8236_DC_Task(argument);
   #else
-  #error "No valid motor driver selected! Please check ACTIVE_MOTOR_DRIVER in app_config.h"
+  #error "No valid driver selected for motor2! Check MOTOR2_DRIVER"
   #endif
   /* USER CODE END Start_MotorControl1_T */
 }

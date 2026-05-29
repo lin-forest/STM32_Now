@@ -5,26 +5,43 @@
 
 ---
 
-## 1. 电机驱动选择
+## 1. 电机驱动类型定义
+
+| 宏 | 值 | 说明 |
+|---|---|---|
+| `MOTOR_DRIVER_TB6612` | `1` | TB6612 驱动芯片 |
+| `MOTOR_DRIVER_IBT4` | `3` | IBT-4 驱动模块 |
+
+### 预设选择
 
 | 宏 | 可选值 | 说明 |
 |---|---|---|
-| `MOTOR_DRIVER_TB6612` | `1` | TB6612 驱动芯片 |
-| `MOTOR_DRIVER_AT8236` | `2` | AT8236 驱动芯片 |
-| `MOTOR_DRIVER_IBT4` | `3` | IBT-4 驱动模块 |
-| `ACTIVE_MOTOR_DRIVER` | 上三者之一 | **当前使用的驱动型号**（在 `app_config.h:19` 修改） |
+| `MOTOR_CFG_SET` | `1` (DEFAULT) / `2` (NEW) | **唯一选择开关**（`app_config.h`） |
+
+| 预设 | 电机1（转向） | 电机2（动力） | 适用场景 |
+|---|---|---|---|
+| `MOTOR_CFG_DEFAULT` (1) | TB6612 | TB6612（旧引脚） | 原有配置兼容 |
+| `MOTOR_CFG_NEW` (2) | TB6612 | **IBT-4 (BTS7960)** | 新动力电机 |
+
+每个预设文件自包含 `MOTOR1_DRIVER` / `MOTOR2_DRIVER` 宏，由 `app_config.h` 按 `MOTOR_CFG_SET` 选择加载。
 
 ---
 
-## 2. 共享控制参数（两电机共用）
+## 2. 全局共享参数（两电机共用）
+
+定义于 `app_config.h`，所有预设共享。
+
+| 宏 | 值 | 说明 |
+|---|---|---|
+| `SPEED_LOGIC_MAX` | `100` | 统一的逻辑速度最大值 |
+| `PWM_MAX` | `7200` | PWM 最大值（TIM ARR，100% 占空比） |
+| `ENCODER_FILTER_ALPHA` | `0.1f` | 编码器 IIR 滤波系数 |
+| `MOTOR_CMD_DEFAULT_SPEED` | `50.0f` | CMD_FORWARD/REVERSE 默认速度（50% 满量程） |
 
 | 宏 | 默认值 | 说明 |
 |---|---|---|
-| `SPEED_TICKS_MAX` | `90` | 单控制周期编码器最大计数值（用于速度归一化） |
-| `ENCODER_FILTER_ALPHA` | `0.1f` | 编码器 IIR 滤波系数，越小越平滑 |
-| `SPEED_LOGIC_MAX` | `100` | 逻辑速度最大值（`0-100`） |
-| `MOTOR_CMD_DEFAULT_SPEED` | `50.0f` | CMD_FORWARD/REVERSE 默认速度（50% 满量程） |
-| `PWM_MAX` | `7200` | PWM 最大值（TIM ARR 值，对应 100% 占空比） |
+| `SPEED_TICKS_MAX` | 预设相关 | 单控制周期编码器最大计数值（用于速度归一化） |
+| | DEFAULT=`90`, NEW=`96` | 各预设内独立定义 |
 
 ### SPEED_TICKS_MAX 计算公式
 
@@ -36,7 +53,7 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 ```
 11 × 4 × (8986 / 60) × 0.01 ≈ 66  (理论值)
 ```
-> 实际配置为 `90`（`app_config.h:29`），提高上限以适配更高转速或避免异常饱和。
+> 当前配置为 `96`（`app_motor_cfg_new.h:22`），提高上限以适配更高转速或避免异常饱和。
 
 ---
 
@@ -76,17 +93,30 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 
 ---
 
-## 4. 电机2（动力电机）— TB6612
+## 4. 电机2（动力电机）— IBT-4 (BTS7960)
+
+> 仅 `MOTOR_CFG_NEW` 预设生效（`App/config/app_motor_cfg_new.h`）
+
+### TIM 资源分配
+
+| TIM | 模式 | 通道 | 引脚 | 用途 |
+|-----|------|------|------|------|
+| **TIM1** | PWM (Period=7200) | CH1 | PA8 | **电机1** TB6612 PWM |
+| | | CH2 | PA9 | **电机2** IBT4 RPWM (正转) |
+| | | CH3 | PA10 | **电机2** IBT4 LPWM (反转) |
+| **TIM2** | Encoder | CH1/CH2 | PA0/PA1 | 电机1 编码器 |
+| **TIM3** | Encoder | CH1/CH2 | PA6/PA7 | **电机2 编码器** |
 
 ### 硬件引脚
 
 | 宏 | 默认值 | 说明 |
 |---|---|---|
-| `MOTOR2_TIM_HANDLE` | `&htim1` | PWM 定时器句柄（与电机1 共用） |
-| `MOTOR2_TIM_CHANNEL` | `TIM_CHANNEL_2` | PWM 输出通道 |
-| `MOTOR2_IN1_PORT/PIN` | `GPIOB, GPIO_PIN_12` | 方向控制引脚1 |
-| `MOTOR2_IN2_PORT/PIN` | `GPIOB, GPIO_PIN_13` | 方向控制引脚2 |
-| `MOTOR2_ENCODER_TIM` | `&htim3` | 编码器定时器 |
+| `MOTOR2_IBT4_TIM` | `&htim1` | PWM 定时器句柄（与电机1 共用 TIM1） |
+| `MOTOR2_IBT4_CH_F` | `TIM_CHANNEL_2` | RPWM 通道（正转），PA9 |
+| `MOTOR2_IBT4_CH_R` | `TIM_CHANNEL_3` | LPWM 通道（反转），PA10 |
+| `MOTOR2_IBT4_EN_PORT/PIN` | `NULL / 0` | 使能引脚（未使用） |
+| `MOTOR2_IBT4_POLARITY` | `0` | 极性（0=默认） |
+| `MOTOR2_ENCODER_TIM` | `&htim3` | 编码器定时器，纯编码器模式 |
 
 ### 控制限制
 
@@ -95,6 +125,14 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 | `MOTOR2_MAX_PWM_OUTPUT` | `PWM_MAX` | 最大 PWM 输出值 |
 | `MOTOR2_MAX_SPEED_LOGIC` | `SPEED_LOGIC_MAX` | 最大逻辑速度 |
 | `MOTOR2_DEAD_ZONE` | `10` | PWM 死区 |
+
+### IBT4 控制逻辑
+
+```
+speed > 0  → CH2(RPWM) = pwm, CH3(LPWM) = 0   ← 正转
+speed < 0  → CH2(RPWM) = 0,    CH3(LPWM) = pwm ← 反转
+speed = 0  → CH2 = 0, CH3 = 0                   ← 停止
+```
 
 ### PID 参数（可独立整定，默认与电机1相同）
 
@@ -114,12 +152,12 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 
 ### CAN ID 选择
 
-`CAN_ID_GROUP`（`app_config.h:160`）：
+`CAN_ID_GROUP`（`app_config.h:137`）：
 
 | ID 组 | 转向电机 | 动力电机 |
 |---|---|---|
-| **`1` (0x125/0x126)** | 控制 `0x125`, 状态 `0x325` | 控制 `0x126`, 状态 `0x326` |
-| `2` (0x123/0x124) | 控制 `0x123`, 状态 `0x323` | 控制 `0x124`, 状态 `0x324` |
+| **`1` (0x125/0x126)** | 控制 `0x125`, 状态查询 `0x225`, 状态反馈 `0x325` | 控制 `0x126`, 状态查询 `0x226`, 状态反馈 `0x326` |
+| `2` (0x123/0x124) | 控制 `0x123`, 状态查询 `0x223`, 状态反馈 `0x323` | 控制 `0x124`, 状态查询 `0x224`, 状态反馈 `0x324` |
 
 ### 总线参数
 
@@ -146,7 +184,7 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 
 ## 6. 运行时结构体
 
-### `Motor_t`（`app_globals.h:27`）
+### `Motor_t`（`app_globals.h:20`）
 
 ```c
 typedef struct {
@@ -194,7 +232,7 @@ extern Motor_t g_motors[MOTOR_COUNT];  // [0]=转向电机, [1]=动力电机
 
 | 函数 | 公式 | 说明 |
 |---|---|---|
-| `ticks_to_logic(ticks)` | `ticks × 100 / 90` | 编码器计数值 → 逻辑速度 |
+| `ticks_to_logic(ticks)` | `ticks × 100 / 96` | 编码器计数值 → 逻辑速度 |
 | `logic_to_pwm(logic)` | `logic × 7200 / 100` | 逻辑速度 → PWM 值 |
 
 ---

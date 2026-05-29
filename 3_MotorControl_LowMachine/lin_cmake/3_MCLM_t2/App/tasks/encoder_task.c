@@ -25,15 +25,15 @@ void Encoder_Task(void *argument)
 
         if (osMutexAcquire(myMutex, osWaitForever) == osOK)
         {
-            motor->current_ticks       = diff;
-            motor->accumulated_ticks  += diff;   // 累计编码器位置
-            motor->current_logic_speed = ticks_to_logic(diff);
+            motor->current_ticks       = -diff;   // 取反修正编码器 A/B 相极性
+            motor->accumulated_ticks  += -diff;
+            motor->current_logic_speed = ticks_to_logic(-diff);
             osMutexRelease(myMutex);
 
             // 方案C：两路电机各自封包投递到 LogQueue，Logger 统一消费
             LogMotorData_t log_data = {
                 .motor_id           = idx,
-                .current_ticks      = diff,
+                .current_ticks      = motor->current_ticks,
                 .accumulated_ticks  = motor->accumulated_ticks,
                 .target_logic_speed = motor->target_logic_speed,
                 .pwm_output         = motor->pwm_output,

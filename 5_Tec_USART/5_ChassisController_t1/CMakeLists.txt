@@ -69,3 +69,15 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+
+# ===== One-click flash via J-Link =====
+set(JLINK_SPEED "4000" CACHE STRING "J-Link SWD speed in kHz")
+configure_file(${CMAKE_SOURCE_DIR}/flash.jlink.in ${CMAKE_BINARY_DIR}/flash.jlink @ONLY)
+
+add_custom_target(flash
+    COMMAND ${CMAKE_COMMAND} -E echo "Flashing ${CMAKE_PROJECT_NAME}..."
+    COMMAND JLinkExe -Device STM32F103C8 -If SWD -Speed ${JLINK_SPEED}
+        -AutoConnect 1 -CommanderScript ${CMAKE_BINARY_DIR}/flash.jlink
+    DEPENDS ${CMAKE_PROJECT_NAME}
+    COMMENT "Build + Flash ${CMAKE_PROJECT_NAME} via J-Link"
+)

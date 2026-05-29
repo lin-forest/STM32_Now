@@ -52,10 +52,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # ===== Drivers (no RTOS dependency) =====
     # App/drivers/motor_BLDC.c
     App/drivers/motor_DC_tb6612.c
-    # App/drivers/motor_DC_ibt4.c
+    App/drivers/motor_DC_IBT4.c
     # App/drivers/encoder.c
-    App/drivers/motor_DC_at8236.c
-    
+
 
     # ===== FreeRTOS tasks =====
     App/tasks/command_task.c
@@ -66,8 +65,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # App/tasks/BLDC_task.c
     # App/tasks/ibt4_DC_task.c
-    App/tasks/at8236_DC_task.c
     App/tasks/tb6612_DC_task.c
+    App/tasks/ibt4_DC_task.c
 
 
 

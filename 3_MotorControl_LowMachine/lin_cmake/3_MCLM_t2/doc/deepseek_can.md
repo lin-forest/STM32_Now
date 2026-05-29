@@ -29,7 +29,7 @@
 | `CAN_CMD_TURN_STDID` | `0x102` | `0x102` | RX | 全车转向命令 |
 | `CAN_CMD_POWER_STDID` | `0x103` | `0x103` | RX | 全车动力命令 |
 
-> 切换 Group：修改 `app_config.h:160` 的 `CAN_ID_GROUP` 值。Group 1（0x125/0x126 系列）为当前默认，Group 2（0x123/0x124 系列）为备选。
+> 切换 Group：修改 `app_config.h:52` 的 `CAN_ID_GROUP` 值。Group 1（0x125/0x126 系列）为当前默认，Group 2（0x123/0x124 系列）为备选。
 
 ---
 
@@ -293,5 +293,3 @@ typedef struct {
 | `MotorQueue1Handle` | `CommandMsg_t` | `command_task.c` | 动力电机控制任务（电机 1） |
 | `AckQueueHandle` | `AckMsg_t` | `command_task.c` | `Ack_task.c` |
 | `LogQueueHandle` | `LogMotorData_t` | logger 模块 | UART 发送任务 |
-
-260511更新git用测试语句
