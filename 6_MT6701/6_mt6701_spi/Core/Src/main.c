@@ -138,11 +138,34 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  /*
+   * 调试阶段预期输出（手动匀速旋转磁铁一周）:
+   *
+   * 正常情况（SPI Mode 1, >>2 正确）:
+   *   raw=0     angle=0.00
+   *   raw=2048  angle=44.98   (约 45°)
+   *   raw=4096  angle=90.00
+   *   raw=8192  angle=180.00
+   *   raw=12288 angle=270.00
+   *   raw=16383 angle=359.98
+   *   raw=0     angle=0.00    ← 回到起点
+   *   360° 内恰好 1 次完整周期, 数值平滑递增/递减
+   *
+   * 异常现象排查:
+   *   "180~360" 或 "90~270"   → SPI 模式错误 (CPOL/CPHA 不对)
+   *   "0~16383 循环 2 次/圈"  → 角度提取 shift/mask 错误 (当前 >>2 不应移除)
+   *   "8800~16383"            → MOSI 送了 0x00, 该模块需要 0xFF
+   *   "一直 65535"            → MISO 接线错误
+   *   "一直是 0"              → CS 没有拉低
+   */
+
   while (1)
   {
+      uint16_t raw = MT6701_ReadRaw();
       float angle = MT6701_GetAngle();
-      printf("angle=%.2f\r\n", angle);
-      HAL_Delay(10);
+      printf("raw=%u angle=%.2f\r\n", raw, angle);
+      HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
