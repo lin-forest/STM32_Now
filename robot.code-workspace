@@ -42,6 +42,9 @@
     },
     {
       "path": "vofa"
+    },
+    {
+      "path": "6_MT6701/6_mt6701_spi"
     }
   ],
   "settings": {

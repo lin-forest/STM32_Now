@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_mt6701_spi.elf
+r
+q

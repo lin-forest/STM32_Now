@@ -16,10 +16,45 @@
       "problemMatcher": []
     },
     {
+      "label": "Build: MPU6050",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_Mpu6050/6_Mpu6050_t1/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: BMP280",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_BMP280/6_BMP280_t1/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: VL53L0",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_VL53L0/6_VL53L0XV2_test/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: MT6701",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_MT6701/6_MT6701_test/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: LED",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Flash: 3_MCLM_t2",
       "type": "shell",
       "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash",
-      "group": { "kind": "build", "isDefault": true },
+      "group": "build",
       "dependsOn": ["Build: 3_MCLM_t2"],
       "dependsOrder": "parallel",
       "problemMatcher": []
@@ -34,11 +69,56 @@
       "problemMatcher": []
     },
     {
+      "label": "Flash: MPU6050",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_Mpu6050/6_Mpu6050_t1/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: MPU6050"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: BMP280",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_BMP280/6_BMP280_t1/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: BMP280"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: VL53L0",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_VL53L0/6_VL53L0XV2_test/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: VL53L0"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: MT6701",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_MT6701/6_MT6701_test/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: MT6701"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash: LED",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash",
+      "group": "build",
+      "dependsOn": ["Build: LED"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
       "label": "Flash: All Nodes",
       "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash && cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash",
+      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash && cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_Mpu6050/6_Mpu6050_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_BMP280/6_BMP280_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_VL53L0/6_VL53L0XV2_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_MT6701/6_MT6701_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash",
       "group": "build",
-      "dependsOn": ["Build: 3_MCLM_t2", "Build: ChassisController"],
+      "dependsOn": ["Build: 3_MCLM_t2", "Build: ChassisController", "Build: MPU6050", "Build: BMP280", "Build: VL53L0", "Build: MT6701", "Build: LED"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }

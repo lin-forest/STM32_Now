@@ -14,7 +14,7 @@
       "args": [
         "-Device", "STM32F103C8",
         "-If", "SWD",
-        "-Speed", "2000",
+        "-Speed", "4000",
         "-CommanderScript", "${workspaceFolder}/flash.jlink"
       ],
       "group": { "kind": "build", "isDefault": true },

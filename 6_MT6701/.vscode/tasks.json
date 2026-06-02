@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: MT6701",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/6_MT6701_test/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash STM32 via J-Link",
+      "type": "process",
+      "command": "/opt/SEGGER/JLink/JLinkExe",
+      "args": [
+        "-Device", "STM32F103C8",
+        "-If", "SWD",
+        "-Speed", "4000",
+        "-CommanderScript", "${workspaceFolder}/6_MT6701_test/flash.jlink"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/6_MT6701_test"
+      },
+      "group": { "kind": "build", "isDefault": true },
+      "dependsOn": "Build: MT6701",
+      "problemMatcher": []
+    }
+  ]
+}

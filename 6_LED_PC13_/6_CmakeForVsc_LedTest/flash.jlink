@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_CmakeForVsc_LedTest.elf
+r
+q

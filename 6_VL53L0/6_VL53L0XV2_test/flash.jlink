@@ -1,5 +1,5 @@
 r
 h
-loadfile build/Debug/3_MCLM_t2.elf
+loadfile build/Debug/6_VL53L0XV2_test.elf
 r
 q

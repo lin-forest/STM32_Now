@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build: BMP280",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/6_BMP280_t1/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash STM32 via J-Link",
+      "type": "process",
+      "command": "/opt/SEGGER/JLink/JLinkExe",
+      "args": [
+        "-Device", "STM32F103C8",
+        "-If", "SWD",
+        "-Speed", "4000",
+        "-CommanderScript", "${workspaceFolder}/6_BMP280_t1/flash.jlink"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/6_BMP280_t1"
+      },
+      "group": { "kind": "build", "isDefault": true },
+      "dependsOn": "Build: BMP280",
+      "problemMatcher": []
+    }
+  ]
+}
