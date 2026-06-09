@@ -25,15 +25,18 @@
  * ================================================================================= */
 #define MOTOR_CFG_DEFAULT  1
 #define MOTOR_CFG_NEW      2
+#define MOTOR_CFG_2IBT4    3
 
-#define MOTOR_CFG_SET   2
+#define MOTOR_CFG_SET   3
 
 #if   MOTOR_CFG_SET == MOTOR_CFG_DEFAULT
   #include "app_motor_cfg_default.h"
 #elif MOTOR_CFG_SET == MOTOR_CFG_NEW
   #include "app_motor_cfg_new.h"
+#elif MOTOR_CFG_SET == MOTOR_CFG_2IBT4
+  #include "app_motor_cfg_2ibt4.h"
 #else
-  #error "MOTOR_CFG_SET must be MOTOR_CFG_DEFAULT (1) or MOTOR_CFG_NEW (2)"
+  #error "MOTOR_CFG_SET must be MOTOR_CFG_DEFAULT (1), MOTOR_CFG_NEW (2), or MOTOR_CFG_2IBT4 (3)"
 #endif
 
 

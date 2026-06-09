@@ -4,23 +4,34 @@
 #include "math.h"
 #include "float.h"
 
-#if (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)
+/* 允许两电机分别使用 IBT4，也可混合使用（任一驱动类型为 IBT4 即编译本文件） */
+#if (MOTOR1_DRIVER == MOTOR_DRIVER_IBT4) || (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)
 
 void IBT4_DC_Task(void *argument)
 {
-    Motor_t *motor = (argument != NULL) ? (Motor_t *)argument : &g_motors[1];
+    Motor_t *motor = (argument != NULL) ? (Motor_t *)argument : &g_motors[0];
     uint8_t idx = (uint8_t)(motor - &g_motors[0]);
 
     Motor_PID_Init(motor);
 
     IBT4_Motor_t hw;
-    IBT4_Motor_Init(&hw,
-                    MOTOR2_IBT4_TIM,
-                    MOTOR2_IBT4_CH_F,
-                    MOTOR2_IBT4_CH_R,
-                    MOTOR2_IBT4_EN_PORT, MOTOR2_IBT4_EN_PIN,
-                    MOTOR2_MAX_PWM_OUTPUT, MOTOR2_MAX_SPEED_LOGIC,
-                    MOTOR2_DEAD_ZONE, MOTOR2_IBT4_POLARITY);
+    if (idx == 0) {
+        IBT4_Motor_Init(&hw,
+                        MOTOR1_IBT4_TIM,
+                        MOTOR1_IBT4_CH_F,
+                        MOTOR1_IBT4_CH_R,
+                        MOTOR1_IBT4_EN_PORT, MOTOR1_IBT4_EN_PIN,
+                        MOTOR1_MAX_PWM_OUTPUT, MOTOR1_MAX_SPEED_LOGIC,
+                        MOTOR1_DEAD_ZONE, MOTOR1_IBT4_POLARITY);
+    } else {
+        IBT4_Motor_Init(&hw,
+                        MOTOR2_IBT4_TIM,
+                        MOTOR2_IBT4_CH_F,
+                        MOTOR2_IBT4_CH_R,
+                        MOTOR2_IBT4_EN_PORT, MOTOR2_IBT4_EN_PIN,
+                        MOTOR2_MAX_PWM_OUTPUT, MOTOR2_MAX_SPEED_LOGIC,
+                        MOTOR2_DEAD_ZONE, MOTOR2_IBT4_POLARITY);
+    }
 
     osMessageQueueId_t myQueue = (idx == 0) ? MotorQueueHandle : MotorQueue1Handle;
     osMutexId_t        myMutex = (idx == 0) ? motor0_mutexHandle : motor1_mutexHandle;
@@ -111,4 +122,4 @@ void IBT4_DC_Task(void *argument)
     }
 }
 
-#endif // (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)
+#endif // (MOTOR1_DRIVER == MOTOR_DRIVER_IBT4) || (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)

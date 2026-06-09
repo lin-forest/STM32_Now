@@ -330,10 +330,10 @@ void MX_FREERTOS_Init(void) {
   Heartbeat_TaHandle = osThreadNew(Start_Heartbeat, NULL, &Heartbeat_Ta_attributes);
 
   /* creation of MotorControl_Ta */
-  MotorControl_TaHandle = osThreadNew(Start_MotorControl, NULL, &MotorControl_Ta_attributes);
+  MotorControl_TaHandle = osThreadNew(Start_MotorControl, (void*) &g_motors[0], &MotorControl_Ta_attributes);
 
   /* creation of Encoder_Ta */
-  Encoder_TaHandle = osThreadNew(Start_Encoder, NULL, &Encoder_Ta_attributes);
+  Encoder_TaHandle = osThreadNew(Start_Encoder, (void*) &g_motors[0], &Encoder_Ta_attributes);
 
   /* creation of Logger_Ta */
   Logger_TaHandle = osThreadNew(Start_Logger, NULL, &Logger_Ta_attributes);
@@ -395,6 +395,8 @@ void Start_MotorControl(void *argument)
   
   #if MOTOR1_DRIVER == MOTOR_DRIVER_TB6612
   TB6612_DC_Task(argument);
+  #elif MOTOR1_DRIVER == MOTOR_DRIVER_IBT4
+  IBT4_DC_Task(argument);
   #else
 
   #error "No valid driver selected for motor1! Check MOTOR1_DRIVER"

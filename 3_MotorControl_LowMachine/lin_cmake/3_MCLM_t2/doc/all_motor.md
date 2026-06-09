@@ -5,6 +5,67 @@
 
 ---
 
+## 0. 电机配置文件架构
+
+```
+App/config/
+├── app_config.h                 ← 顶层选择器：MOTOR_CFG_SET 决定引入哪个预设
+├── app_motor_cfg_default.h      ← 预设 DEFAULT (1)：原底盘配置，双 TB6612
+├── app_motor_cfg_new.h          ← 预设 NEW     (2)：新电机，TB6612 + IBT-4
+└── app_motor_cfg_2ibt4.h       ← 预设 2IBT4  (3)：双 IBT-4 (BTS7960)
+```
+
+### 选择机制（`app_config.h`）
+
+```c
+#define MOTOR_CFG_DEFAULT  1
+#define MOTOR_CFG_NEW      2
+
+#define MOTOR_CFG_SET   3       // ← 唯一开关
+
+#if   MOTOR_CFG_SET == MOTOR_CFG_DEFAULT
+  #include "app_motor_cfg_default.h"
+#elif MOTOR_CFG_SET == MOTOR_CFG_NEW
+  #include "app_motor_cfg_new.h"
+#endif
+```
+
+- `MOTOR_CFG_SET` 是 **唯一选择开关**，编译时决定加载哪个电机配置
+- 每个预设文件 **自包含完整配置**（驱动类型、引脚、PID、编码器等）
+- 全局参数（`SPEED_LOGIC_MAX`、`PWM_MAX`）定义在 `app_config.h` 中，**所有预设共享**
+
+### 预设文件布局
+
+每个 `.h` 文件按以下顺序组织：
+
+| 段落 | 内容 | 示例宏 |
+|------|------|--------|
+| 预设头 | 简介、适用电机、驱动芯片 | 注释块 |
+| 驱动选择 | 电机1/电机2 的驱动芯片 | `MOTOR1_DRIVER`, `MOTOR2_DRIVER` |
+| 速度上限 | `SPEED_TICKS_MAX` 计算与定义 | `SPEED_TICKS_MAX` |
+| 电机1 配置 | 硬件引脚 → 控制限制 → PID → 编码器 | `MOTOR1_TIM_HANDLE`... `MOTOR1_PID_KP`... |
+| 电机2 配置 | 同上（驱动芯片相关的宏） | `MOTOR2_*` / `MOTOR2_IBT4_*` |
+
+### SPEED_TICKS_MAX 的纽带作用
+
+```
+编码器 ticks  →  ticks_to_logic()  →  逻辑速度 (-100~100)  →  logic_to_pwm()  →  PWM 值
+                 └── SPEED_TICKS_MAX 是归一化分母 ──┘
+```
+
+### 添加新预设的步骤
+
+当引入全新电机时（如输出轴 100RPM 的电机）：
+
+1. **新建** `app_motor_cfg_xxx.h`，按上述布局编写
+2. **在 `app_config.h` 中**：
+   - 添加 `#define MOTOR_CFG_XXX  3`
+   - 在 `MOTOR_CFG_SET` 的选择链中追加 `#elif` 和 `#include`
+   - 更新 `#error` 提示支持的值范围
+3. 修改 `#define MOTOR_CFG_SET  3` 即可切换
+
+---
+
 ## 1. 电机驱动类型定义
 
 | 宏 | 值 | 说明 |
@@ -16,12 +77,13 @@
 
 | 宏 | 可选值 | 说明 |
 |---|---|---|
-| `MOTOR_CFG_SET` | `1` (DEFAULT) / `2` (NEW) | **唯一选择开关**（`app_config.h`） |
+| `MOTOR_CFG_SET` | `1` (DEFAULT) / `2` (NEW) / `3` (2IBT4) | **唯一选择开关**（`app_config.h`） |
 
 | 预设 | 电机1（转向） | 电机2（动力） | 适用场景 |
 |---|---|---|---|
 | `MOTOR_CFG_DEFAULT` (1) | TB6612 | TB6612（旧引脚） | 原有配置兼容 |
 | `MOTOR_CFG_NEW` (2) | TB6612 | **IBT-4 (BTS7960)** | 新动力电机 |
+| `MOTOR_CFG_2IBT4` (3) | **IBT-4 (BTS7960)** | **IBT-4 (BTS7960)** | 双 IBT-4 驱动 |
 
 每个预设文件自包含 `MOTOR1_DRIVER` / `MOTOR2_DRIVER` 宏，由 `app_config.h` 按 `MOTOR_CFG_SET` 选择加载。
 
@@ -95,28 +157,63 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 
 ## 4. 电机2（动力电机）— IBT-4 (BTS7960)
 
-> 仅 `MOTOR_CFG_NEW` 预设生效（`App/config/app_motor_cfg_new.h`）
+> `MOTOR_CFG_NEW` 预设中为动力电机；`MOTOR_CFG_2IBT4` 预设中两电机均使用 IBT-4。
 
 ### TIM 资源分配
 
+#### 预设 NEW — TB6612 + IBT4 (`app_motor_cfg_new.h`)
+
 | TIM | 模式 | 通道 | 引脚 | 用途 |
 |-----|------|------|------|------|
-| **TIM1** | PWM (Period=7200) | CH1 | PA8 | **电机1** TB6612 PWM |
-| | | CH2 | PA9 | **电机2** IBT4 RPWM (正转) |
-| | | CH3 | PA10 | **电机2** IBT4 LPWM (反转) |
+| **TIM1** | PWM (Period=7200) | CH1 | PA8 | **电机2** IBT4 RPWM (正转) |
+| | | CH2 | PA9 | **电机2** IBT4 LPWM (反转) |
+| | | CH3 | PA10 | **电机1** TB6612 PWM |
 | **TIM2** | Encoder | CH1/CH2 | PA0/PA1 | 电机1 编码器 |
 | **TIM3** | Encoder | CH1/CH2 | PA6/PA7 | **电机2 编码器** |
 
-### 硬件引脚
+#### 预设 2IBT4 — 双 IBT4 (`app_motor_cfg_2ibt4.h`)
+
+| TIM | 模式 | 通道 | 引脚 | 用途 |
+|-----|------|------|------|------|
+| **TIM1** | PWM (Period=7200) | CH1 | PA8 | **电机2** IBT4 RPWM (正转) |
+| | | CH2 | PA9 | **电机2** IBT4 LPWM (反转) |
+| | | CH3 | PA10 | **电机1** IBT4 RPWM (正转) |
+| | | CH4 | PA11 | **电机1** IBT4 LPWM (反转) |
+| **TIM2** | Encoder | CH1/CH2 | PA0/PA1 | **电机1** 编码器 |
+| **TIM3** | Encoder | CH1/CH2 | PA6/PA7 | **电机2** 编码器 |
+
+### 硬件引脚（预设 NEW — 电机2 IBT4）
 
 | 宏 | 默认值 | 说明 |
 |---|---|---|
 | `MOTOR2_IBT4_TIM` | `&htim1` | PWM 定时器句柄（与电机1 共用 TIM1） |
-| `MOTOR2_IBT4_CH_F` | `TIM_CHANNEL_2` | RPWM 通道（正转），PA9 |
-| `MOTOR2_IBT4_CH_R` | `TIM_CHANNEL_3` | LPWM 通道（反转），PA10 |
+| `MOTOR2_IBT4_CH_F` | `TIM_CHANNEL_1` | RPWM 通道（正转），PA8 |
+| `MOTOR2_IBT4_CH_R` | `TIM_CHANNEL_2` | LPWM 通道（反转），PA9 |
 | `MOTOR2_IBT4_EN_PORT/PIN` | `NULL / 0` | 使能引脚（未使用） |
 | `MOTOR2_IBT4_POLARITY` | `0` | 极性（0=默认） |
 | `MOTOR2_ENCODER_TIM` | `&htim3` | 编码器定时器，纯编码器模式 |
+
+### 硬件引脚（预设 2IBT4 — 电机1 IBT4）
+
+| 宏 | 默认值 | 说明 |
+|---|---|---|
+| `MOTOR1_IBT4_TIM` | `&htim1` | PWM 定时器句柄 |
+| `MOTOR1_IBT4_CH_F` | `TIM_CHANNEL_3` | RPWM 通道（正转），PA10 |
+| `MOTOR1_IBT4_CH_R` | `TIM_CHANNEL_4` | LPWM 通道（反转），PA11 |
+| `MOTOR1_IBT4_EN_PORT/PIN` | `NULL / 0` | 使能引脚（未使用） |
+| `MOTOR1_IBT4_POLARITY` | `0` | 极性（0=默认） |
+| `MOTOR1_ENCODER_TIM` | `&htim2` | 编码器定时器 (PA0/PA1) |
+
+### 硬件引脚（预设 2IBT4 — 电机2 IBT4）
+
+| 宏 | 默认值 | 说明 |
+|---|---|---|
+| `MOTOR2_IBT4_TIM` | `&htim1` | PWM 定时器句柄 |
+| `MOTOR2_IBT4_CH_F` | `TIM_CHANNEL_1` | RPWM 通道（正转），PA8 |
+| `MOTOR2_IBT4_CH_R` | `TIM_CHANNEL_2` | LPWM 通道（反转），PA9 |
+| `MOTOR2_IBT4_EN_PORT/PIN` | `NULL / 0` | 使能引脚（未使用） |
+| `MOTOR2_IBT4_POLARITY` | `0` | 极性（0=默认） |
+| `MOTOR2_ENCODER_TIM` | `&htim3` | 编码器定时器 (PA6/PA7) |
 
 ### 控制限制
 
@@ -129,10 +226,18 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 ### IBT4 控制逻辑
 
 ```
-speed > 0  → CH2(RPWM) = pwm, CH3(LPWM) = 0   ← 正转
-speed < 0  → CH2(RPWM) = 0,    CH3(LPWM) = pwm ← 反转
-speed = 0  → CH2 = 0, CH3 = 0                   ← 停止
+speed > 0  → CH_F(RPWM) = pwm, CH_R(LPWM) = 0   ← 正转
+speed < 0  → CH_F(RPWM) = 0,    CH_R(LPWM) = pwm ← 反转
+speed = 0  → CH_F = 0, CH_R = 0                   ← 停止
 ```
+
+各预设实际通道映射：
+
+| 预设 | 电机 | RPWM(CH_F) | LPWM(CH_R) |
+|------|------|------------|------------|
+| NEW (2) | 电机2 | TIM1_CH2 (PA9) | TIM1_CH3 (PA10) |
+| 2IBT4 (3) | 电机1 | TIM1_CH3 (PA10) | TIM1_CH4 (PA11) |
+| 2IBT4 (3) | 电机2 | TIM1_CH1 (PA8) | TIM1_CH2 (PA9) |
 
 ### PID 参数（可独立整定，默认与电机1相同）
 
