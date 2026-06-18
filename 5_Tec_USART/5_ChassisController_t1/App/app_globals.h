@@ -6,6 +6,8 @@
 #include "can.h"
 #include "usart.h"
 #include "cmsis_os.h"
+#include "app_system_state.h"
+#include "app_command.h"
 
 /* Extern declarations of handles defined elsewhere (e.g., in freertos.c, can.c) */
 
@@ -25,5 +27,11 @@ extern osEventFlagsId_t   uart1_rx_eventHandle;  // ISR 通知 ProtocolParser �
 
 // ISR 中递增的 CAN TX 完成计数器 (volatile: ISR 写，Task 读)
 extern volatile uint32_t can_tx_done_cnt;
+
+// Phase 1 新增：全局系统状态实例
+extern System_State_t g_system_state;
+
+// Phase 1 新增：待发送 CAN 帧队列（CommandProcess → UartToCan）
+extern osMessageQueueId_t canTxQueueHandle;
 
 #endif /* APP_GLOBALS_H */

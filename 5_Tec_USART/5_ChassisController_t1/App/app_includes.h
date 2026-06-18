@@ -14,6 +14,8 @@
 #include "app_config.h"
 #include "app_globals.h"
 #include "app_task.h"
+#include "app_system_state.h"
+#include "app_command.h"
 
 
 #endif /* APP_INCLUDES_H */

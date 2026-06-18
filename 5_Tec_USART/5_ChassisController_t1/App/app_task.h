@@ -36,5 +36,13 @@ void Heartbeat_Task_Run(void *argument);
  */
 void ProtocolParser_Task_Run(void *argument);
 
+/**
+ * @brief  命令处理任务的实现函数 (Phase 1 新增)
+ *         从 uartToCanQueue 取出消息，解析语义，更新 SystemState，决定是否转发 CAN
+ * @param  argument: 任务参数 (未使用)
+ * @retval None
+ */
+void CommandProcess_Task_Run(void *argument);
+
 
 #endif /* APP_TASK_H */

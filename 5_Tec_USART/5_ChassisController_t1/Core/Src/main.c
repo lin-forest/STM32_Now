@@ -95,7 +95,13 @@ int main(void)
   MX_CAN_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  
   /* USER CODE BEGIN 2 */
+  /* 启动诊断：Phase1 调试时启用，验证UART TX硬件正常。
+   * 用完后注释掉以减少启动输出。
+   */
+  // HAL_UART_Transmit(&huart1, (uint8_t*)"BOOT: System starting...\r\n", 26, 100);
+
   CAN_Filter_Config(); // 初始化CAN过滤器
 
   if (HAL_CAN_Start(&hcan) != HAL_OK) // 启动CAN

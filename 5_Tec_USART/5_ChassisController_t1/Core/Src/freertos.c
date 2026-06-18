@@ -101,6 +101,18 @@ const osThreadAttr_t ProtocolParser__attributes = {
   .stack_size = sizeof(ProtocolParser_Buffer),
   .priority = (osPriority_t) osPriorityNormal1,
 };
+/* Definitions for CommandProcess_Ta */
+osThreadId_t CommandProcess_TaHandle;
+uint32_t CommandProcess_TaBuffer[ 256 ];
+osStaticThreadDef_t CommandProcess_TaControlBlock;
+const osThreadAttr_t CommandProcess_Ta_attributes = {
+  .name = "CommandProcess_Ta",
+  .cb_mem = &CommandProcess_TaControlBlock,
+  .cb_size = sizeof(CommandProcess_TaControlBlock),
+  .stack_mem = &CommandProcess_TaBuffer[0],
+  .stack_size = sizeof(CommandProcess_TaBuffer),
+  .priority = (osPriority_t) osPriorityNormal1,
+};
 /* Definitions for canRxQueue */
 osMessageQueueId_t canRxQueueHandle;
 const osMessageQueueAttr_t canRxQueue_attributes = {
@@ -110,6 +122,11 @@ const osMessageQueueAttr_t canRxQueue_attributes = {
 osMessageQueueId_t uartToCanQueueHandle;
 const osMessageQueueAttr_t uartToCanQueue_attributes = {
   .name = "uartToCanQueue"
+};
+/* Definitions for canTxQueue */
+osMessageQueueId_t canTxQueueHandle;
+const osMessageQueueAttr_t canTxQueue_attributes = {
+  .name = "canTxQueue"
 };
 /* Definitions for uart1_tx_mutex */
 osMutexId_t uart1_tx_mutexHandle;
@@ -145,6 +162,7 @@ void Start_UartToCan(void *argument);
 void Start_CanRxProcess(void *argument);
 void Start_Heartbeat(void *argument);
 void Start_ProtocolParser(void *argument);
+void Start_CommandProcess(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -211,6 +229,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of uartToCanQueue */
   uartToCanQueueHandle = osMessageQueueNew (16, sizeof(App_UART_Message_t), &uartToCanQueue_attributes);
 
+  /* creation of canTxQueue */
+  canTxQueueHandle = osMessageQueueNew (16, sizeof(App_CAN_Message_t), &canTxQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -227,6 +248,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of ProtocolParser_ */
   ProtocolParser_Handle = osThreadNew(Start_ProtocolParser, NULL, &ProtocolParser__attributes);
+
+  /* creation of CommandProcess_Ta */
+  CommandProcess_TaHandle = osThreadNew(Start_CommandProcess, NULL, &CommandProcess_Ta_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -303,6 +327,20 @@ void Start_ProtocolParser(void *argument)
 
   ProtocolParser_Task_Run(argument);
   /* USER CODE END Start_ProtocolParser */
+}
+
+/* USER CODE BEGIN Header_Start_CommandProcess */
+/**
+* @brief Function implementing the CommandProcess_Ta thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_CommandProcess */
+void Start_CommandProcess(void *argument)
+{
+  /* USER CODE BEGIN Start_CommandProcess */
+  CommandProcess_Task_Run(argument);
+  /* USER CODE END Start_CommandProcess */
 }
 
 /* Private application code --------------------------------------------------*/

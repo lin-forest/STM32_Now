@@ -57,7 +57,7 @@
   #error "MOTOR1_DRIVER must be MOTOR_DRIVER_IBT4 in this preset"
 #endif
 
-
+// 1
 /* =================================================================================
  *   3. 电机2（动力电机）— IBT-4 (BTS7960)
  *   通道分配: TIM1_CH1 = RPWM (PA8), TIM1_CH2 = LPWM (PA9)
@@ -75,6 +75,7 @@
 
 /* --- 电机控制限制 --- */
 #define MOTOR2_MAX_PWM_OUTPUT       PWM_MAX
+#define MOTOR1_MIN_PWM_OUTPUT       0
 #define MOTOR2_MAX_SPEED_LOGIC      SPEED_LOGIC_MAX
 #define MOTOR2_DEAD_ZONE            10
 
