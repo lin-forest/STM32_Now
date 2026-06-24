@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build: LED",
+      "label": "Build: LED (CmakeForVsc)",
       "type": "shell",
       "command": "cmake --build ${workspaceFolder}/6_CmakeForVsc_LedTest/build/Debug",
       "group": "build",
       "problemMatcher": []
     },
     {
-      "label": "Flash STM32 via J-Link",
+      "label": "Flash STM32 via J-Link (CmakeForVsc)",
       "type": "process",
       "command": "/opt/SEGGER/JLink/JLinkExe",
       "args": [
@@ -21,8 +21,32 @@
       "options": {
         "cwd": "${workspaceFolder}/6_CmakeForVsc_LedTest"
       },
+      "group": { "kind": "build", "isDefault": false },
+      "dependsOn": "Build: LED (CmakeForVsc)",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build: LED (Led_cmake)",
+      "type": "shell",
+      "command": "cmake --build ${workspaceFolder}/6_Led_cmake/build/Debug",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flash STM32 via J-Link (Led_cmake)",
+      "type": "process",
+      "command": "/opt/SEGGER/JLink/JLinkExe",
+      "args": [
+        "-Device", "STM32F103C8",
+        "-If", "SWD",
+        "-Speed", "4000",
+        "-CommanderScript", "${workspaceFolder}/6_Led_cmake/flash.jlink"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/6_Led_cmake"
+      },
       "group": { "kind": "build", "isDefault": true },
-      "dependsOn": "Build: LED",
+      "dependsOn": "Build: LED (Led_cmake)",
       "problemMatcher": []
     }
   ]

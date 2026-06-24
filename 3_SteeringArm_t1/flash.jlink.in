@@ -1,0 +1,5 @@
+r
+h
+loadfile @CMAKE_PROJECT_NAME@.elf
+r
+q

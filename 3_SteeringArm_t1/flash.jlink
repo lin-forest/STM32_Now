@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/3_SteeringArm_t1.elf
+r
+q

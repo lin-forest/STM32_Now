@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "JLink Debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "executable": "${workspaceFolder}/build/Debug/3_SteeringArm_t1.elf",
+            "servertype": "jlink",
+            "device": "STM32F103C8",
+            "interface": "swd",
+            "runToMain": true,
+            "mapFile": "${workspaceFolder}/build/Debug/3_SteeringArm_t1.map"
+        }
+    ]
+}

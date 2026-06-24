@@ -45,6 +45,12 @@
     },
     {
       "path": "6_MT6701/6_mt6701_spi"
+    },
+    {
+      "path": "3_SteeringArm_t1"
+    },
+    {
+      "path": "RC_dog"
     }
   ],
   "settings": {

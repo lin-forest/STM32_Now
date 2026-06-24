@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/6_Led_cmake.elf
+r
+q
