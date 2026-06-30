@@ -13,4 +13,8 @@ void    MT6701_Init(void);
 uint16_t MT6701_ReadRaw(GPIO_TypeDef *cs_port, uint16_t cs_pin);
 float   MT6701_GetAngle(GPIO_TypeDef *cs_port, uint16_t cs_pin);
 
+/* 带偏移标定 + 过零回绕处理的角度读取 */
+int16_t MT6701_GetAngleX10(GPIO_TypeDef *cs_port, uint16_t cs_pin, uint16_t offset_raw);
+int16_t MT6701_RawToAngleX10(uint16_t raw, uint16_t offset_raw);
+
 #endif

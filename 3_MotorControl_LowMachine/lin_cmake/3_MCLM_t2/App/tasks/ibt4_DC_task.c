@@ -15,6 +15,7 @@ void IBT4_DC_Task(void *argument)
     Motor_PID_Init(motor);
 
     IBT4_Motor_t hw;
+#if (MOTOR1_DRIVER == MOTOR_DRIVER_IBT4)
     if (idx == 0) {
         IBT4_Motor_Init(&hw,
                         MOTOR1_IBT4_TIM,
@@ -23,7 +24,9 @@ void IBT4_DC_Task(void *argument)
                         MOTOR1_IBT4_EN_PORT, MOTOR1_IBT4_EN_PIN,
                         MOTOR1_MAX_PWM_OUTPUT, MOTOR1_MAX_SPEED_LOGIC,
                         MOTOR1_DEAD_ZONE, MOTOR1_IBT4_POLARITY);
-    } else {
+    } else
+#endif
+    {
         IBT4_Motor_Init(&hw,
                         MOTOR2_IBT4_TIM,
                         MOTOR2_IBT4_CH_F,

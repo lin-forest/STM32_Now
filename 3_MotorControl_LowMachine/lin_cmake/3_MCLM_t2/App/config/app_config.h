@@ -27,7 +27,7 @@
 #define MOTOR_CFG_NEW      2
 #define MOTOR_CFG_2IBT4    3
 
-#define MOTOR_CFG_SET   3
+#define MOTOR_CFG_SET   2
 
 #if   MOTOR_CFG_SET == MOTOR_CFG_DEFAULT
   #include "app_motor_cfg_default.h"
@@ -52,7 +52,7 @@
  *   1 = 0x125/0x126 系列
  *   2 = 0x123/0x124 系列
  */
-#define CAN_ID_GROUP  1
+#define CAN_ID_GROUP  2
 
 #if CAN_ID_GROUP == 1
     #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID

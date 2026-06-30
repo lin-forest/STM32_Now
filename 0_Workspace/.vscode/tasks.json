@@ -50,13 +50,13 @@
       "group": "build",
       "problemMatcher": []
     },
-    {
-      "label": "Build: LED (CmakeForVsc)",
-      "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug",
-      "group": "build",
-      "problemMatcher": []
-    },
+    // {
+    //   "label": "Build: LED (CmakeForVsc)",
+    //   "type": "shell",
+    //   "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug",
+    //   "group": "build",
+    //   "problemMatcher": []
+    // },
     {
       "label": "Build: LED (Led_cmake)",
       "type": "shell",
@@ -118,15 +118,15 @@
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
-    {
-      "label": "Flash: LED (CmakeForVsc)",
-      "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash",
-      "group": "build",
-      "dependsOn": ["Build: LED (CmakeForVsc)"],
-      "dependsOrder": "parallel",
-      "problemMatcher": []
-    },
+    // {
+    //   "label": "Flash: LED (CmakeForVsc)",
+    //   "type": "shell",
+    //   "command": "cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash",
+    //   "group": "build",
+    //   "dependsOn": ["Build: LED (CmakeForVsc)"],
+    //   "dependsOrder": "parallel",
+    //   "problemMatcher": []
+    // },
     {
       "label": "Flash: LED (Led_cmake)",
       "type": "shell",
@@ -145,14 +145,14 @@
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
-    {
-      "label": "Flash: All Nodes",
-      "type": "shell",
-      "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash && cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_Mpu6050/6_Mpu6050_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_BMP280/6_BMP280_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_VL53L0/6_VL53L0XV2_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_MT6701/6_MT6701_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_LED_PC13_/6_Led_cmake/build/Debug --target flash && cmake --build ${workspaceFolder}/../3_SteeringArm/build/Debug --target flash",
-      "group": "build",
-      "dependsOn": ["Build: 3_MCLM_t2", "Build: ChassisController", "Build: MPU6050", "Build: BMP280", "Build: VL53L0", "Build: MT6701", "Build: LED (CmakeForVsc)", "Build: LED (Led_cmake)", "Build: SteeringArm"],
-      "dependsOrder": "parallel",
-      "problemMatcher": []
-    }
+    // {
+    //   "label": "Flash: All Nodes",
+    //   "type": "shell",
+    //   "command": "cmake --build ${workspaceFolder}/../3_MotorControl_LowMachine/lin_cmake/3_MCLM_t2/build/Debug --target flash && cmake --build ${workspaceFolder}/../5_Tec_USART/5_ChassisController_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_Mpu6050/6_Mpu6050_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_BMP280/6_BMP280_t1/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_VL53L0/6_VL53L0XV2_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_MT6701/6_MT6701_test/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_LED_PC13_/6_CmakeForVsc_LedTest/build/Debug --target flash && cmake --build ${workspaceFolder}/../6_LED_PC13_/6_Led_cmake/build/Debug --target flash && cmake --build ${workspaceFolder}/../3_SteeringArm/build/Debug --target flash",
+    //   "group": "build",
+    //   "dependsOn": ["Build: 3_MCLM_t2", "Build: ChassisController", "Build: MPU6050", "Build: BMP280", "Build: VL53L0", "Build: MT6701", "Build: LED (CmakeForVsc)", "Build: LED (Led_cmake)", "Build: SteeringArm"],
+    //   "dependsOrder": "parallel",
+    //   "problemMatcher": []
+    // }
   ]
 }

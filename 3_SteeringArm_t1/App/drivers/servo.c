@@ -31,9 +31,7 @@ void Servo_Init(void)
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
-    /* 初始：J1/J2 = 0° (中位), 夹爪 = 全开 */
-    Servo_SetAngle(&htim4, TIM_CHANNEL_1, 0.0f);
-    Servo_SetAngle(&htim4, TIM_CHANNEL_2, 0.0f);
+    /* 初始：仅夹爪设全开，舵机不设角度（等待 CAN 命令） */
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 1000);
     __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 1000);
 }

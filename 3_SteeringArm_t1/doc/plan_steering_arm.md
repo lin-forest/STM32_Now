@@ -22,7 +22,7 @@
      ┃ CAN Bus (500kbps, 标准帧11bit)
      ▼
 ┌────────────────┐   ┌────────────────────────┐
-│ 3_MCLM_t2      │   │ 1_SteeringArm (本方案) │
+│ 3_MCLM_t2      │   │ 3_SteeringArm_t1 (本方案) │
 │ 电机控制器节点  │   │ 机械臂控制器节点 ★新增  │
 │ (驱动+转向电机) │   │ (J0~J2 + 夹爪)        │
 └────────────────┘   └────────────────────────┘
@@ -36,9 +36,9 @@ ChassisController_t1 (网关)
   │
   ├─ CAN 0x1XX → 已有 MCLM_t2 电机控制器（底盘运动）
   │
-  ├─ CAN 0x1XX → 1_SteeringArm **本方案**（机械臂控制）
+  ├─ CAN 0x1XX → 3_SteeringArm_t1 **本方案**（机械臂控制）
   │     ┌──────────────────────────────────────┐
-  │     │ 1_SteeringArm (STM32F103)             │
+  │     │ 3_SteeringArm_t1 (STM32F103)             │
   │     │ FreeRTOS (CMSIS-V2), CubeMX 初始化     │
   │     │                                       │
   │     │ J0: DC电机+TB6612 (复用3_MCLM代码)    │
@@ -307,7 +307,7 @@ Project Manager → Project Settings → Pinout → HAL Settings → Timebase So
 
 ### 5.8 TIM4 (4路舵机 PWM) — 35kg 300° 数字舵机
 
-舵机参数：**500μs~2500μs 对应 0°~300°**
+舵机参数：**500μs~2500μs 对应 -150°~+150°（0°=中位）**
 
 | 参数 | 值 | 说明 |
 |------|-----|------|
@@ -315,13 +315,22 @@ Project Manager → Project Settings → Pinout → HAL Settings → Timebase So
 | Channel 2 | PWM Generation CH2 | PB7 → J2舵机 |
 | Channel 3 | PWM Generation CH3 | PB8 → 夹爪1 |
 | Channel 4 | PWM Generation CH4 | PB9 → 夹爪2 |
-| Prescaler | **18-1** | 36MHz/18 = 2MHz → 每tick=0.5μs |
-| Counter Period (ARR) | **40000-1** | 2MHz/40000 = **50Hz** ✅ |
-| Pulse | 各通道初始 **3000** (150° 中间) |
+| Prescaler | **35** | ⚠️ 见下方时钟说明 |
+| Counter Period (ARR) | **40000-1** | 50Hz ✅ |
+| Pulse | 各通道初始 **3000** (中位 0°) |
 | Polarity | High |
 
-> **脉宽映射**：CCR=1000→0°(500μs), CCR=3000→150°(1500μs), CCR=5000→300°(2500μs)
-> 分辨率 **0.075°/count**（旧方案 PSC=720→3°/count，精度提升40倍）
+> **⚠️ STM32F1 定时器时钟翻倍规则（RM0008 §5.2）：**
+> APB1=36MHz(分频≠1) 时，TIM 时钟 = 36MHz×**2** = **72MHz**
+> 72MHz / 36(PSC+1) = **2MHz** → 每 tick = **0.5μs** → ARR=39999 → **50Hz**
+>
+> **脉宽映射（0° = 中位）**：
+> ```
+>  角度 -150° → out=0   → 500μs  → CCR=1000
+>  角度 0°    → out=150 → 1500μs → CCR=3000   ← 中位
+>  角度 +150° → out=300 → 2500μs → CCR=5000
+> ```
+> 详见 [`doc/tim4_clock_fix.md`](tim4_clock_fix.md)
 
 ### 5.9 GPIO
 
@@ -356,13 +365,13 @@ Project Manager → Project Settings → Pinout → HAL Settings → Timebase So
 
 ### 6.1 任务总览
 
-| 任务 | 函数名 | 优先级 | 栈(words) | 周期 | 功能 |
-|------|--------|-------|-----------|------|------|
-| `CAN_Rx_Ta` | `CAN_Rx_Task_Run` | Normal | 256 | 事件驱动 | 解析 CAN RX → JointCmdQueue |
-| `DC_Motor_Ta` | `DC_Motor_Task_Run` | Normal1 | 256 | **10ms** | J0 PID闭环（复用 MCLM 代码） |
-| `Servo_Ta` | `Servo_Task_Run` | Normal | 256 | **20ms** | J1/J2/夹爪 PWM 更新 + MT6701 读取 |
-| `Arm_State_Ta` | `Arm_State_Task_Run` | Normal | 256 | **50ms** | 收集关节状态 → CAN 上报 |
-| `Heartbeat_Ta` | `Heartbeat_Task_Run` | Low | 64 | 300ms | LED 翻转 |
+| 任务 | 函数名 | 优先级 | 栈(words) | 周期 | 功能 | 状态 |
+|------|--------|-------|-----------|------|------|:----:|
+| `Heartbeat_Ta` | `Heartbeat_Task_Run` | Low (8) | 64 | 300ms | LED 翻转 | ✅ |
+| `CAN_Rx_Ta` | `CAN_Rx_Task_Run` | Normal (24) | 256 | 事件驱动 | 解析 CAN 0x130/0x430 → g_arm_state | ✅ |
+| `Servo_Ta` | `Servo_Task_Run` | Normal (24) | **128** | **20ms** | 平滑插值 + Servo_SetAngle | ✅ |
+| `DC_Motor_Ta` | `DC_Motor_Task_Run` | Normal1 (25) | 256 | — | J0 暂缓 | ⏳ |
+| `Arm_State_Ta` | `Arm_State_Task_Run` | Normal (24) | 256 | — | 未实现 | ⏳ |
 
 ### 6.2 任务间通信
 
@@ -532,51 +541,57 @@ static void J0_Position_Loop(void)
 - CAN 命令 `0x130 joint_id=0` 设置的是**目标位置**，不再直接设速度
 - 增加 `g_arm_state.j0_target_position`（位置环目标）和 `g_arm_state.j0_velocity_target`（速度环目标）
 
-### 6.5 Servo_Task — 舵机 + 编码器联合控制 (20ms)
+### 6.5 Servo_Task — 舵机控制 (20ms 平滑插值)
 
-整合两个相关工作：
-1. **读 MT6701** — 复用 `6_mt6701_spi` 已验证代码，分时读取 J1/J2 角度
-2. **舵机位置闭环** — 将目标角度与实测角度比较，调整 PWM 脉宽
-3. **夹爪控制** — 开环，根据目标位置直接输出脉宽
+角度约定：**0° = 中位，-150°~+150° 为全行程**（参考 RC_dog 架构）
+
+```
+脉宽映射（TIM4: PSC=35, ARR=39999, tick=0.5μs）:
+  角度 -150° → out=0   → 500μs  → CCR=1000
+  角度 0°    → out=150 → 1500μs → CCR=3000
+  角度 +150° → out=300 → 2500μs → CCR=5000
+```
+
+驱动层：`App/drivers/servo.c/h` 提供 `Servo_SetAngle(htim, channel, angle_deg)`
+
+**核心机制**：每 20ms 将 `j1_current` 向 `j1_target` 逼近一步，步长 = `speed_dps × 0.02s`。实现平滑加减速，避免舵机突跳。上电时 `g_servo_active=0`，输出被禁止；收到第一条 CAN 0x130 后激活。
 
 ```c
 void Servo_Task_Run(void *argument)
 {
-    Arm_JointCmd_t cmd;
-    
+    Servo_Init();
+    MT6701_Init();
+
+    /* 初始速度 */
+    g_arm_state.j1_speed_dps = 180.0f;   /* 默认 180°/s */
+    g_arm_state.j2_speed_dps = 180.0f;
+    g_arm_state.gripper_target = 1000;
+
     for (;;) {
-        // 1. 检查是否有新命令（非阻塞）
-        if (osMessageQueueGet(JointCmdQueueHandle, &cmd, NULL, 0) == osOK) {
-            if (cmd.joint_id >= 1 && cmd.joint_id <= 3) {
-                g_arm_state.target[cmd.joint_id] = cmd.value;
-            }
+        /* 1. 读 MT6701 */
+        g_arm_state.j1_raw = MT6701_ReadRaw(J1_CS_GPIO_Port, J1_CS_Pin);
+        g_arm_state.j2_raw = MT6701_ReadRaw(J2_CS_GPIO_Port, J2_CS_Pin);
+
+        /* 2. 舵机激活后才输出（g_servo_active 由 CAN 0x130 置1） */
+        if (g_servo_active) {
+            float diff1 = g_arm_state.j1_target - g_arm_state.j1_current;
+            float step1 = g_arm_state.j1_speed_dps * 0.02f;
+            if (step1 > fabsf(diff1)) step1 = fabsf(diff1);
+            g_arm_state.j1_current += (diff1 > 0.0f) ? step1 : -step1;
+
+            float diff2 = g_arm_state.j2_target - g_arm_state.j2_current;
+            float step2 = g_arm_state.j2_speed_dps * 0.02f;
+            if (step2 > fabsf(diff2)) step2 = fabsf(diff2);
+            g_arm_state.j2_current += (diff2 > 0.0f) ? step2 : -step2;
+
+            Servo_SetAngle(&htim4, TIM_CHANNEL_1, g_arm_state.j1_current);
+            Servo_SetAngle(&htim4, TIM_CHANNEL_2, g_arm_state.j2_current);
         }
-        
-        // 2. 读取 J1 MT6701 绝对角度
-        MT6701_CS_LOW(J1);
-        HAL_SPI_Receive(&hspi1, rx, 2, 100);
-        MT6701_CS_HIGH(J1);
-        g_arm_state.j1_raw = (rx[0] << 8 | rx[1]) >> 2;
-        g_arm_state.j1_deg = g_arm_state.j1_raw * 360.0f / 16384.0f;
-        
-        // 3. 读取 J2 MT6701 绝对角度
-        MT6701_CS_LOW(J2);
-        HAL_SPI_Receive(&hspi1, rx, 2, 100);
-        MT6701_CS_HIGH(J2);
-        g_arm_state.j2_raw = (rx[0] << 8 | rx[1]) >> 2;
-        g_arm_state.j2_deg = g_arm_state.j2_raw * 360.0f / 16384.0f;
-        
-        // 4. 舵机位置修正（简单比例控制或直接位置映射）
-        servo_j1_pulse = angle_to_pulse(g_arm_state.target[1], g_arm_state.j1_deg);
-        servo_j2_pulse = angle_to_pulse(g_arm_state.target[2], g_arm_state.j2_deg);
-        
-        // 5. 更新 PWM 脉宽
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, servo_j1_pulse);  // J1
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, servo_j2_pulse);  // J2
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, g_arm_state.gripper_target);  // 夹爪1
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, g_arm_state.gripper_target);  // 夹爪2
-        
-        osDelay(20);  // 20ms 周期
+        /* 夹爪不受激活限制 */
+        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, g_arm_state.gripper_target);
+        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, g_arm_state.gripper_target);
+
+        osDelay(20);
     }
 }
 ```
@@ -613,23 +628,36 @@ data[7]:    flags (bit0:J0_stall, bit1:J1_valid, bit2:J2_valid)
 
 ### 7.2 ARM_CMD (0x130) 帧格式
 
+角度约定：**0° = 中位，-150°~+150° 为全行程**（与 RC_dog 架构一致）
+
 ```
 Byte 0:    命令字节 (0x11=SET_POSITION, 0x08=STOP, 0x01=HOME)
 Byte 1:    关节ID (0=J0, 1=J1, 2=J2, 3=Gripper, 0xFF=All)
 Byte 2..3: 目标值 (int16, LE)
   - J0: 逻辑速度 -100~100
-  - J1/J2: 角度 0~16383 (14bit 编码器值) 或 0~3600 (0.1°)
-  - Gripper: 位置 0~1000
+  - J1/J2: 角度 ×10 (0.1°精度), -1500~+1500
+            如 900 = 90.0°, -450 = -45.0°
+  - Gripper: 脉宽值 1000~5000 (1000=全开, 5000=全闭)
 Byte 4..7: 保留 (填充0)
 ```
 
 示例：设置 J1 到 90°
 ```
-0x130 | 11 01 10 0E 00 00 00 00
-                   ↑ J1目标 = 0x0E10 = 3600 = 90.0° (0.1°精度)
+0x130 | 11 01 84 03 00 00 00 00
+                   ↑ J1目标 = 0x0384 = 900 = 90.0° (0.1°精度)
 ```
 
-### 7.3 ARM_QUERY (0x230) 查询格式
+### 7.3 ARM_CONFIG (0x430) 参数配置
+
+```
+Byte 0:    命令字节
+  - 0x01 = 回中 (J1/J2 回到 0°)
+  - 0x02 = 设置角速度, data[1..2] = 速度×10 (int16 LE)
+           例: 0x02 0B B8 = 3000 = 300.0°/s
+Byte 1..7: 参数数据
+```
+
+### 7.4 ARM_QUERY (0x230) 查询格式
 
 与 MCLM_t2 的 `0x225/0x226` 查询帧格式一致：
 
@@ -643,7 +671,7 @@ Byte 1..7: 保留 (填充0)
 
 > 注意：0x230 不是空帧。**至少 data[0] 携带命令字节**，由机械臂控制器解析并响应。
 
-### 7.4 ARM_STATUS (0x330) 上报格式
+### 7.5 ARM_STATUS (0x330) 上报格式
 
 ```
 Byte 0..1: J0 current_logic_speed  (int16 LE)
@@ -726,7 +754,7 @@ Byte 7:    flags
 ## 九、项目目录结构
 
 ```
-1_SteeringArm/
+3_SteeringArm_t1/
 ├── CMakeLists.txt              # 构建配置（参照 MCLM_t2）
 ├── Core/                       # CubeMX 生成
 │   ├── Inc/
@@ -776,42 +804,56 @@ Byte 7:    flags
 
 ## 十、实施步骤（建议次序）
 
-### Phase 1：基础设施 (CubeMX + FreeRTOS + CAN)
+### Phase 1：基础设施 — ✅ 已完成
 
-| 步骤 | 内容 | 预估时间 |
-|------|------|---------|
-| 1.1 | CubeMX 生成基础工程（按第五章配置） | 30 min |
-| 1.2 | 验证 FreeRTOS 启动，LED 心跳闪烁 | 15 min |
-| 1.3 | 验证 CAN 通信：发送简单 CAN 帧，SavvyCAN 查看 | 30 min |
-| 1.4 | 验证 USART1 printf 调试输出 | 15 min |
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 1.1 | CubeMX 生成基础工程 | ✅ |
+| 1.2 | FreeRTOS 启动，LED 心跳 | ✅ |
+| 1.3 | CAN 通信验证（收发） | ✅ |
+| 1.4 | USART1 printf 调试输出 | ✅ |
 
-### Phase 2：J0 直流电机控制
+### Phase 2：基础验证 — ✅ 已完成
 
-| 步骤 | 内容 | 预估时间 |
-|------|------|---------|
-| 2.1 | 移植 TB6612 驱动 + PID + 编码器（来自 3_MCLM） | 1h |
-| 2.2 | J0 PID 整定，验证编码器反馈 | 1h |
-| 2.3 | CAN 控制 J0 转速（来自 CAN 总线命令） | 30 min |
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 2.1 | LED 心跳闪烁 | ✅ |
+| 2.2 | printf 串口输出 | ✅ |
+| 2.3 | CAN 接收打印 | ✅ |
 
-### Phase 3：舵机 + 编码器
+### Phase 3：舵机 + MT6701 — 🔶 核心完成
 
-| 步骤 | 内容 | 预估时间 |
-|------|------|---------|
-| 3.1 | 移植 MT6701 SPI 驱动（来自 6_mt6701_spi） | 30 min |
-| 3.2 | 验证 J1/J2 编码器角度读取 | 30 min |
-| 3.3 | 实现舵机 PWM 控制（TIM4 4通道50Hz） | 30 min |
-| 3.4 | 舵机位置闭环（编码器反馈） | 1h |
-| 3.5 | 夹爪双舵机开环控制 | 30 min |
-| 3.6 | CAN 控制 J1/J2/夹爪位置 | 30 min |
+| 步骤 | 内容 | 状态 | 备注 |
+|------|------|:----:|------|
+| 3.1 | MT6701 SPI 驱动 | ✅ | 代码就绪，待接线 |
+| 3.2 | 舵机 PWM 控制 (TIM4 50Hz) | ✅ | PSC=35 ⚠️见时钟翻倍 |
+| 3.3 | 平滑插值 + CAN 角度控制 | ✅ | speed_dps 可调 |
+| 3.4 | CAN 回中 + 设速度 (0x430) | ✅ | 0x01回中, 0x02设速度 |
+| 3.5 | 上电无动作 (g_servo_active) | ✅ | 收到 CAN 后激活 |
+| 3.6 | MT6701 接线验证 | 🔌 | 待硬件就绪 |
 
-### Phase 4：集成与调试
+### Phase 4：J0 直流电机 — ⏳ 暂缓
 
-| 步骤 | 内容 | 预估时间 |
-|------|------|---------|
-| 4.1 | CAN 总线联调：底盘网关 ↔ 机械臂控制器 | 1h |
-| 4.2 | 机械臂动作序列测试 | 1h |
-| 4.3 | 异常处理（超时/堵转/通信丢失） | 1h |
-| 4.4 | 整车联合调试 | 2h |
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 4.1 | 移植 TB6612 驱动 + PID（来自 3_MCLM） | ⏳ |
+| 4.2 | J0 PID 整定 | ⏳ |
+| 4.3 | CAN 控制 J0 转速 | ⏳ |
+
+### Phase 5：CAN 命令 + 状态上报 — ⏳ 待开始
+
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 5.1 | 实现 Arm_State_Task (0x330 上报) | ⏳ |
+| 5.2 | 实现 0x230 查询响应 | ⏳ |
+
+### Phase 6：ChassisController 网关适配 — ⏳ 待开始
+
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 6.1 | 增加 CMD_ARM_CONTROL UART 命令 | ⏳ |
+| 6.2 | CommandProcess_Task 转发 CAN 0x130 | ⏳ |
+| 6.3 | CanRxProcess_Task 解析 0x330 | ⏳ |
 
 ---
 

@@ -39,3 +39,24 @@ float MT6701_GetAngle(GPIO_TypeDef *cs_port, uint16_t cs_pin)
     uint16_t raw = MT6701_ReadRaw(cs_port, cs_pin);
     return raw * 360.0f / 16384.0f;
 }
+
+/* 带偏移标定 + 过零回绕的角度读取
+ *  offset_raw: 机械 0° 对应的 raw 值
+ *  返回: 角度 × 10 (int16, 如 -936 = -93.6°)
+ *  过零回绕: raw 跨过 16383→0 时自动修正
+ */
+int16_t MT6701_RawToAngleX10(uint16_t raw, uint16_t offset_raw)
+{
+    int32_t diff = (int32_t)raw - (int32_t)offset_raw;
+
+    /* 回绕处理: 差超过半圈(8192)则修正 */
+    if (diff >  8191) diff -= 16384;
+    if (diff < -8192) diff += 16384;
+
+    return (int16_t)(diff * 3600 / 16384);
+}
+
+int16_t MT6701_GetAngleX10(GPIO_TypeDef *cs_port, uint16_t cs_pin, uint16_t offset_raw)
+{
+    return MT6701_RawToAngleX10(MT6701_ReadRaw(cs_port, cs_pin), offset_raw);
+}

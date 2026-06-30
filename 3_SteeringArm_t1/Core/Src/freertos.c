@@ -31,6 +31,7 @@
 #include "servo.h"
 #include "tim.h"
 #include "gpio.h"
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +53,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 ArmState_t g_arm_state = {0};
+volatile uint8_t g_servo_active = 0;   /* 收到 CAN 命令后设为 1 */
 /* USER CODE END Variables */
 /* Definitions for Heartbeat_Ta */
 osThreadId_t Heartbeat_TaHandle;
@@ -250,10 +252,67 @@ void CAN_Rx_Task_Run(void *argument)
   {
     App_CAN_Message_t msg;
     if (osMessageQueueGet(canRxQueueHandle, &msg, NULL, osWaitForever) == osOK) {
-        printf("CAN RX: ID=0x%03lX Len=%d ", msg.id, msg.len);
-        for (int i = 0; i < msg.len; i++)
-            printf("%02X ", msg.data[i]);
-        printf("\r\n");
+
+      /* ---- ARM_CMD (0x130)：关节角度控制 ---- */
+      if (msg.id == 0x130 && msg.len >= 4) {
+          uint8_t  cmd      = msg.data[0];
+          uint8_t  joint_id = msg.data[1];
+          int16_t  value    = (int16_t)(msg.data[2] | (msg.data[3] << 8));
+
+          if (cmd == 0x21) {     /* 增量模式：在当前目标上累加 */
+              float delta = (float)value / 10.0f;
+              g_servo_active = 1;
+              switch (joint_id) {
+                  case 1:  g_arm_state.j1_target += delta;
+                           printf("ARM_INC: j1 += %d -> %d\r\n", value, (int)g_arm_state.j1_target);
+                           break;
+                  case 2:  g_arm_state.j2_target += delta;
+                           printf("ARM_INC: j2 += %d -> %d\r\n", value, (int)g_arm_state.j2_target);
+                           break;
+                  case 3:  g_arm_state.gripper_target += (uint16_t)value;
+                           printf("ARM_INC: gripper += %d\r\n", value);
+                           break;
+                  default: break;
+              }
+          }
+          else {                 /* 绝对模式（0x11 或其他，现有逻辑） */
+              printf("ARM_CMD: j%d = %d\r\n", joint_id, value);
+              g_servo_active = 1;
+
+              switch (joint_id) {
+                  case 1:  g_arm_state.j1_target = (float)value / 10.0f; break;
+                  case 2:  g_arm_state.j2_target = (float)value / 10.0f; break;
+                  case 3:  g_arm_state.gripper_target = (uint16_t)value; break;
+                  default: break;
+              }
+          }
+
+      }
+      /* ---- ARM_CONFIG (0x430) ---- */
+      else if (msg.id == 0x430 && msg.len >= 1) {
+          switch (msg.data[0]) {
+              case 0x01:  /* 回中 */
+                  g_arm_state.j1_target = 0.0f;
+                  g_arm_state.j2_target = 0.0f;
+                  printf("=== HOME (0°) ===\r\n");
+                  break;
+              case 0x02:  /* 设置速度 (°/s × 10) */
+                  if (msg.len >= 3) {
+                      int16_t spd = (int16_t)(msg.data[1] | (msg.data[2] << 8));
+                      g_arm_state.j1_speed_dps = (float)spd / 10.0f;
+                      g_arm_state.j2_speed_dps = (float)spd / 10.0f;
+                      printf("Speed = %.0f°/s\r\n", g_arm_state.j1_speed_dps);
+                  }
+                  break;
+          }
+      }
+      /* ---- 其他 ID：调试打印 ---- */
+      else {
+          printf("CAN RX: ID=0x%03lX Len=%d ", msg.id, msg.len);
+          for (int i = 0; i < msg.len; i++)
+              printf("%02X ", msg.data[i]);
+          printf("\r\n");
+      }
     }
   }
   /* USER CODE END CAN_Rx_Task_Run */
@@ -290,48 +349,50 @@ void Servo_Task_Run(void *argument)
   Servo_Init();
   MT6701_Init();
 
-  /* 从中位向两侧扩展：找真实角度范围 */
-  /* 角度约定：-150° ~ +150°，0° 为中位 */
-  float angle = 0.0f;
-  int16_t ccr;
+  /* 初始速度 */
+  g_arm_state.j1_speed_dps = 180.0f;
+  g_arm_state.j2_speed_dps = 180.0f;
+  g_arm_state.gripper_target = 1000;
+  printf("Servo_Task ready, speed=180°/s\r\n");
 
-  osDelay(2000);
+  for(;;)
+  {
+    /* ===== 读 MT6701 ===== */
+    g_arm_state.j1_raw = MT6701_ReadRaw(J1_CS_GPIO_Port, J1_CS_Pin);
+    g_arm_state.j2_raw = MT6701_ReadRaw(J2_CS_GPIO_Port, J2_CS_Pin);
 
-  /* Phase 1：走到中位 0° */
-  printf("=== CENTER (0°) ===\r\n");
-  Servo_SetAngle(&htim4, TIM_CHANNEL_1, 0.0f);
-  ccr = Servo_AngleToPulse(0.0f);
-  printf("angle=0°  pulse=%uus  CCR=%u\r\n", ccr / 2, ccr);
-  osDelay(2000);
+    /* ===== 舵机激活前不输出角度（等待 CAN 命令） ===== */
+    if (g_servo_active) {
+        /* 平滑逼近目标 (每 20ms 走一步) */
+        float diff1 = g_arm_state.j1_target - g_arm_state.j1_current;
+        float step1 = g_arm_state.j1_speed_dps * 0.02f;
+        if (step1 > fabsf(diff1)) step1 = fabsf(diff1);
+        g_arm_state.j1_current += (diff1 > 0.0f) ? step1 : -step1;
 
-  /* Phase 2：从 0° 逐步走到 +150° */
-  printf("=== TO +150° ===\r\n");
-  for (angle = 0.0f; angle <= 150.0f; angle += 10.0f) {
-      Servo_SetAngle(&htim4, TIM_CHANNEL_1, angle);
-      ccr = Servo_AngleToPulse(angle);
-      printf("angle=%+4.0f°  pulse=%4uus  CCR=%u\r\n", angle, ccr / 2, ccr);
-      osDelay(400);
+        float diff2 = g_arm_state.j2_target - g_arm_state.j2_current;
+        float step2 = g_arm_state.j2_speed_dps * 0.02f;
+        if (step2 > fabsf(diff2)) step2 = fabsf(diff2);
+        g_arm_state.j2_current += (diff2 > 0.0f) ? step2 : -step2;
+
+        Servo_SetAngle(&htim4, TIM_CHANNEL_1, g_arm_state.j1_current);
+        Servo_SetAngle(&htim4, TIM_CHANNEL_2, g_arm_state.j2_current);
+    }
+    /* 夹爪始终可控制 */
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, g_arm_state.gripper_target);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, g_arm_state.gripper_target);
+
+    /* 零位硬编码：这个物理姿态下关节显示为 0°（实测标定值） */
+    #define J1_ZERO_RAW  12041   /* 默认姿态（最小收缩端）的 raw */
+    #define J2_ZERO_RAW  7637    /* 默认姿态（最小收缩端）的 raw */
+
+    int16_t j1_deg_x10 = MT6701_RawToAngleX10(g_arm_state.j1_raw, J1_ZERO_RAW);
+    int16_t j2_deg_x10 = MT6701_RawToAngleX10(g_arm_state.j2_raw, J2_ZERO_RAW);
+
+    printf("J1=%+5d J2=%+5d\r\n",
+           j1_deg_x10, j2_deg_x10);
+
+    osDelay(20);
   }
-
-  /* Phase 3：从 +150° 逐步走到 -150° */
-  printf("=== TO -150° ===\r\n");
-  for (angle = 150.0f; angle >= -150.0f; angle -= 10.0f) {
-      Servo_SetAngle(&htim4, TIM_CHANNEL_1, angle);
-      ccr = Servo_AngleToPulse(angle);
-      printf("angle=%+4.0f°  pulse=%4uus  CCR=%u\r\n", angle, ccr / 2, ccr);
-      osDelay(400);
-  }
-
-  /* Phase 4：回到中位 0° */
-  printf("=== BACK TO 0° ===\r\n");
-  Servo_SetAngle(&htim4, TIM_CHANNEL_1, 0.0f);
-  ccr = Servo_AngleToPulse(0.0f);
-  printf("angle=0°  pulse=%uus  CCR=%u\r\n", ccr / 2, ccr);
-  osDelay(2000);
-
-  /* Phase 5：循环 */
-  printf("=== REPEAT ===\r\n");
-  for(;;) { osDelay(1000); }
   /* USER CODE END Servo_Task_Run */
 }
 

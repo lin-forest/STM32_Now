@@ -3,6 +3,16 @@
 > 配合 `plan_steering_arm.md` 使用，按顺序逐步完成。
 > 每步都有明确的目标和验收标准，完成后打勾 ✅
 
+## 整体进度
+
+| Phase | 内容 | 进度 |
+|:----:|:----|:----:|
+| 1~2 | 基础验证（LED/printf/CAN） | ✅ 完成 |
+| **3** | **舵机 + MT6701** | **🔶 核心完成** |
+| 4 | J0 直流电机 | ⏳ 暂缓 |
+| 5 | CAN 状态上报 | ⏳ 待开始 |
+| 6 | 网关适配 | ⏳ 待开始 |
+
 ---
 
 ## Phase 0：准备工作
@@ -505,9 +515,21 @@ void DC_Motor_Task(void *argument)
 
 ---
 
-## Phase 3：舵机 + MT6701 编码器
+## Phase 3：舵机 + MT6701 编码器 — 🔶 核心完成
 
-### Step 3.1 — 移植 MT6701 驱动
+| 子步骤 | 内容 | 状态 |
+|:----:|------|:----:|
+| 3.1 | MT6701 SPI 驱动 | ✅ 代码就绪，待接线测试 |
+| 3.2 | 舵机 PWM 封装 (500~2500μs, 300°) | ✅ 已验证300°全行程 |
+| 3.3 | Servo_Task 平滑插值 + CAN控制 | ✅ speed_dps可调 |
+| 3.4 | 单步测试 | ✅ 上电无动作，CAN激活 |
+
+> **注意**：当前 Servo_Task 已从扫描测试模式改为生产模式：
+> - 上电 `g_servo_active=0` → 不输出 PWM，舵机保持原位
+> - 收到 CAN 0x130 后 `g_servo_active=1` → 开始平滑插值输出
+> - 默认速度 180°/s，可用 0x430 调整
+
+### Step 3.1 — 移植 MT6701 驱动 ✅ 代码已创建
 
 参考 `6_MT6701/6_mt6701_spi/Core/Src/main.c` 中的读取函数，封装为独立驱动：
 
@@ -710,9 +732,16 @@ void Servo_Task(void *argument)
 
 ---
 
-## Phase 5：CAN 命令控制 + 状态上报
+## Phase 5：CAN 命令控制 + 状态上报 — ⏳ 待开始
 
-### Step 5.1 — 实现 Arm_State_Task（50ms 上报）
+| 功能 | 状态 | 说明 |
+|:----|:----:|:----|
+| CAN 0x130 角度控制 | ✅ **已在 CAN_Rx_Task 实现** | JointCmdQueue + g_arm_state |
+| CAN 0x430 回中/设速度 | ✅ 已在 CAN_Rx_Task 实现 | 0x01回中, 0x02设速度 |
+| CAN 0x230 状态查询 | ⏳ | 待实现 |
+| CAN 0x330 状态上报 | ⏳ | 待实现 Arm_State_Task |
+
+### Step 5.1 — 实现 Arm_State_Task（50ms 上报）— ⏳ 未开始
 
 ```c
 // App/tasks/arm_state_task.c
@@ -844,7 +873,7 @@ SavvyCAN 发送上述帧，观察各关节响应。同时收 `0x330` 状态帧�
 
 ---
 
-## Phase 6：ChassisController 网关适配
+## Phase 6：ChassisController 网关适配 — ⏳ 待开始
 
 > 最后一步：让底盘网关能转发机械臂命令。
 

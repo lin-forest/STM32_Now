@@ -34,6 +34,10 @@ typedef struct {
     float   j2_current;
     uint16_t j2_raw;
 
+    /* 舵机运动速度 */
+    float   j1_speed_dps;        // 角速度 (°/s), 如 180 = 180°/s
+    float   j2_speed_dps;
+
     /* 夹爪 */
     uint16_t gripper_target;    // 目标脉宽 1000~5000
 
@@ -43,5 +47,6 @@ typedef struct {
 } ArmState_t;
 
 extern ArmState_t g_arm_state;
+extern volatile uint8_t g_servo_active;
 
 #endif
