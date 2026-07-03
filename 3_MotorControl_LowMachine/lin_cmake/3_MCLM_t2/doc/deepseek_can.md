@@ -15,21 +15,37 @@
 
 ## CAN ID 定义
 
-定义于 `App/config/app_config.h`（当前 `CAN_ID_GROUP=1`）：
+定义于 `App/config/app_config.h`。每块 MCLM 板通过编译期宏 `CAN_ID_GROUP` 选择一组 ID。当前默认 **Group 2**（舵轮动力单元 2）：
 
-| 宏定义 | ID (Group 1) | ID (Group 2) | 方向 | 用途 |
-|---|---|---|---|---|
-| `CAN_MOTOR_TURN_CMD_STDID` | **`0x125`** | `0x123` | RX | **转向**电机控制指令 |
-| `CAN_MOTOR_POWER_CMD_STDID` | **`0x126`** | `0x124` | RX | **动力**电机控制指令 |
-| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | **`0x225`** | `0x223` | RX | **转向**电机状态查询 / 日志控制 |
-| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | **`0x226`** | `0x224` | RX | **动力**电机状态查询 / 日志控制 |
-| `CAN_MOTOR_TURN_STATUS_STDID` | **`0x325`** | `0x323` | TX | **转向**电机状态反馈 |
-| `CAN_MOTOR_POWER_STATUS_STDID` | **`0x326`** | `0x324` | TX | **动力**电机状态反馈 |
-| `CAN_CMD_STOP_STDID` | `0x101` | `0x101` | RX | 全车停止 |
-| `CAN_CMD_TURN_STDID` | `0x102` | `0x102` | RX | 全车转向命令 |
-| `CAN_CMD_POWER_STDID` | `0x103` | `0x103` | RX | 全车动力命令 |
+| 宏定义 | Group 1 | Group 2 | Group 3 | Group 4 | 方向 | 用途 |
+|---|---|---|---|---|---|---|
+| `CAN_MOTOR_TURN_CMD_STDID` | `0x125` | **`0x123`** | `0x121` | `0x127` | RX | **转向**电机控制指令 |
+| `CAN_MOTOR_POWER_CMD_STDID` | `0x126` | **`0x124`** | `0x122` | `0x128` | RX | **驱动**电机控制指令 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` | `0x225` | **`0x223`** | `0x221` | `0x227` | RX | **转向**电机状态查询 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` | `0x226` | **`0x224`** | `0x222` | `0x228` | RX | **驱动**电机状态查询 |
+| `CAN_MOTOR_TURN_STATUS_STDID` | `0x325` | **`0x323`** | `0x321` | `0x327` | TX | **转向**电机状态反馈 |
+| `CAN_MOTOR_POWER_STATUS_STDID` | `0x326` | **`0x324`** | `0x322` | `0x328` | TX | **驱动**电机状态反馈 |
 
-> 切换 Group：修改 `app_config.h:52` 的 `CAN_ID_GROUP` 值。Group 1（0x125/0x126 系列）为当前默认，Group 2（0x123/0x124 系列）为备选。
+全车广播命令（所有 Group 共用）：
+
+| 宏定义 | ID | 方向 | 用途 |
+|---|---|---|---|
+| `CAN_CMD_STOP_STDID` | `0x101` | RX | 全车停止（广播到两个电机） |
+| `CAN_CMD_TURN_STDID` | `0x102` | RX | 全车转向命令（路由到转向电机） |
+| `CAN_CMD_POWER_STDID` | `0x103` | RX | 全车动力命令（路由到驱动电机） |
+
+### 与舵轮底盘构型的映射
+
+四块 MCLM 板对应四个动力单元（详见 [`chassis_model.md`](../../../../doc/chassis_model.md)）：
+
+| 板 | `CAN_ID_GROUP` | CMD 对 | 部署位置 |
+|---|---|---|---|
+| MCLM #1 | **3** | `0x121`/`0x122` | 动力单元 1（转向+驱动） |
+| MCLM #2 | **2**（当前默认） | `0x123`/`0x124` | 动力单元 2（转向+驱动） |
+| MCLM #3 | **1** | `0x125`/`0x126` | 动力单元 3（转向+驱动） |
+| MCLM #4 | **4** | `0x127`/`0x128` | 动力单元 4（转向+驱动） |
+
+> 切换 Group：修改 `app_config.h` 的 `CAN_ID_GROUP` 值后重新编译烧录。
 
 ---
 
@@ -37,8 +53,9 @@
 
 定义于 `App/config/app_config.h`，初始化于 `Core/Src/can.c:MX_CAN_Init()`：
 
-- 实例：`CAN1`，引脚 PA11 (RX) / PA12 (TX)
-- 波特率：500 kbps（Prescaler=4, BS1=13TQ, BS2=4TQ）
+- 实例：`CAN1`，引脚 **PB8 (RX) / PB9 (TX)**
+- 重映射：`__HAL_AFIO_REMAP_CAN1_2()`（默认 PA11/PA12，通过 AFIO 重映射到 PB8/PB9）
+- 波特率：**1 Mbps**（Prescaler=2, BS1=13TQ, BS2=4TQ）
 - 过滤器：Bank 0，掩码全 0（接收所有 ID），FIFO0
 - 中断：`USB_LP_CAN1_RX0_IRQn`，优先级 5
 - 自动重传：ENABLE（硬件重传直到收到 ACK）
@@ -97,19 +114,21 @@ Command_Task(void *argument)
 - `cmdByte`：命令字节（`rxData[0]`）
 - `rxData`：完整数据帧（提取速度值时用到）
 
-### 白名单表
+### 白名单表（以当前默认 Group 2 为例）
 
 以表格形式（而非 if-else）定义 7 个 ID 的合法命令字节组合：
 
 | StdId | motor_id | 允许的命令字节 |
 |---|---|---|
-| `CAN_MOTOR_TURN_CMD_STDID` (0x125) | 0 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
-| `CAN_MOTOR_POWER_CMD_STDID` (0x126) | 1 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
-| `CAN_MOTOR_TURN_CMD_STATUS_STDID` (0x225) | 0 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
-| `CAN_MOTOR_POWER_CMD_STATUS_STDID` (0x226) | 1 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_MOTOR_TURN_CMD_STDID` (当前 `0x123`) | 0 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_POWER_CMD_STDID` (当前 `0x124`) | 1 | `0x11` 调速, `0x07` 调速, `0x08` 停止, `0x02` 倒转 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` (当前 `0x223`) | 0 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` (当前 `0x224`) | 1 | `0x01` 查询, `0x04` 日志开始, `0x05` 日志停止 |
 | `CAN_CMD_STOP_STDID` (`0x101`) | 广播 | `0x08` 停止, `0x11` 调速 |
 | `CAN_CMD_TURN_STDID` (`0x102`) | 0 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
 | `CAN_CMD_POWER_STDID` (`0x103`) | 1 | `0x07` 调速, `0x08` 停止, `0x02` 倒转, `0x11` 调速 |
+
+> 切换 Group 后，白名单中的具体 StdId 随宏定义自动切换，结构不变。
 
 ### 命令字节 → CommandType_t 映射
 
@@ -119,9 +138,9 @@ Command_Task(void *argument)
 | `0x07` | `CAN_CMD_SET_SPEED` | `(int8_t)rxData[1]` | — |
 | `0x08` | `CAN_CMD_STOP` | 0 | — |
 | `0x02` | `CMD_REVERSE` | 0（任务侧用 `-MOTOR_CMD_DEFAULT_SPEED`） | — |
-| `0x01` | `CMD_QUERY_STATUS` | 0 | 仅当 StdId == STATUS ID |
-| `0x04` | `CMD_LOG_START` | 0 | 仅当 StdId == STATUS ID |
-| `0x05` | `CMD_LOG_STOP` | 0 | 仅当 StdId == STATUS ID |
+| `0x01` | `CMD_QUERY_STATUS` | 0 | 仅当 StdId == CMD_STATUS ID |
+| `0x04` | `CMD_LOG_START` | 0 | 仅当 StdId == CMD_STATUS ID |
+| `0x05` | `CMD_LOG_STOP` | 0 | 仅当 StdId == CMD_STATUS ID |
 
 > 注意：相比原内联代码，新过滤表对 ID 与命令字节的合法组合做了明确约束。原代码中 `0x11`/`0x07`/`0x08`/`0x02` 在 switch 中不检查 ID，任意白名单 ID 上发送这些字节都会被接受。新过滤表按 ID 限制了允许的命令字节（例如 STATUS ID 不再接受调速命令）。
 
@@ -143,7 +162,7 @@ int16_t           CAN_Filter_GetValue(uint32_t stdId, uint8_t cmdByte, const uin
 当 `command_task.c` 处理 `CMD_LOG_START` 或 `CMD_LOG_STOP` 时，除了设置 `g_logger_enabled`，还会发送一帧 CAN 消息作为确认：
 
 ```
-txHeader.StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID (0x225)
+txHeader.StdId = CAN_MOTOR_TURN_CMD_STATUS_STDID  (当前默认 Group 2 = 0x223)
 txData[0] = 0xCF           // 标识魔术字
 txData[1] = cmd.type       // 4=LOG_START, 5=LOG_STOP
 txData[2] = g_logger_enabled  // 1=开启, 0=关闭
@@ -167,8 +186,8 @@ Command_Task
     │  调用 send_motor_status(mid)
     │  读 g_motors[mid]（mutex 保护）
     │  构造 CAN_TxHeaderTypeDef txHeader:
-    │      .StdId = (mid == 0) ? CAN_MOTOR_TURN_STATUS_STDID (0x325)
-    │                           : CAN_MOTOR_POWER_STATUS_STDID (0x326)
+    │      .StdId = (mid == 0) ? CAN_MOTOR_TURN_STATUS_STDID    (当前 0x323)
+    │                           : CAN_MOTOR_POWER_STATUS_STDID   (当前 0x324)
     │      .DLC   = 8
     │      .IDE   = CAN_ID_STD
     │      .RTR   = CAN_RTR_DATA
@@ -180,9 +199,9 @@ Command_Task
     │      [7]    = flags                  (uint8_t) → MOTOR_FLAG_*
     │  HAL_CAN_AddTxMessage(&hcan, &txHeader, txData, &txMailbox)
     ▼
-CAN 总线  →  主控
+CAN 总线
 
-注：主控若超过 100ms 未收到任何状态帧，可判定节点离线。
+注：主控若超过 200ms 未收到任何状态帧，可判定节点离线。
 ```
 
 ### 状态帧格式验证
@@ -290,6 +309,15 @@ typedef struct {
 |---|---|---|---|
 | `CommandQueueHandle` | `CommandMsg_t` | `can.c` 中断回调 / UART 命令解析 | `command_task.c` |
 | `MotorQueueHandle` | `CommandMsg_t` | `command_task.c` | 转向电机控制任务（电机 0） |
-| `MotorQueue1Handle` | `CommandMsg_t` | `command_task.c` | 动力电机控制任务（电机 1） |
+| `MotorQueue1Handle` | `CommandMsg_t` | `command_task.c` | 驱动电机控制任务（电机 1） |
 | `AckQueueHandle` | `AckMsg_t` | `command_task.c` | `Ack_task.c` |
 | `LogQueueHandle` | `LogMotorData_t` | logger 模块 | UART 发送任务 |
+
+---
+
+## 与全局项目参考的关系
+
+| 参考文档 | 内容 | 与本文档的关系 |
+|---|---|---|
+| [`architecture.md`](../../../../doc/architecture.md) | 项目整体架构、模块分层、构建规范 | 本文件是 MCLM 子模块的 CAN 协议详述 |
+| [`chassis_model.md`](../../../../doc/chassis_model.md) | 底盘构型分析、网关与 MCLM 的数据流设计 | 本文件的上层协议驱动来源；CAN ID 分组映射到构型 A 的动力单元 |

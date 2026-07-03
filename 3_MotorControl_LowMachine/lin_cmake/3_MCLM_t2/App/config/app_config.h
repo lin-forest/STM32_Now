@@ -27,7 +27,7 @@
 #define MOTOR_CFG_NEW      2
 #define MOTOR_CFG_2IBT4    3
 
-#define MOTOR_CFG_SET   2
+#define MOTOR_CFG_SET   3
 
 #if   MOTOR_CFG_SET == MOTOR_CFG_DEFAULT
   #include "app_motor_cfg_default.h"
@@ -49,27 +49,46 @@
 
 /* ------------------- CAN总线配置 ------------------- */
 /* CAN ID 组选择：改下面这个数字即可切换
- *   1 = 0x125/0x126 系列
- *   2 = 0x123/0x124 系列
+ *   1 = 0x125/0x126 系列  → 舵轮动力单元 3
+ *   2 = 0x123/0x124 系列  → 舵轮动力单元 2
+ *   3 = 0x121/0x122 系列  → 舵轮动力单元 1
+ *   4 = 0x127/0x128 系列  → 舵轮动力单元 4
+ *
+ *   （构型 A 四单元舵轮底盘，四块 MCLM 板各占一组，
+ *     每板控制 1 个动力单元 = 1 转向 + 1 驱动）
  */
-#define CAN_ID_GROUP  2
+#define CAN_ID_GROUP  1
 
 #if CAN_ID_GROUP == 1
-    #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 方向电机控制指令的CAN ID
-    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 方向上层控制电机状态的CAN ID
-    #define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 方向电机状态反馈的CAN ID
-    #define CAN_MOTOR_POWER_CMD_STDID            0x126   // 动力电机控制指令的CAN ID
-    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 动力上层控制电机状态的CAN ID
-    #define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 动力电机状态反馈的CAN ID
+    #define CAN_MOTOR_TURN_CMD_STDID             0x125   // 转向电机控制指令
+    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x225   // 转向电机状态查询
+    #define CAN_MOTOR_TURN_STATUS_STDID          0x325   // 转向电机状态反馈（TX）
+    #define CAN_MOTOR_POWER_CMD_STDID            0x126   // 驱动电机控制指令
+    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x226   // 驱动电机状态查询
+    #define CAN_MOTOR_POWER_STATUS_STDID         0x326   // 驱动电机状态反馈（TX）
 #elif CAN_ID_GROUP == 2
-    #define CAN_MOTOR_TURN_CMD_STDID             0x123   // 方向电机控制指令的CAN ID
-    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 方向上层控制电机状态的CAN ID
-    #define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 方向电机状态反馈的CAN ID
-    #define CAN_MOTOR_POWER_CMD_STDID            0x124   // 动力电机控制指令的CAN ID
-    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 动力上层控制电机状态的CAN ID
-    #define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 动力电机状态反馈的CAN ID
+    #define CAN_MOTOR_TURN_CMD_STDID             0x123   // 转向电机控制指令
+    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x223   // 转向电机状态查询
+    #define CAN_MOTOR_TURN_STATUS_STDID          0x323   // 转向电机状态反馈（TX）
+    #define CAN_MOTOR_POWER_CMD_STDID            0x124   // 驱动电机控制指令
+    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x224   // 驱动电机状态查询
+    #define CAN_MOTOR_POWER_STATUS_STDID         0x324   // 驱动电机状态反馈（TX）
+#elif CAN_ID_GROUP == 3
+    #define CAN_MOTOR_TURN_CMD_STDID             0x121   // 转向电机控制指令
+    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x221   // 转向电机状态查询
+    #define CAN_MOTOR_TURN_STATUS_STDID          0x321   // 转向电机状态反馈（TX）
+    #define CAN_MOTOR_POWER_CMD_STDID            0x122   // 驱动电机控制指令
+    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x222   // 驱动电机状态查询
+    #define CAN_MOTOR_POWER_STATUS_STDID         0x322   // 驱动电机状态反馈（TX）
+#elif CAN_ID_GROUP == 4
+    #define CAN_MOTOR_TURN_CMD_STDID             0x127   // 转向电机控制指令
+    #define CAN_MOTOR_TURN_CMD_STATUS_STDID      0x227   // 转向电机状态查询
+    #define CAN_MOTOR_TURN_STATUS_STDID          0x327   // 转向电机状态反馈（TX）
+    #define CAN_MOTOR_POWER_CMD_STDID            0x128   // 驱动电机控制指令
+    #define CAN_MOTOR_POWER_CMD_STATUS_STDID     0x228   // 驱动电机状态查询
+    #define CAN_MOTOR_POWER_STATUS_STDID         0x328   // 驱动电机状态反馈（TX）
 #else
-    #error "CAN_ID_GROUP must be 1 (0x125/0x126) or 2 (0x123/0x124)"
+    #error "CAN_ID_GROUP must be 1 (0x125/0x126), 2 (0x123/0x124), 3 (0x121/0x122), or 4 (0x127/0x128)"
 #endif
 
 #define CAN_CMD_SET_SPEED_T2            0x11    // 新的设置速度命令

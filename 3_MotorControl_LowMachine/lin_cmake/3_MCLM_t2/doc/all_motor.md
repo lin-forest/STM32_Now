@@ -15,18 +15,23 @@ App/config/
 └── app_motor_cfg_2ibt4.h       ← 预设 2IBT4  (3)：双 IBT-4 (BTS7960)
 ```
 
-### 选择机制（`app_config.h`）
+### 选择机制（`app_config.h` 当前状态）
 
 ```c
 #define MOTOR_CFG_DEFAULT  1
 #define MOTOR_CFG_NEW      2
+#define MOTOR_CFG_2IBT4    3
 
-#define MOTOR_CFG_SET   3       // ← 唯一开关
+#define MOTOR_CFG_SET   3       // ← 唯一开关，当前选 2IBT4
 
 #if   MOTOR_CFG_SET == MOTOR_CFG_DEFAULT
   #include "app_motor_cfg_default.h"
 #elif MOTOR_CFG_SET == MOTOR_CFG_NEW
   #include "app_motor_cfg_new.h"
+#elif MOTOR_CFG_SET == MOTOR_CFG_2IBT4
+  #include "app_motor_cfg_2ibt4.h"
+#else
+  #error "MOTOR_CFG_SET must be MOTOR_CFG_DEFAULT (1), MOTOR_CFG_NEW (2), or MOTOR_CFG_2IBT4 (3)"
 #endif
 ```
 
@@ -59,10 +64,10 @@ App/config/
 
 1. **新建** `app_motor_cfg_xxx.h`，按上述布局编写
 2. **在 `app_config.h` 中**：
-   - 添加 `#define MOTOR_CFG_XXX  3`
+   - 添加 `#define MOTOR_CFG_XXX  4`
    - 在 `MOTOR_CFG_SET` 的选择链中追加 `#elif` 和 `#include`
    - 更新 `#error` 提示支持的值范围
-3. 修改 `#define MOTOR_CFG_SET  3` 即可切换
+3. 修改 `#define MOTOR_CFG_SET  4` 即可切换
 
 ---
 
@@ -100,10 +105,9 @@ App/config/
 | `ENCODER_FILTER_ALPHA` | `0.1f` | 编码器 IIR 滤波系数 |
 | `MOTOR_CMD_DEFAULT_SPEED` | `50.0f` | CMD_FORWARD/REVERSE 默认速度（50% 满量程） |
 
-| 宏 | 默认值 | 说明 |
+| 宏 | 各预设值 | 说明 |
 |---|---|---|
-| `SPEED_TICKS_MAX` | 预设相关 | 单控制周期编码器最大计数值（用于速度归一化） |
-| | DEFAULT=`90`, NEW=`96` | 各预设内独立定义 |
+| `SPEED_TICKS_MAX` | DEFAULT=`90`, NEW=`96`, 2IBT4=`96` | 单控制周期编码器最大计数值（用于速度归一化） |
 
 ### SPEED_TICKS_MAX 计算公式
 
@@ -111,11 +115,13 @@ App/config/
 SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期(0.01s)
 ```
 
-**当前参数**：PPR=11, TI12=4x, 电机最高RPM=8986（输出轴 478 RPM × 减速比 18.8）
+**当前参数（NEW / 2IBT4 预设）**：PPR=12, TI12=4x, 电机最高RPM=8986（输出轴 478 RPM × 减速比 18.8）
 ```
-11 × 4 × (8986 / 60) × 0.01 ≈ 66  (理论值)
+12 × 4 × (8986 / 60) × 0.01 ≈ 72  (理论值)
+→ 增加 33% 裕量 → 96
 ```
-> 当前配置为 `96`（`app_motor_cfg_new.h:22`），提高上限以适配更高转速或避免异常饱和。
+
+**DEFAULT 预设**：`SPEED_TICKS_MAX=90`（参数未标注，无详细计算式）。
 
 ---
 
@@ -126,7 +132,7 @@ SPEED_TICKS_MAX = PPR × 4(TI12倍频) × (电机最高RPM / 60) × 控制周期
 | 宏 | 默认值 | 说明 |
 |---|---|---|
 | `MOTOR1_TIM_HANDLE` | `&htim1` | PWM 定时器句柄 |
-| `MOTOR1_TIM_CHANNEL` | `TIM_CHANNEL_1` | PWM 输出通道 |
+| `MOTOR1_TIM_CHANNEL` | `TIM_CHANNEL_1`（DEFAULT）/ `TIM_CHANNEL_3`（NEW） | PWM 输出通道（预设不同） |
 | `MOTOR1_IN1_PORT/PIN` | `GPIOB, GPIO_PIN_0` | 方向控制引脚1 |
 | `MOTOR1_IN2_PORT/PIN` | `GPIOB, GPIO_PIN_1` | 方向控制引脚2 |
 | `MOTOR1_DEFAULT_STOP_MODE` | `TB6612_MOTOR_STOP_BRAKE` | 默认停止模式（刹车/滑行） |
@@ -235,7 +241,7 @@ speed = 0  → CH_F = 0, CH_R = 0                   ← 停止
 
 | 预设 | 电机 | RPWM(CH_F) | LPWM(CH_R) |
 |------|------|------------|------------|
-| NEW (2) | 电机2 | TIM1_CH2 (PA9) | TIM1_CH3 (PA10) |
+| NEW (2) | 电机2 | TIM1_CH1 (PA8) | TIM1_CH2 (PA9) |
 | 2IBT4 (3) | 电机1 | TIM1_CH3 (PA10) | TIM1_CH4 (PA11) |
 | 2IBT4 (3) | 电机2 | TIM1_CH1 (PA8) | TIM1_CH2 (PA9) |
 
@@ -257,21 +263,37 @@ speed = 0  → CH_F = 0, CH_R = 0                   ← 停止
 
 ### CAN ID 选择
 
-`CAN_ID_GROUP`（`app_config.h:137`）：
+`CAN_ID_GROUP`（`app_config.h`）：编译期宏选择，每块 MCLM 板用一组 ID。
 
-| ID 组 | 转向电机 | 动力电机 |
+| 组 | 转向 CMD | 转向状态查询 | 转向状态反馈(TX) | 驱动 CMD | 驱动状态查询 | 驱动状态反馈(TX) | 舵轮单元 |
+|:--:|:--------:|:------------:|:----------------:|:--------:|:------------:|:----------------:|:--------:|
+| 1 (0x125/0x126) | `0x125` | `0x225` | `0x325` | `0x126` | `0x226` | `0x326` | 单元 3 |
+| **2 (当前默认)** | **`0x123`** | **`0x223`** | **`0x323`** | **`0x124`** | **`0x224`** | **`0x324`** | 单元 2 |
+| 3 (0x121/0x122) | `0x121` | `0x221` | `0x321` | `0x122` | `0x222` | `0x322` | 单元 1 |
+| 4 (0x127/0x128) | `0x127` | `0x227` | `0x327` | `0x128` | `0x228` | `0x328` | 单元 4 |
+
+> 四组 ID 对应舵轮底盘四个动力单元，详见 [`chassis_model.md`](../../../../doc/chassis_model.md)。
+
+全车广播命令（所有 Group 共用）：
+
+| 宏 | ID | 说明 |
 |---|---|---|
-| **`1` (0x125/0x126)** | 控制 `0x125`, 状态查询 `0x225`, 状态反馈 `0x325` | 控制 `0x126`, 状态查询 `0x226`, 状态反馈 `0x326` |
-| `2` (0x123/0x124) | 控制 `0x123`, 状态查询 `0x223`, 状态反馈 `0x323` | 控制 `0x124`, 状态查询 `0x224`, 状态反馈 `0x324` |
+| `CAN_CMD_STOP_STDID` | `0x101` | 全车停止（广播到两个电机） |
+| `CAN_CMD_TURN_STDID` | `0x102` | 全车转向命令（路由到转向电机） |
+| `CAN_CMD_POWER_STDID` | `0x103` | 全车动力命令（路由到驱动电机） |
 
 ### 总线参数
 
-| 宏 | 默认值 | 说明 |
-|---|---|---|
-| `CAN_PRESCALER` | `4` | 分频器 |
-| `CAN_MODE` | `CAN_MODE_NORMAL` | 工作模式 |
-| `CAN_TIME_SEG1` | `CAN_BS1_13TQ` | 时间段1 |
-| `CAN_TIME_SEG2` | `CAN_BS2_4TQ` | 时间段2 |
+| 宏 / 参数 | 宏定义值 | 代码实际使用值 | 说明 |
+|---|---|---|---|
+| `CAN_PRESCALER` | `4`（`app_config.h`） | **`2`**（`can.c:77` 硬编码） | 宏为遗留死定义，实际 prescaler=2 → **1 Mbps** |
+| `CAN_MODE` | `CAN_MODE_NORMAL` | 同左 | 工作模式 |
+| `CAN_SYNC_JUMP_WIDTH` | `CAN_SJW_1TQ` | 同左 | 同步跳转宽度 |
+| `CAN_TIME_SEG1` | `CAN_BS1_13TQ` | 同左 | 时间段1 |
+| `CAN_TIME_SEG2` | `CAN_BS2_4TQ` | 同左 | 时间段2 |
+| — | — | — | **计算：36MHz / 2 / (1+13+4) = 1 Mbps** |
+
+> `CAN_PRESCALER` 宏已无代码引用，`can.c` 直接写 `hcan.Init.Prescaler = 2;`。如需还原 CubeMX 生成时可同步更新宏。
 
 ### 命令定义
 
@@ -284,6 +306,39 @@ speed = 0  → CH_F = 0, CH_R = 0                   ← 停止
 | `CAN_CMD_STOP_STDID` | `0x101` | 全车停止 ID |
 | `CAN_CMD_TURN_STDID` | `0x102` | 全车转向 ID |
 | `CAN_CMD_POWER_STDID` | `0x103` | 全车动力 ID |
+
+### 白名单表（当前默认 Group 2）
+
+`App/services/can_filter.c` 中以表格形式定义合法 ID+命令字节组合：
+
+| StdId | motor_id | 允许的命令字节 |
+|---|---|---|
+| `CAN_MOTOR_TURN_CMD_STDID` (`0x123`) | 0 | `0x11` 调速、`0x07` 调速、`0x08` 停止、`0x02` 倒转 |
+| `CAN_MOTOR_POWER_CMD_STDID` (`0x124`) | 1 | 同上 |
+| `CAN_MOTOR_TURN_CMD_STATUS_STDID` (`0x223`) | 0 | `0x01` 查询、`0x04` 日志开始、`0x05` 日志停止 |
+| `CAN_MOTOR_POWER_CMD_STATUS_STDID` (`0x224`) | 1 | 同上 |
+| `CAN_CMD_STOP_STDID` (`0x101`) | 广播 | `0x08` 停止、`0x11` 调速 |
+| `CAN_CMD_TURN_STDID` (`0x102`) | 0 | `0x07` 调速、`0x08` 停止、`0x02` 倒转、`0x11` 调速 |
+| `CAN_CMD_POWER_STDID` (`0x103`) | 1 | 同上 |
+
+> 切换 Group 后 StdId 随宏定义自动切换，白名单结构不变。详见 [`deepseek_can.md`](deepseek_can.md)。
+
+### 状态帧格式（TX，50ms 周期）
+
+由 `command_task.c` 的 `send_motor_status()` 发送：
+
+```
+Byte [0-1]: current_logic_speed  (int16 LE)  实际转速
+Byte [2-3]: accumulated_ticks    (uint16 LE)  编码器脉冲累计
+Byte [4-5]: pwm_output           (int16 LE)   PWM 输出值
+Byte [6]:   target_logic_speed   (int8)        目标速度
+Byte [7]:   flags                (uint8)       bit0=堵转, bit1=PWM饱和
+```
+
+| 触发方式 | ID | 说明 |
+|---|---|---|
+| 每 50ms 定时 | `CAN_MOTOR_TURN_STATUS_STDID` / `CAN_MOTOR_POWER_STATUS_STDID` | 主动心跳上报（20Hz） |
+| 收到 `CMD_QUERY_STATUS` | 同上 | 按需查询响应 |
 
 ---
 
@@ -314,7 +369,7 @@ extern Motor_t g_motors[MOTOR_COUNT];  // [0]=转向电机, [1]=动力电机
 | `MOTOR_FLAG_STALL` | `0x01` | 堵转：setpoint != 0 但 speed ≈ 0 持续 > 50ms |
 | `MOTOR_FLAG_SATURATED` | `0x02` | 饱和：PWM 已达上限但仍无法达到目标速度 |
 
-检测逻辑在 `tb6612_DC_task.c` 的 PID 控制循环中实现。停止时自动清零。  
+检测逻辑在 `tb6612_DC_task.c` / `ibt4_DC_task.c` 的 PID 控制循环中实现。停止时自动清零。  
 通过 CAN 状态帧 `[7]` 字节上报给主控。
 
 > 经 CAN 总线录制验证：真实堵转时正确上报 `0x03`（STALL\|SATURATED），正常运行时 `flags=0x00`。详见 [`ai_session/can_data_analyze.md`](ai_session/can_data_analyze.md)。
@@ -337,8 +392,10 @@ extern Motor_t g_motors[MOTOR_COUNT];  // [0]=转向电机, [1]=动力电机
 
 | 函数 | 公式 | 说明 |
 |---|---|---|
-| `ticks_to_logic(ticks)` | `ticks × 100 / 96` | 编码器计数值 → 逻辑速度 |
-| `logic_to_pwm(logic)` | `logic × 7200 / 100` | 逻辑速度 → PWM 值 |
+| `ticks_to_logic(ticks)` | `ticks × SPEED_LOGIC_MAX / SPEED_TICKS_MAX` | 编码器计数值 → 逻辑速度 |
+| `logic_to_pwm(logic)` | `logic × PWM_MAX / SPEED_LOGIC_MAX` | 逻辑速度 → PWM 值 |
+
+> 当前 `SPEED_TICKS_MAX=96`（NEW/2IBT4 预设）时：`ticks_to_logic = ticks × 100 / 96`
 
 ---
 

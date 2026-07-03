@@ -61,8 +61,8 @@
 #if (MOTOR2_DRIVER == MOTOR_DRIVER_IBT4)
 
 #define MOTOR2_IBT4_TIM             &htim1
-#define MOTOR2_IBT4_CH_F            TIM_CHANNEL_1   // RPWM (正转) PA9
-#define MOTOR2_IBT4_CH_R            TIM_CHANNEL_2   // LPWM (反转) PA10
+#define MOTOR2_IBT4_CH_F            TIM_CHANNEL_1   // RPWM (正转) PA8
+#define MOTOR2_IBT4_CH_R            TIM_CHANNEL_2   // LPWM (反转) PA9
 #define MOTOR2_IBT4_EN_PORT         NULL
 #define MOTOR2_IBT4_EN_PIN          0
 #define MOTOR2_IBT4_POLARITY        0
