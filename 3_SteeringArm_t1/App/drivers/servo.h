@@ -10,6 +10,7 @@
 #include "stm32f1xx_hal.h"
 
 void     Servo_Init(void);
+void     Servo_StartAll(void);          /* 首次激活时启动全部 PWM 通道 */
 uint16_t Servo_AngleToPulse(float angle_deg);
 void     Servo_SetPulse(TIM_HandleTypeDef *htim, uint32_t channel, uint16_t pulse);
 void     Servo_SetAngle(TIM_HandleTypeDef *htim, uint32_t channel, float angle_deg);

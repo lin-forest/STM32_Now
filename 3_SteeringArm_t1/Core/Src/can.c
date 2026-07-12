@@ -38,7 +38,7 @@ void MX_CAN_Init(void)
 
   /* USER CODE END CAN_Init 1 */
   hcan.Instance = CAN1;
-  hcan.Init.Prescaler = 4;
+  hcan.Init.Prescaler = 2;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
@@ -54,19 +54,49 @@ void MX_CAN_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN_Init 2 */
-  
-  CAN_FilterTypeDef can_filter = {
-      .FilterBank = 0,
-      .FilterMode = CAN_FILTERMODE_IDMASK,
-      .FilterScale = CAN_FILTERSCALE_32BIT,
-      .FilterIdHigh = 0x0000,
-      .FilterIdLow = 0x0000,
-      .FilterMaskIdHigh = 0x0000,
-      .FilterMaskIdLow = 0x0000,
-      .FilterFIFOAssignment = CAN_RX_FIFO0,
-      .FilterActivation = ENABLE,
-  };
+
+  /*
+   * 硬件滤波 — 32-bit mask mode，精确匹配本机关心的 CAN ID
+   *
+   *    Bank 0: 0x130 + 0x131 (mask=0x7FE, 忽略 bit0)
+   *    Bank 1: 0x230          (mask=0x7FF, 精确匹配)
+   *    Bank 2: 0x430          (mask=0x7FF, 精确匹配)
+   *
+   * 寄存器布局 (CAN_FxR1 / CAN_FxR2, 32-bit):
+   *   [31:21] = STID[10:0], [2] = IDE, [1] = RTR
+   */
+  CAN_FilterTypeDef can_filter = {0};
+
+  /* Bank 0: accept 0x130 and 0x131 */
+  can_filter.FilterBank = 0;
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  can_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+  can_filter.FilterIdHigh        = (uint16_t)((0x130UL << 21) >> 16);
+  can_filter.FilterIdLow         = (uint16_t)((0x130UL << 21) & 0xFFFF);
+  can_filter.FilterMaskIdHigh    = (uint16_t)((0x7FEUL << 21) >> 16);
+  can_filter.FilterMaskIdLow     = (uint16_t)(((0x7FEUL << 21) & 0xFFFF) | 0x0004);
+  can_filter.FilterFIFOAssignment = CAN_RX_FIFO0;
+  can_filter.FilterActivation    = ENABLE;
   HAL_CAN_ConfigFilter(&hcan, &can_filter);
+
+  /* Bank 1: accept 0x230 */
+  can_filter.FilterBank = 1;
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  can_filter.FilterIdHigh        = (uint16_t)((0x230UL << 21) >> 16);
+  can_filter.FilterIdLow         = (uint16_t)((0x230UL << 21) & 0xFFFF);
+  can_filter.FilterMaskIdHigh    = (uint16_t)((0x7FFUL << 21) >> 16);
+  can_filter.FilterMaskIdLow     = (uint16_t)(((0x7FFUL << 21) & 0xFFFF) | 0x0004);
+  HAL_CAN_ConfigFilter(&hcan, &can_filter);
+
+  /* Bank 2: accept 0x430 */
+  can_filter.FilterBank = 2;
+  can_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+  can_filter.FilterIdHigh        = (uint16_t)((0x430UL << 21) >> 16);
+  can_filter.FilterIdLow         = (uint16_t)((0x430UL << 21) & 0xFFFF);
+  can_filter.FilterMaskIdHigh    = (uint16_t)((0x7FFUL << 21) >> 16);
+  can_filter.FilterMaskIdLow     = (uint16_t)(((0x7FFUL << 21) & 0xFFFF) | 0x0004);
+  HAL_CAN_ConfigFilter(&hcan, &can_filter);
+
   HAL_CAN_Start(&hcan);
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan, CAN_IT_ERROR);

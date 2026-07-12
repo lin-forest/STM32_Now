@@ -78,7 +78,76 @@ VS Code 和 CubeMX 生成的文件使用 CRLF 行尾，导致 `Edit` 工具匹�
 
 ---
 
-## 5. 待解决
+---
+
+## 5. HAL_CAN_ErrorCallback — 重写 HAL 弱回调做 CAN 错误诊断
+
+### 背景
+第一次见到这种写法：在 `stm32f1xx_it.c` 里直接定义一个名为 `HAL_CAN_ErrorCallback` 的函数，HAL 就会自动调用它。
+
+### 原理
+STM32 HAL 驱动用 `__weak` 定义了一批 **空回调函数**，比如：
+
+```c
+__weak void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) { /* 空 */ }
+```
+
+用户在自己的 `.c` 文件里定义一个**同名同签名**的函数，链接器会用强符号替换弱符号，HAL 的中断服务程序会自动调用到你的版本。
+
+不只 CAN，所有外设都有类似机制：
+- `HAL_UART_ErrorCallback` / `HAL_UART_RxCpltCallback`
+- `HAL_SPI_TxCpltCallback` / `HAL_SPI_RxCpltCallback`
+- `HAL_TIM_PeriodElapsedCallback`
+- `HAL_ADC_ConvCpltCallback`
+
+### 当前代码做了什么
+
+```c
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+    uint32_t err = HAL_CAN_GetError(hcan);
+    printf("CAN_ERR: 0x%08lX\r\n", err);
+    if (err & HAL_CAN_ERROR_ACK)   printf("  - ACK error (no response on bus)\r\n");
+    if (err & HAL_CAN_ERROR_BOF)   printf("  - Bus-Off\r\n");
+    if (err & HAL_CAN_ERROR_EPV)   printf("  - Error Passive\r\n");
+    if (err & HAL_CAN_ERROR_EWG)   printf("  - Warning\r\n");
+    if (err & HAL_CAN_ERROR_STF)   printf("  - Stuff error\r\n");
+    if (err & HAL_CAN_ERROR_FOR)   printf("  - Form error\r\n");
+    if (err & HAL_CAN_ERROR_CRC)   printf("  - CRC error\r\n");
+}
+```
+
+逐位解析错误码，打印可读的故障原因——调试 CAN 通信问题时直接看到是 ACK 没应答还是总线干扰。
+
+### 这样做的好处
+
+| 优势 | 说明 |
+|:----|:----|
+| **不修改 HAL 源码** | 升级 HAL 库时不受影响 |
+| **中断中快速诊断** | CAN 出错立刻知道原因，而不是静默卡死 |
+| **Cortex-M 中断模型支持** | 函数名即中断向量表入口（对 IRQ Handler 而言），而回调是 HAL 内联调用，不依赖向量表 |
+| **零侵入** | CubeMX 重新生成代码也不会删除你的回调函数（只要写在 `USER CODE` 段外或保留区内） |
+
+### 注意事项 ⚠️
+
+**`printf` 在中断中不安全**。如果 `printf` 底层走 UART 且 UART 使用中断，优先级不同可能导致死锁。推荐改成：
+
+```c
+// 只存标志，延迟处理
+static volatile uint32_t g_can_err = 0;
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
+    g_can_err = HAL_CAN_GetError(hcan);
+}
+// 在主循环或 FreeRTOS 任务中检查并打印
+```
+
+### 参考
+- `Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c` 搜索 `__weak`
+- RM0008 §23 — CAN 错误状态机
+
+---
+
+## 6. 待解决
 
 | 问题 | 方案 | 依赖 |
 |:----|:----|:----:|

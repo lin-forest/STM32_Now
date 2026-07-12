@@ -98,8 +98,8 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_USART1_UART_Init();
   MX_TIM4_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   printf("3_SteeringArm starting...\r\n");
@@ -173,7 +173,7 @@ void SystemClock_Config(void)
 
 int __io_putchar(int ch)
 {
-    HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 100);
+    HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 100);
     return ch;
 }
 

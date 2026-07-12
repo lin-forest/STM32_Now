@@ -47,6 +47,17 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     App/drivers/mt6701.c
     App/drivers/servo.c
+    App/drivers/motor_DC_IBT4.c
+
+    # FreeRTOS tasks
+    App/tasks/heartbeat_task.c
+    App/tasks/can_rx_task.c
+    App/tasks/servo_task.c
+    App/tasks/dc_motor_task.c
+    App/tasks/arm_state_task.c
+
+    # Modules
+    App/modules/pid.c
 )
 
 # Add include paths
@@ -54,6 +65,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     App/config
     App/drivers
+    App/tasks
+    App/modules
+    App/services
 )
 
 # Add project symbols (macros)

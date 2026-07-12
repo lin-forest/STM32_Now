@@ -27,26 +27,33 @@ typedef struct {
     /* J1 舵机 */
     float   j1_target;          // 目标角度 (°)
     float   j1_current;         // 当前角度 (°)
+    float   j1_offset;          // 角度补偿 (°), 弥补机械安装误差
     uint16_t j1_raw;            // MT6701 原始值 0~16383
 
     /* J2 舵机 */
     float   j2_target;
     float   j2_current;
+    float   j2_offset;          // 角度补偿 (°)
     uint16_t j2_raw;
 
     /* 舵机运动速度 */
     float   j1_speed_dps;        // 角速度 (°/s), 如 180 = 180°/s
     float   j2_speed_dps;
 
-    /* 夹爪 */
+    /* J3 夹爪 (单舵机, R1/R2 共用) */
     uint16_t gripper_target;    // 目标脉宽 1000~5000
+    uint16_t ch1_target;        // R1 左舵机独立目标 (0=跟随 gripper_target)
+    uint16_t ch2_target;        // R1 右舵机独立目标 (0=跟随 gripper_target)
+    int16_t gripper_offset;     // J3 脉宽偏移, R1/R2 共用
 
     /* 预留 J0 */
     int16_t j0_target;
     int16_t j0_current_speed;
+    uint16_t j0_encoder_raw;    // TIM2 编码器原始值 (用于 PC 端位置控制)
 } ArmState_t;
 
 extern ArmState_t g_arm_state;
-extern volatile uint8_t g_servo_active;
+extern volatile uint8_t g_servo_active;   // 0=未激活(上电), 1=已收到首次命令
+extern volatile uint8_t g_system_locked;  // 0=正常, 1=锁定(430#03), 覆盖 g_servo_active
 
 #endif

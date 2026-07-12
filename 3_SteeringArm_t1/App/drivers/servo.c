@@ -26,14 +26,18 @@
 
 void Servo_Init(void)
 {
+    /* 所有通道不上电启动，由 servo_task 首次激活时统一开启，防止上电突跳 */
+    /* 设中位初值，PWM 信号未启动时不会输出，激活后从中位开始 */
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 3000);
+    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 3000);
+}
+
+void Servo_StartAll(void)
+{
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-
-    /* 初始：仅夹爪设全开，舵机不设角度（等待 CAN 命令） */
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 1000);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 1000);
 }
 
 /* 角度 → 脉宽 (μs)

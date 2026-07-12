@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "cmsis_os.h"
 #include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -226,5 +227,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
     memcpy(msg.data, rx_data, 8);
 
     osMessageQueuePut(canRxQueueHandle, &msg, 0, 0);
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+    uint32_t err = HAL_CAN_GetError(hcan);
+    printf("CAN_ERR: 0x%08lX\r\n", err);
+    if (err & HAL_CAN_ERROR_ACK)        printf("  - ACK error (no response on bus)\r\n");
+    if (err & HAL_CAN_ERROR_BOF)        printf("  - Bus-Off\r\n");
+    if (err & HAL_CAN_ERROR_EPV)        printf("  - Error Passive\r\n");
+    if (err & HAL_CAN_ERROR_EWG)        printf("  - Warning\r\n");
+    if (err & HAL_CAN_ERROR_STF)        printf("  - Stuff error\r\n");
+    if (err & HAL_CAN_ERROR_FOR)        printf("  - Form error\r\n");
+    if (err & HAL_CAN_ERROR_CRC)        printf("  - CRC error\r\n");
 }
 /* USER CODE END 1 */
