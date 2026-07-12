@@ -56,14 +56,14 @@ void Servo_Task_Impl(void *argument)
 #if ARM_CFG_SET == 2
         /* ── R2: J1/J2 + 夹爪 ── */
         if (g_servo_active && !g_system_locked) {
-            /* 首次激活：启动全部 PWM 通道，直接到目标位置，不经过 0° */
+            /* 首次激活：从 MT6701 读真实位置开始平滑插值 */
             static uint8_t activated = 0;
             if (!activated) {
                 Servo_StartAll();
-                g_arm_state.j1_current = g_arm_state.j1_target;
-                g_arm_state.j2_current = g_arm_state.j2_target;
+                g_arm_state.j1_current = MT6701_GetAngle(J1_CS_GPIO_Port, J1_CS_Pin);
+                g_arm_state.j2_current = MT6701_GetAngle(J2_CS_GPIO_Port, J2_CS_Pin);
                 activated = 1;
-                printf("Servo activated → J1=%.1f° J2=%.1f°\r\n",
+                printf("Servo activated → J1=%.1f° J2=%.1f° (from MT6701)\r\n",
                        (double)g_arm_state.j1_current, (double)g_arm_state.j2_current);
             }
 

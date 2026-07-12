@@ -142,6 +142,7 @@ void CAN_Rx_Task_Impl(void *argument)
                 switch (msg.data[0])
                 {
                     case 0x01:  /* 回中 */
+                        if (!g_servo_active) g_servo_active = 1;  /* 首次激活 */
 #if ARM_CFG_SET == 2
                         g_arm_state.j1_target = 0.0f;
                         g_arm_state.j2_target = 0.0f;
@@ -173,16 +174,6 @@ void CAN_Rx_Task_Impl(void *argument)
                         printf("=== UNLOCKED ===\r\n");
                         break;
                 }
-            }
-            /* ======== 0x131 — ARM_VEL ======== */
-            else if (msg.id == CAN_ARM_VEL_STDID && msg.len >= 4)
-            {
-                uint8_t jid = msg.data[0];
-                int16_t spd = (int16_t)(msg.data[2] | (msg.data[3] << 8));
-                float speed_dps = (float)spd / 10.0f;
-                if (jid == 0xFF || jid == 1) g_arm_state.j1_speed_dps = speed_dps;
-                if (jid == 0xFF || jid == 2) g_arm_state.j2_speed_dps = speed_dps;
-                printf("ARM_VEL: j%d = %d (0.1°/s)\r\n", jid, spd);
             }
             /* ======== 0x230 — ARM_QUERY ======== */
             else if (msg.id == CAN_ARM_QUERY_STDID)
