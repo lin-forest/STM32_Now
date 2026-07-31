@@ -1,0 +1,17 @@
+[Unit]
+Description=Setup CANable2 interface
+After=network.target
+# 等待 CANable 设备节点出现
+Wants=dev-ttyACM0.device
+After=dev-ttyACM0.device
+BindsTo=dev-ttyACM0.device
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 1
+ExecStart=/usr/bin/slcand -o -s8 -t hw /dev/ttyACM0 can0
+ExecStart=/usr/bin/ip link set can0 up
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

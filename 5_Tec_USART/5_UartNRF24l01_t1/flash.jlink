@@ -1,0 +1,5 @@
+r
+h
+loadfile build/Debug/5_UartNRF24l01_t1.elf
+r
+q
